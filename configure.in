@@ -1,4 +1,4 @@
-AC_INIT([grossd],[0.6.0])
+AC_INIT([gross],[0.6.0])
 
 AM_INIT_AUTOMAKE
 
