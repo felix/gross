@@ -1,0 +1,119 @@
+gross - Graylisting of suspicious sources
+
+INTRODUCTION
+
+Gross is a graylisting server. The features that make gross
+stand out from other graylisters are:
+
+- it's blazingly fast
+- it's amazingly resource efficient
+- it can be configured to query DNSBL databases, and
+enforce graylisting only for hosts that are found on
+those databases
+- it can be replicated and run parallel on two servers
+
+It supports Sun Java System Messaging Server and Postfix.
+Well, only SJSMS implementation is being run on production.
+
+AUTHORS
+
+Gross is written by Eino Tuominen <eino@utu.fi> and
+Antti Siira <antti@utu.fi>
+
+MOTIVATION
+
+We decided to write a greylister of our own because
+traditional greylisting was not acceptable due to it's
+impact on legitimate emails. Likewise, we have not used
+DNSBLs to directly refuse mail because of the possible
+false positives. One of the cornerstones of our spam
+fighting policy is to minimize the possibility of false
+positives.
+
+Because greylisting is found to be a very effective way
+to reduce spam, and most of spam is originated from
+hosts on various DNSBLs, I suggested that greylisting just 
+those servers found on DNSBLs would reduce the amount
+of spam received. This software has been written to test
+if that hypothesis was correct.
+
+DESIGN AND OPERATION
+
+Gross consists of grossd, the graylisting daemon, and
+a client library for SJSMS. The server also implements 
+Postfix's content filtering protocol. The protocol is
+chosen when compiling the server.
+
+Upon receiving a request from a client, grossd first 
+validates it. The request includes a triplet (smtp-client-ip, 
+sender-address, recipient-address). A hash is then 
+calculated and matched against the Bloom filter. If a
+match is found, server sends an OK message.
+
+If the triplet has not been seen before, grossd then
+queries configured DNSBL databases for the smtp-client-ip.
+If a positive match is found, grossd sends client a 
+GRAY response. If DNSBL tests are negative, an OK response
+is sent. Database is then updated; currently there are 
+two updating styles: either to always update or to only
+update if the result was GRAY.
+
+As mentioned above, the data store is implemented with
+Bloom filters. A Bloom filter is a very efficient way
+to store data. It's a probabilistic data structure,
+which means that there is a possibility of error when querying
+the database. False positives are possible, but false
+negatives are not. This means that there is a possibility
+that grossd will falsely give an OK response when a
+connection should be graylisted. By sizing the bloom
+filters, you can control the error possibility to meet your
+needs. The right bloom filter size depends on the number
+of entries in the database, that is, the retention time
+versus the number of handled connections.[1]
+
+DNS queries are done asynchronously using c-ares library
+(http://daniel.haxx.se/projects/c-ares/). 
+
+DOCUMENTATION
+
+Documentation is nearly nonexistent, and should be extended
+to cover at least the installation process. Please, don't
+hesitate to contact the authors directly if you have any
+questions!
+
+PERFORMANCE AND STABILITY
+
+Gross is currently doing greylisting for the mail gateways
+of the University of Turku.
+
+Although the current release has never crashed, do a decent
+testing before putting it in production. After all, it's
+been on production on just a single platform.
+
+We run grossd (and SJSMS) on Solaris 9 on Sun Sparc platform.
+
+When we enabled Gross on our servers, we saw a tremendous 
+drop on our internet originated mail flow. Also,
+the load on our spam filtering servers was cut in half!
+
+DEVELOPMENT AND LICENSING
+
+Gross is published on a BSD-like license.
+
+Things on our TODO-list are: documentation, make logging 
+more configurable, implement a way to collect statistics
+from the running servers, implement an administrative
+interface for i.e. querying the database without updating
+it.
+
+If you have any suggestions regarding the software or wish
+to take part on the development, feel free to contact the authors.
+We'll be happy to hear if you dare to try out the software.
+
+Should it be grey or gray?-)
+
+  Eino Tuominen
+
+
+
+[1] http://en.wikipedia.org/wiki/Bloom_filter

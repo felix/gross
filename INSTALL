@@ -1,0 +1,121 @@
+REQUIREMENTS
+
+You'll need a decent compiler, we have tested gcc on FreeBSD and
+Sun Studio 8 on Solaris Sparc.
+
+In order to configure dnsbl queries you need c-ares library for
+asynhronous dns queries. You can download it here:
+http://daniel.haxx.se/projects/c-ares/
+
+COMPILING
+
+You should be able to compile it for testing by just commanding:
+
+$ ./configure --with-worker=sjsms --prefix=/tmp/gross
+$ make install
+
+Default worker protocol is Postfix's, if you use sjsms you must
+specify it excplicitly.
+
+BASIC CONFIGURATION
+
+Default configuration is not yet included in the source package, so you
+need to write $PREFIX/etc/grossd.conf yourself. Here is an example:
+
+#update=gray
+dnsbl=bl.spamcop.net
+dnsbl=relays.ordb.org
+dnsbl=sbl.spamhaus.org
+dnsbl=dnsbl.njabl.org
+dnsbl=cbl.abuseat.org
+dnsbl=xbl.smaphaus.org
+host=127.0.0.1
+port=1111
+filter_bits=21
+number_buffers=8
+rotate_interval=120 # 2 minutes
+#synchost=
+#syncport=
+#peerhost=
+#statefile=/tmp/grossd.state
+
+This is a single server configuration. dnsbl entries are just what you'd
+think they are. update=gray will update the datebase only in case of a
+GRAY response. It is the default. update=always will enable enable
+updating in any case. host and port are the ip and port for the server
+to bind(). filter_bits is the length of the Bloom filter (actually the
+bit vector length will be 2^filter_bits).
+
+The server keeps the state information in the Bloom filter bit arrays.
+By the nature of the filters you can insert elements in the filters, but
+not to remove them. So we actually use several filters, and rotate them
+on intervals. The actual filter is just a logical OR of those rotating
+filters. number_buffers is the number of the rotating filters, and
+rotate_interval is the interval in seconds. So, 8 buffers with 2 minutes
+rotate interval will give you approximately 2 * 7.5 minutes worth of
+state information. That is, any graylisted triplet will be stored for
+some 15 minutes. Of course, you have to modify the numbers when going
+into production. Default interval is 3600 seconds. This is the
+configuration we use on our production servers:
+
+dnsbl=rbl-plus.mail-abuse.org
+dnsbl=bl.spamcop.net
+dnsbl=relays.ordb.org
+dnsbl=sbl.spamhaus.org
+dnsbl=dnsbl.njabl.org
+dnsbl=cbl.abuseat.org
+dnsbl=xbl.smaphaus.org
+dnsbl=dnsbl.sorbs.net
+host=localhost
+synchost=10.10.13.1
+peerhost=10.10.13.2
+number_buffers=12
+filter_bits=24
+statefile=grossd.state
+
+synchost is the server ip, and peerhost stands for the replication
+partners ip address.
+
+Also, you must create the state file by hand. Try starting the server
+with -d command line option, it tells you the size of the state
+file grossd is expecting. You can create the statefile with
+dd: dd if=/dev/zero of=grossd.state bs=1 count=[filesize].
+Or, if using Solaris, with mkfile(1M).
+
+If you get this far, you can start the server. I suggest you
+run the server first in foreground with -d option. After starting,
+you can test it with $PREFIX/bin/gclient. Good luck, and don't
+hesitate to ask me if in doubt!
+
+MTA CONFIGURATION
+
+Although never tested, Gross should work with Postfix's native
+filtering protocol.
+
+On the other hand, SJSMS needs some mapping entry for queries.
+This is an entry from our production server config:
+
+ORIG_MAIL_ACCESS
+
+  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/usr/local/gross/lib/grossd/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,1111,$2,$=$8$_,$=$6$_]
+
+The server will always query the first server if it's available.
+
+First, when you have only one server, you can test it like this:
+
+  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/path/to/grosscheck.so,grosscheck,127.0.0.1,,1111,$2,$=$8$_,$=$6$_]
+
+KNOWN ISSUES
+
+Thread library check fails at least on Solaris 9. You
+must set LDFLAGS="-lpthread" for configuration by hand. 
+
+LOGGING AND TROUBLESHOOTING
+
+grossd logs everything through syslog. Facility is LOG_MAIL, loglevel
+defaults to INFO. For now, this is only configurable when compiling,
+change the #define LOGLEVEL in include/srvutils.h
+
+You can enable full debugging by starting grossd on foreground
+with -d command line option. In that case grossd will write output
+on standard terminal instead of syslog.
