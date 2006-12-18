@@ -276,6 +276,7 @@ main(int argc, char *argv[])
 			break;
 		case 'V':
                         printf("grossd - Greylisting of Suspicious Sources. Version %s.\n", VERSION);
+			exit(0);
                         break;
 		case '?':
 			fprintf(stderr,
