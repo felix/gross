@@ -18,7 +18,11 @@
 #include "common.h"
 #include "srvutils.h"
 #include "syncmgr.h"
+
+#ifdef DNSBL
 #include "dnsblc.h"
+#endif
+
 #include "msgqueue.h"
 #include "worker.h"
 

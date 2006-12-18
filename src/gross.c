@@ -22,7 +22,10 @@
 #include "conf.h"
 #include "srvutils.h"
 #include "msgqueue.h"
+
+#ifdef DNSBL
 #include "dnsblc.h"
+#endif /* DNSBL */
 
 /* maximum simultaneus tcp worker threads */
 #define MAXWORKERS 1
@@ -322,10 +325,12 @@ main(int argc, char *argv[])
 				perror("rotate put_msg");
 		}
 
+#ifdef DNSBL
 		if (time(NULL) >= toleration + 10) {
 			toleration = time(NULL);
 			increment_dnsbl_tolerance_counters(ctx->dnsbl);
 		}
+#endif /* DNSBL */
 
 		/* not so busy loop */
 		sleep(1);
