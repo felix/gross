@@ -19,8 +19,11 @@ specify it excplicitly.
 
 BASIC CONFIGURATION
 
-Default configuration is not yet included in the source package, so you
-need to write $PREFIX/etc/grossd.conf yourself. Here is an example:
+An example configuration is included in doc/example/grossd.conf:
+I suggest you write your own in $PREFIX/etc/grossd.conf, it's
+not installed there automatically. grossd will load configuration 
+in the current working directory, you may tell grossd to use 
+another config file via -f command line option.
 
 #update=grey
 dnsbl=bl.spamcop.net
