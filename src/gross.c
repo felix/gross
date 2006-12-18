@@ -225,6 +225,7 @@ usage(void)
 	printf("       -d	Run grossd as a foreground process.\n");
 	printf("       -f	override default configfile\n");
 	printf("       -r	disable replication\n");
+	printf("       -V	version information\n");
 	exit(1);
 }
 
@@ -257,7 +258,7 @@ main(int argc, char *argv[])
 	}
 
 	/* command line arguments */
-	while ((c = getopt(argc, argv, ":drf:")) != -1) {
+	while ((c = getopt(argc, argv, ":drf:V")) != -1) {
 		switch (c) {
 		case 'd':
 			ctx->config.flags |= FLG_NODAEMON;
@@ -273,6 +274,9 @@ main(int argc, char *argv[])
 		case 'r':
                         ctx->config.flags |= FLG_NOREPLICATE;
 			break;
+		case 'V':
+                        printf("grossd - Greylisting of Suspicious Sources. Version %s.\n", VERSION);
+                        break;
 		case '?':
 			fprintf(stderr,
 				"Unrecongnized option: -%c\n", optopt);
