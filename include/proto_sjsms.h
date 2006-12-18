@@ -26,7 +26,7 @@ typedef struct {
         int recipient;
         int client_address;
         char message[MAXLINELEN];
-} gray_req_t;
+} grey_req_t;
 
 enum msgtype_t { QUERY, LOGMSG };
 
@@ -36,9 +36,9 @@ typedef struct {
 	char message[MAXLINELEN];
 } sjsms_msg_t;
 
-gray_tuple_t *unfold(gray_req_t *request);
-int fold(gray_req_t *request, const char *sender, const char *recipient, const char *caddr);
-int sendquery(int fd, struct sockaddr_in *gserv, gray_req_t *request);
+grey_tuple_t *unfold(grey_req_t *request);
+int fold(grey_req_t *request, const char *sender, const char *recipient, const char *caddr);
+int sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request);
 int senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...);
 
 #endif

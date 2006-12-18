@@ -23,7 +23,7 @@
 
 #define MAP_TRUST       "$Y"
 #define MAP_MATCH       "$Y"
-#define MAP_GRAYLIST    "$X4.4.3|$NPlease$ try$ again$ later"
+#define MAP_GREYLIST    "$X4.4.3|$NPlease$ try$ again$ later"
 #define MAP_UNKNOWN     "$Y"    /* accept if server not available */
 #define MAP_ERROR       "$Y" 
 
@@ -59,7 +59,7 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	int numservers = 0;
 	char *token = 0x00;
 	char *rstr = 0x00;
-	gray_req_t request;
+	grey_req_t request;
 #ifdef ARGDEBUG
 	FILE *foo;
 #endif
@@ -173,7 +173,7 @@ QUERY:
 
 	switch (recbuf[0]) {
 		case 'G':
-			rstr = MAP_GRAYLIST;
+			rstr = MAP_GREYLIST;
 			break;
 		case 'T':
 			rstr = MAP_TRUST;

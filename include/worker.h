@@ -19,7 +19,7 @@
 
 #define MAXCONNQ 5
 
-enum gray_status_t { STATUS_GRAY, STATUS_MATCH, STATUS_TRUST };
+enum grey_status_t { STATUS_GREY, STATUS_MATCH, STATUS_TRUST };
 
 typedef struct {
         int connfd;
@@ -35,12 +35,12 @@ typedef struct {
         char *sender;
         char *recipient;
         char *client_address;
-} gray_tuple_t;
+} grey_tuple_t;
 
 static void *postfix_policy_server(void *arg);
 static void *worker(void *arg);
-void free_request(gray_tuple_t *arg);
-int test_tuple(gray_tuple_t *tuple, tmout_action_t *ta);
+void free_request(grey_tuple_t *arg);
+int test_tuple(grey_tuple_t *tuple, tmout_action_t *ta);
 void free_client_info(client_info_t *arg);
 
 /* function must be implemented in worker_[proto].c */

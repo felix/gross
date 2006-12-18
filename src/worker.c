@@ -209,10 +209,10 @@ tcp_server(void *arg)
 #endif /* WORKER_PROTO_UDP */
 
 /* 
- * destructor for gray_tuple_t
+ * destructor for grey_tuple_t
  */
 void
-free_request(gray_tuple_t *arg)
+free_request(grey_tuple_t *arg)
 {
 	free(arg->sender);
 	free(arg->recipient);
@@ -221,7 +221,7 @@ free_request(gray_tuple_t *arg)
 }
 
 int
-test_tuple(gray_tuple_t *request, tmout_action_t *ta) {
+test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	char tuple[MSGSZ];
 	sha_256_t digest;
 	update_message_t update;
@@ -229,7 +229,7 @@ test_tuple(gray_tuple_t *request, tmout_action_t *ta) {
 	int retvalue = 0;
 	oper_sync_t os;
 
-	/* graylist */
+	/* greylist */
 	snprintf(tuple, MSGSZ, "%s %s %s",
 			request->client_address,
 			request->sender,
@@ -243,14 +243,14 @@ test_tuple(gray_tuple_t *request, tmout_action_t *ta) {
 		retvalue = STATUS_MATCH;
 	} else {
 #ifndef DNSBL
-		logstr(GLOG_INFO, "graylist: %s", tuple);
-		acctstr(ACCT_GRAY, "%s", tuple);
-		retvalue = STATUS_GRAY;
+		logstr(GLOG_INFO, "greylist: %s", tuple);
+		acctstr(ACCT_GREY, "%s", tuple);
+		retvalue = STATUS_GREY;
 #else
 		if (dnsblc(request->client_address, ta)) {
-			logstr(GLOG_INFO, "graylist: %s", tuple);
-			acctstr(ACCT_GRAY, "%s", tuple);
-			retvalue = STATUS_GRAY;
+			logstr(GLOG_INFO, "greylist: %s", tuple);
+			acctstr(ACCT_GREY, "%s", tuple);
+			retvalue = STATUS_GREY;
 		} else {
 			logstr(GLOG_INFO, "trust: %s", tuple);
 			acctstr(ACCT_TRUST, "%s", tuple);
@@ -259,7 +259,7 @@ test_tuple(gray_tuple_t *request, tmout_action_t *ta) {
 #endif /* DNSBL */
 	}
 
-	if (((retvalue == STATUS_GRAY) || (retvalue == STATUS_MATCH)) 
+	if (((retvalue == STATUS_GREY) || (retvalue == STATUS_MATCH)) 
 		|| (ctx->config.flags & FLG_UPDATE_ALWAYS)) {
 		/* update the filter */
 		update.mtype = UPDATE;

@@ -143,12 +143,12 @@ configure_grossd(configlist_t *config)
 	  logstr(LOG_INFO, "Peerhost %s configured. Replicating.", dconf(config, "peerhost", ""));
 	}
 
-	updatestr = dconf(config, "update", "gray");
+	updatestr = dconf(config, "update", "grey");
 	if (strncmp(updatestr, "always", 7) == 0) {
 		logstr(LOG_INFO, "updatestyle: ALWAYS");
 		ctx->config.flags |= FLG_UPDATE_ALWAYS;
 	} else {
-		logstr(LOG_INFO, "updatestyle: GRAY");
+		logstr(LOG_INFO, "updatestyle: GREY");
 	}
 
 	ctx->config.status_host.sin_family = AF_INET;

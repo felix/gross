@@ -26,7 +26,7 @@ client_sjsms(int argc, char **argv)
 	char recbuf[MAXLINELEN + 1];
 	int runs = 1;
 	int counter = 0, n;
-	gray_req_t request;
+	grey_req_t request;
 	char *sender, *recipient, *caddr;
 	
 	if (argc != 7 && argc != 5 && argc != 4) {

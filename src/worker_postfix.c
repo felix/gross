@@ -23,7 +23,7 @@
 enum parse_status_t { PARSE_OK, PARSE_CLOSED, PARSE_ERROR, PARSE_SYS_ERROR };
 
 /* prototypes of internals */
-int parse_postfix(client_info_t *info, gray_tuple_t *gray_tuple);
+int parse_postfix(client_info_t *info, grey_tuple_t *grey_tuple);
 char *try_match(char *matcher, char *matchee);
 
 /*
@@ -32,13 +32,13 @@ char *try_match(char *matcher, char *matchee);
 int
 handle_connection(client_info_t *client_info)
 {
-	gray_tuple_t *request;
+	grey_tuple_t *request;
 	char *response;
 	int ret;
 	int status;
 
 	while(1) {
-		request = Malloc(sizeof(gray_tuple_t));
+		request = Malloc(sizeof(grey_tuple_t));
 		ret = parse_postfix(client_info, request);
 		if (ret == PARSE_OK) {
 			/* We are go */
@@ -48,8 +48,8 @@ handle_connection(client_info_t *client_info)
 				case STATUS_MATCH:
 					response = "action=dunno";
 					break;
-				case STATUS_GRAY:
-					response = "action=defer_if_permit Graylisted";
+				case STATUS_GREY:
+					response = "action=defer_if_permit Greylisted";
 					break;
 				case STATUS_TRUST:
 					response = "action=dunno";
@@ -84,7 +84,7 @@ handle_connection(client_info_t *client_info)
  * parse_postfix	- build the request tuple (sender, recipient, ipaddr)
  */
 int
-parse_postfix(client_info_t *client_info, gray_tuple_t *gray_tuple)
+parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 {
 	char line[MAXLINELEN];
 /* 	ssize_t linelen; */
@@ -93,7 +93,7 @@ parse_postfix(client_info_t *client_info, gray_tuple_t *gray_tuple)
 	int ret;
 
 	/* zero out the struct - see free_request() */
-	memset(gray_tuple, 0, sizeof(gray_tuple_t));
+	memset(grey_tuple, 0, sizeof(grey_tuple_t));
 
 	do {
 		ret = readline(client_info->connfd, &line, MAXLINELEN);
@@ -115,28 +115,28 @@ parse_postfix(client_info_t *client_info, gray_tuple_t *gray_tuple)
 		/* matching switch */
 		match = try_match("sender=", line);
 		if (match) {
-			gray_tuple->sender = match;
+			grey_tuple->sender = match;
 			logstr(GLOG_DEBUG, "sender=%s", match);
 			continue;
 		}
 		match = try_match("recipient=", line);
 		if (match) {
-			gray_tuple->recipient = match;
+			grey_tuple->recipient = match;
 			logstr(GLOG_DEBUG, "recipient=%s", match);
 			continue;
 		}
 		match = try_match("client_address=", line);
 		if (match) {
-			gray_tuple->client_address = match;
+			grey_tuple->client_address = match;
 			logstr(GLOG_DEBUG, "client_address=%s", match);
 			continue;
 		}
 		
 	} while (strlen(line) > 0);
 	
-	if ( gray_tuple->sender &&
-             gray_tuple->recipient &&
-	     gray_tuple->client_address ) {
+	if ( grey_tuple->sender &&
+             grey_tuple->recipient &&
+	     grey_tuple->client_address ) {
 		return PARSE_OK;
 	} else {
 		return PARSE_ERROR;

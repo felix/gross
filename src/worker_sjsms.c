@@ -37,16 +37,16 @@ void calm_client(void *arg, mseconds_t timeused) {
 }
 
 /*
- * handle_connection    - the actual graylist server
+ * handle_connection    - the actual greylist server
  */
 int
 handle_connection(client_info_t *client_info)
 {
 	int n;
 	socklen_t len;
-	gray_req_t request;
+	grey_req_t request;
 	sjsms_msg_t *msg;
-	gray_tuple_t *tuple;
+	grey_tuple_t *tuple;
 	char response = 'F';
 	int status;
 	tmout_action_t ta1, ta2;
@@ -88,7 +88,7 @@ handle_connection(client_info_t *client_info)
 			case STATUS_MATCH:
 				response = 'M';
 				break;
-			case STATUS_GRAY:
+			case STATUS_GREY:
 				response = 'G';
 				break;
 			case STATUS_TRUST:

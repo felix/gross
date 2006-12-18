@@ -23,7 +23,7 @@
 int send_sjsms_msg(int fd, struct sockaddr_in *grserv, sjsms_msg_t *message);
 
 int
-fold(gray_req_t *req, const char *sender,
+fold(grey_req_t *req, const char *sender,
         const char *rcpt, const char *caddr)
 {
         int sender_len, rcpt_len, caddr_len;
@@ -67,7 +67,7 @@ senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...)
 	
 
 int
-sendquery(int fd, struct sockaddr_in *gserv, gray_req_t *request)
+sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request)
 {
 	sjsms_msg_t message;
 	void *ret;
@@ -89,12 +89,12 @@ send_sjsms_msg(int fd, struct sockaddr_in *gserv, sjsms_msg_t *message)
 		0, (struct sockaddr *)gserv, slen);
 }
 
-gray_tuple_t *
-unfold(gray_req_t *request)
+grey_tuple_t *
+unfold(grey_req_t *request)
 {
-        gray_tuple_t *tuple;
+        grey_tuple_t *tuple;
 
-        tuple = malloc(sizeof(gray_tuple_t));
+        tuple = malloc(sizeof(grey_tuple_t));
 	if (! tuple)
 		return NULL;
 

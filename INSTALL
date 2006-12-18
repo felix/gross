@@ -22,7 +22,7 @@ BASIC CONFIGURATION
 Default configuration is not yet included in the source package, so you
 need to write $PREFIX/etc/grossd.conf yourself. Here is an example:
 
-#update=gray
+#update=grey
 dnsbl=bl.spamcop.net
 dnsbl=relays.ordb.org
 dnsbl=sbl.spamhaus.org
@@ -40,8 +40,8 @@ rotate_interval=120 # 2 minutes
 #statefile=/tmp/grossd.state
 
 This is a single server configuration. dnsbl entries are just what you'd
-think they are. update=gray will update the datebase only in case of a
-GRAY response. It is the default. update=always will enable enable
+think they are. update=grey will update the datebase only in case of a
+GREY response. It is the default. update=always will enable enable
 updating in any case. host and port are the ip and port for the server
 to bind(). filter_bits is the length of the Bloom filter (actually the
 bit vector length will be 2^filter_bits).
@@ -53,7 +53,7 @@ on intervals. The actual filter is just a logical OR of those rotating
 filters. number_buffers is the number of the rotating filters, and
 rotate_interval is the interval in seconds. So, 8 buffers with 2 minutes
 rotate interval will give you approximately 2 * 7.5 minutes worth of
-state information. That is, any graylisted triplet will be stored for
+state information. That is, any greylisted triplet will be stored for
 some 15 minutes. Of course, you have to modify the numbers when going
 into production. Default interval is 3600 seconds. This is the
 configuration we use on our production servers:

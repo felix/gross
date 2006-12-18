@@ -396,8 +396,8 @@ char *acct_fmt(int type, const char *msg)
         final = Malloc(MSGSZ);
 
         switch (type & ACCT_FULL) {
-                case ACCT_GRAY:
-                        snprintf(final, MSGSZ-1, "gray %s", msg);
+                case ACCT_GREY:
+                        snprintf(final, MSGSZ-1, "grey %s", msg);
                         break;
                 case ACCT_MATCH:
                         snprintf(final, MSGSZ-1, "match %s", msg);
