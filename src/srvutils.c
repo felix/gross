@@ -167,6 +167,7 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
         struct stat statbuf;
         char *magic = "mmbrq2\n";
         int use_mmap = FALSE;
+	FILE *statefile;
 
         assert(num_bits > 3);
 
@@ -183,19 +184,32 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
         if (use_mmap) {
                 /* prepare for mmapping */
                 lumpsize += sizeof(mmapped_brq_t);
+
                 ret = stat(ctx->config.statefile, &statbuf);
-                if (ret == 0) {
-                        if (statbuf.st_size != lumpsize) {
-                                printf("statefile size (%d) differs from the calculated size (%d)\n",
-					((int)statbuf.st_size), lumpsize);
-                                daemon_shutdown(1, "statefile size differs from the calculated size");
-                        }
-                        fd = open(ctx->config.statefile, O_RDWR);
-                } else {
-                        perror("stat");
-                        printf("need a file with size of %d bytes\n", lumpsize);
-                        daemon_shutdown(1, "statefile opening failed");
+                if (ret == 0 && (ctx->config.flags & FLG_CREATE_STATEFILE)) {
+			/* if statefile exists, but creation requested */
+			daemon_shutdown(1, "statefile already exists");
+		} else if (ret == 0 && (statbuf.st_size != lumpsize)) {
+			/* if statefile exists, but is wrong size */
+			printf("statefile size (%d) differs from the calculated size (%d)\n",
+				((int)statbuf.st_size), lumpsize);
+			daemon_shutdown(1, "statefile size differs from the calculated size");
+                } else if (ret != 0 && (ctx->config.flags & FLG_CREATE_STATEFILE)) {
+			/* statefile does not exist and creation requested */
+			statefile = fopen(ctx->config.statefile, "w");
+			if (statefile == NULL) {
+				daemon_perror("stat(): statefile creation failed");
+			}
+			for (i = 0; i < lumpsize; i++) {
+				if (fputc(0, statefile)) daemon_perror("fputc()");
+			}
+			fclose(statefile);
+		} else if (ret != 0) {
+			/* statefile does not exist or is not accessible */
+			daemon_perror("stat(): statefile opening failed");
                 }
+
+		fd = open(ctx->config.statefile, O_RDWR);
 
                 ptr = (char *)mmap((void*)0, lumpsize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
                 assert(ptr);

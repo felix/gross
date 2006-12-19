@@ -68,6 +68,7 @@
 #define FLG_NODAEMON (int)0x01
 #define FLG_NOREPLICATE (int)0x02
 #define FLG_UPDATE_ALWAYS (int)0x04
+#define FLG_CREATE_STATEFILE (int)0x08
 
 #define MAX(a,b) 	((a) > (b) ? (a) : (b))
 #define MIN(a,b) 	((a) < (b) ? (a) : (b))
