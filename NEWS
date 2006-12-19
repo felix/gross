@@ -1,0 +1,5 @@
+Version 0.6.1
+
+- You can now create statfile with grossd -C command line option
+- Config file defaults to $sysconfdir/grossd.conf
+- example config in doc/examples/grossd.conf
