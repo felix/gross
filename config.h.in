@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
+/* Default config file */
+#undef CONFIGFILE
+
 /* Define to 1 if you have the <ares.h> header file. */
 #undef HAVE_ARES_H
 

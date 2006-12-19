@@ -17,8 +17,6 @@
 #ifndef CONF_H
 #define CONF_H
 
-#define CONFIGFILE "grossd.conf"
-
 #define VALID_NAMES     "dnsbl",             \
 			"peerhost",	     \
 			"peerport",          \

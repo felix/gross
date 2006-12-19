@@ -10273,6 +10273,12 @@ _ACEOF
 
 
 
+
+cat >>confdefs.h <<_ACEOF
+#define CONFIGFILE "`eval echo $sysconfdir/grossd.conf`"
+_ACEOF
+
+
                     ac_config_files="$ac_config_files Makefile src/Makefile"
 
 cat >confcache <<\_ACEOF

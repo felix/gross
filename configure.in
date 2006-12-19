@@ -92,5 +92,9 @@ AC_HEADER_STDC
 AC_C_CONST
 AC_TYPE_SIGNAL
 
+dnl default config file location
+dnl eval "config_file_path=`eval echo $sysconfdir/grossd.conf`"
+AC_DEFINE_UNQUOTED([CONFIGFILE], "`eval echo $sysconfdir/grossd.conf`", [Default config file])
+
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
