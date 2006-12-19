@@ -28,12 +28,12 @@ void calm_client(void *arg, mseconds_t timeused) {
 	char response = 'P';
 	socklen_t len;
 
-	logstr(GLOG_DEBUG, "timeout: used %d ms", timeused);
-
 	len = sizeof(struct sockaddr_in);
 	client_info = (client_info_t *)arg;
 	sendto(client_info->connfd, &response, 1,
 		0, (struct sockaddr *)client_info->caddr, len);
+
+	logstr(GLOG_DEBUG, "timeout: used %d ms. PROGRESS sent", timeused);
 }
 
 /*
