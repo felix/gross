@@ -5,6 +5,14 @@ AM_INIT_AUTOMAKE
 dnl AC_PROG_MAKE_SET
 AC_PROG_CC([cc gcc])
 AC_PROG_INSTALL
+
+dnl this will disable C++ and F77 checking 
+dnl there is a chance that it'll break something in
+dnl the future, but this will do for now
+AC_DEFUN([GROSS_CLEAR_LT_TAGCONFIG],
+    [m4_define([_LT_AC_TAGCONFIG], [])]
+)
+GROSS_CLEAR_LT_TAGCONFIG
 AC_PROG_LIBTOOL
 
 CPPFLAGS="$CPPFLAGS -I/usr/local/include"
