@@ -71,7 +71,9 @@ extern gross_ctx_t *ctx;
 
 int logstr(int level, const char *fmt, ...);
 int logmsg(log_message_t *mbuf);
-int acctstr(int level, const char *fmt, ...);
+/* acctstr disabled for now as redundant, see srvutils.c */
+/* int acctstr(int level, const char *fmt, ...); */
+#define acctstr(foo, bar, ...) 0
 void daemon_shutdown(int return_code, const char *fmt, ...);
 void daemon_perror(const char *reason);
 int connected(peer_t* peer);

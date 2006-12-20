@@ -37,7 +37,7 @@ logstr(int level, const char *fmt, ...) {
 	char mbuf[MSGSZ];
 	va_list vap;
 
-	if (level > LOGLEVEL) {
+	if (level > ctx->config.loglevel) {
 		return 0;
 	}
 
@@ -60,6 +60,11 @@ logstr(int level, const char *fmt, ...) {
 	return 0;
 }
 
+/*
+ * remove acctstr as redundant for now
+ * accounting must be redesigned 
+ */
+#if 0
 int
 acctstr(int level, const char *fmt, ...) {
 	char logfmt[MSGSZ];
@@ -83,6 +88,7 @@ acctstr(int level, const char *fmt, ...) {
 
 	return 0;
 }
+#endif
 
 void
 daemon_shutdown(int return_code, const char *fmt, ...)

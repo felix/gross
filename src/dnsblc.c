@@ -102,12 +102,14 @@ addrinfo_callback(void *arg, int status, struct hostent *host)
 
 	if (status == ARES_SUCCESS) {
 		*cba->matches = 1;
-		logstr(GLOG_DEBUG, "match from %s", cba->dnsbl->name);
+		logstr(GLOG_INFO, "dns-match: %s for %s",
+			cba->dnsbl->name, cba->client_address);
 		acctstr(ACCT_DNS_MATCH, "%s for %s", cba->dnsbl->name, cba->client_address);
 	}
 
 	if (*cba->timeout) {
-		logstr(GLOG_DEBUG, "dnsbl timeout: %s", cba->dnsbl->name);
+		logstr(GLOG_INFO, "dns-timeout: %s for %s",
+			cba->dnsbl->name, cba->client_address);
 		acctstr(ACCT_DNS_TMOUT, "%s for %s", cba->dnsbl->name, cba->client_address);
 	} else {
 		sem_post(cba->dnsbl->failurecount_sem);
@@ -225,8 +227,10 @@ dnsblc(const char *client_address, tmout_action_t *ta)
 		snprintf(buffer, MAXQUERYSTRLEN, "%s.%s", ipstr, dnsbl->name);
 		query = strdup(buffer);
 		if (query_clearance(dnsbl) == TRUE) {
-			logstr(GLOG_INSANE, "initiating dnsbl query for: %s", query);
-			acctstr(ACCT_DNS_QUERY, "%s for %s (%s)", dnsbl->name, client_address, query);
+			logstr(GLOG_INSANE, "initiating dnsbl query: %s for %s (%s)", query);
+			/* we should only count the queries, not log them */
+			/* acctstr(ACCT_DNS_QUERY, "%s for %s (%s)", dnsbl->name, client_address, query); */
+
 			callback_arg = Malloc(sizeof(callback_arg_t));
 			callback_arg->dnsbl = dnsbl;
 			callback_arg->matches = &match_found;

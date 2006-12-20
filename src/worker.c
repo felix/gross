@@ -68,6 +68,13 @@ worker(void *arg)
 
 	client_info = (client_info_t *)arg;
 
+#ifdef WORKER_PROTO_UDP
+	logstr(GLOG_INFO, "query from %s", client_info->ipstr);
+#else
+	logstr(GLOG_INFO, "client connected from %s", client_info->ipstr);
+#endif
+
+
         /* serve while good */
 	handle_connection(client_info);
 

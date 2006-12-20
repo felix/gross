@@ -140,18 +140,18 @@ configure_grossd(configlist_t *config)
 	ctx->config.peer.peer_addr.sin_port = htons(atoi(dconf(config, "peerport", "1112")));
 
 	if (strncmp(dconf(config, "peerhost", ""), "", 1) == 0) {
-	  logstr(LOG_INFO, "No peerhost configured. Replication suppressed.");
+	  logstr(GLOG_INFO, "No peerhost configured. Replication suppressed.");
 	  ctx->config.flags |= FLG_NOREPLICATE;	  
 	} else {
-	  logstr(LOG_INFO, "Peerhost %s configured. Replicating.", dconf(config, "peerhost", ""));
+	  logstr(GLOG_INFO, "Peerhost %s configured. Replicating.", dconf(config, "peerhost", ""));
 	}
 
 	updatestr = dconf(config, "update", "grey");
 	if (strncmp(updatestr, "always", 7) == 0) {
-		logstr(LOG_INFO, "updatestyle: ALWAYS");
+		logstr(GLOG_INFO, "updatestyle: ALWAYS");
 		ctx->config.flags |= FLG_UPDATE_ALWAYS;
 	} else {
-		logstr(LOG_INFO, "updatestyle: GREY");
+		logstr(GLOG_INFO, "updatestyle: GREY");
 	}
 
 	ctx->config.status_host.sin_family = AF_INET;
@@ -176,7 +176,8 @@ configure_grossd(configlist_t *config)
 	}
 
 	ctx->config.acctmask = 0x003f;
-	ctx->config.loglevel = LOGLEVEL;
+	if (ctx->config.loglevel != GLOG_DEBUG) 
+		ctx->config.loglevel = LOGLEVEL;
 
 	*(ctx->last_rotate) = time(NULL);
 
@@ -221,8 +222,9 @@ mrproper(int signo)
 void
 usage(void)
 {
-	printf("Usage: grossd [-d] [-r] [-f configfile]\n");
+	printf("Usage: grossd [-dDrCV] [-f configfile]\n");
 	printf("       -d	Run grossd as a foreground process.\n");
+	printf("       -D	Enable debug logging.\n");
 	printf("       -f	override default configfile\n");
 	printf("       -r	disable replication\n");
 	printf("       -C	create statefile\n");
@@ -259,7 +261,7 @@ main(int argc, char *argv[])
 	}
 
 	/* command line arguments */
-	while ((c = getopt(argc, argv, ":drf:VC")) != -1) {
+	while ((c = getopt(argc, argv, ":drf:VCD")) != -1) {
 		switch (c) {
 		case 'd':
 			ctx->config.flags |= FLG_NODAEMON;
@@ -281,6 +283,9 @@ main(int argc, char *argv[])
                         break;
 		case 'C':
                         ctx->config.flags |= FLG_CREATE_STATEFILE;
+			break;
+		case 'D':
+			ctx->config.loglevel = GLOG_DEBUG;
 			break;
 		case '?':
 			fprintf(stderr,
