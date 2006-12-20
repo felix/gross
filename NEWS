@@ -1,11 +1,14 @@
 Version 0.6.2
 
 Issues fixed:
-#1: -lpthread also on Solaris 9
-#7: libdir is now installed same as other directories
-#8: removed relays.ordb.org from example config
-#9: SJSMS client library path corrected in INSTALL
-#10: default config file path is now correct with default prefix
+#1: -lpthread also on Solaris 9.
+#2: Logging has been trimmed down.
+#7: Libdir is now installed same as other directories.
+#8: Removed relays.ordb.org from example config.
+#9: SJSMS client library path corrected in INSTALL.
+#10: Default config file path is now correct with default prefix.
+#11: Implemented -D command line option for enabling debug logging.
+#12: grosscheck now sends empty sender address as <> in query to grossd.
 
 - Installs libraries to $prefix/lib/ instead of previous
 $prefix/lib/gross/

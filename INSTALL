@@ -114,8 +114,8 @@ LOGGING AND TROUBLESHOOTING
 
 grossd logs everything through syslog. Facility is LOG_MAIL, loglevel
 defaults to INFO. For now, this is only configurable when compiling,
-change the #define LOGLEVEL in include/srvutils.h
+change the #define LOGLEVEL in include/srvutils.h.
 
-You can enable full debugging by starting grossd on foreground
-with -d command line option. In that case grossd will write output
-on standard terminal instead of syslog.
+You can enable full debugging by starting grossd with -D command line
+option. You may also want -d, as grossd then writes output on standard
+terminal instead of syslog.

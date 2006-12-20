@@ -133,8 +133,12 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	strncpy(recipient, token, SBUFLEN-1);
 
 	token = strtok(NULL, MAP_SEPARATOR);
-	if ( NULL == token ) GROSSCHECK_ERROR();
-	strncpy(sender, token, SBUFLEN-1);
+	if ( NULL == token ) {
+		strncpy(sender, "<>", SBUFLEN-1);
+		sender[SBUFLEN-1] = '\0';
+	} else {
+		strncpy(sender, token, SBUFLEN-1);
+	}
 
 	gserv = &gserv1;
 
