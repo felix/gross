@@ -97,6 +97,9 @@ REENTRANT_FLAG=-D_REENTRANT
 AC_SUBST(REENTRANT_FLAG)
 
 dnl default config file location
+if test "x$prefix" == xNONE; then
+    prefix=$ac_default_prefix
+fi
 AC_DEFINE_UNQUOTED([CONFIGFILE], "`eval echo $sysconfdir/grossd.conf`", [Default config file])
 
 AC_CONFIG_FILES([Makefile src/Makefile])

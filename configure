@@ -10217,6 +10217,9 @@ _ACEOF
 REENTRANT_FLAG=-D_REENTRANT
 
 
+if test "x$prefix" == xNONE; then
+    prefix=$ac_default_prefix
+fi
 
 cat >>confdefs.h <<_ACEOF
 #define CONFIGFILE "`eval echo $sysconfdir/grossd.conf`"
