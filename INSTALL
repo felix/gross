@@ -79,16 +79,13 @@ statefile=grossd.state
 synchost is the server ip, and peerhost stands for the replication
 partners ip address.
 
-Also, you must create the state file by hand. Try starting the server
-with -d command line option, it tells you the size of the state
-file grossd is expecting. You can create the statefile with
-dd: dd if=/dev/zero of=grossd.state bs=1 count=[filesize].
-Or, if using Solaris, with mkfile(1M).
-
 If you get this far, you can start the server. I suggest you
-run the server first in foreground with -d option. After starting,
-you can test it with $PREFIX/bin/gclient. Good luck, and don't
-hesitate to ask me if in doubt!
+run the server first in foreground with -d option. If you
+configured statefile, you have to start grossd with -C option
+in order to create the state file.
+
+After starting, you can test it with $PREFIX/bin/gclient.
+Good luck, and don't hesitate to ask me if in doubt!
 
 MTA CONFIGURATION
 
@@ -100,7 +97,7 @@ This is an entry from our production server config:
 
 ORIG_MAIL_ACCESS
 
-  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/usr/local/gross/lib/gross/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,1111,$2,$=$8$_,$=$6$_]
+  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/usr/local/gross/lib/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,1111,$2,$=$8$_,$=$6$_]
 
 The server will always query the first server if it's available.
 
@@ -110,8 +107,8 @@ First, when you have only one server, you can test it like this:
 
 KNOWN ISSUES
 
-Thread library check fails at least on Solaris 9. You
-must set LDFLAGS="-lpthread" for configuration by hand. 
+See http://code.google.com/p/gross/issues/list for bugs
+and known issues.
 
 LOGGING AND TROUBLESHOOTING
 

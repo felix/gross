@@ -3,8 +3,7 @@ INCLUDES = -I$(top_srcdir)/include
 
 sbin_PROGRAMS = grossd 
 bin_PROGRAMS = gclient
-pkglib_LTLIBRARIES = grosscheck.la
-lib_LIBRARIES =
+lib_LTLIBRARIES = grosscheck.la
 noinst_PROGRAMS = bloom
 
 grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c

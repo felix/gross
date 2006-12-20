@@ -1,3 +1,15 @@
+Version 0.6.2
+
+Issues fixed:
+#1: -lpthread also on Solaris 9
+#7: libdir is now installed same as other directories
+#8: removed relays.ordb.org from example config
+#9: SJSMS client library path corrected in INSTALL
+#10: default config file path is now correct with default prefix
+
+- Installs libraries to $prefix/lib/ instead of previous
+$prefix/lib/gross/
+
 Version 0.6.1
 
 - You can now create statfile with grossd -C command line option

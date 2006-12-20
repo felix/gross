@@ -15,7 +15,6 @@
 @SET_MAKE@
 
 
-
 SOURCES = $(grosscheck_la_SOURCES) $(bloom_SOURCES) $(gclient_SOURCES) $(EXTRA_gclient_SOURCES) $(grossd_SOURCES) $(EXTRA_grossd_SOURCES) $(sha256_SOURCES)
 
 srcdir = @srcdir@
@@ -58,12 +57,10 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkglibdir)" \
-	"$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)"
-libLIBRARIES_INSTALL = $(INSTALL_DATA)
-LIBRARIES = $(lib_LIBRARIES)
-pkglibLTLIBRARIES_INSTALL = $(INSTALL)
-LTLIBRARIES = $(pkglib_LTLIBRARIES)
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
+	"$(DESTDIR)$(sbindir)"
+libLTLIBRARIES_INSTALL = $(INSTALL)
+LTLIBRARIES = $(lib_LTLIBRARIES)
 grosscheck_la_LIBADD =
 am_grosscheck_la_OBJECTS = grosscheck.lo proto_sjsms.lo
 grosscheck_la_OBJECTS = $(am_grosscheck_la_OBJECTS)
@@ -198,8 +195,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 AM_CPPFLAGS = @REENTRANT_FLAG@
 INCLUDES = -I$(top_srcdir)/include
-pkglib_LTLIBRARIES = grosscheck.la
-lib_LIBRARIES = 
+lib_LTLIBRARIES = grosscheck.la
 grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c
 EXTRA_grossd_SOURCES = dnsblc.c worker_postfix.c worker_sjsms.c proto_postfix.c
 grossd_LDFLAGS = @LDFLAGS@  
@@ -247,64 +243,35 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libLIBRARIES: $(lib_LIBRARIES)
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    f=$(am__strip_dir) \
-	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
-	  else :; fi; \
-	done
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    p=$(am__strip_dir) \
-	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
-	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
+	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
 	  else :; fi; \
 	done
 
-uninstall-libLIBRARIES:
+uninstall-libLTLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	@set -x; list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  p=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	  echo " $(LIBTOOL) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	  $(LIBTOOL) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$p"; \
 	done
 
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-install-pkglibLTLIBRARIES: $(pkglib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	test -z "$(pkglibdir)" || $(mkdir_p) "$(DESTDIR)$(pkglibdir)"
-	@list='$(pkglib_LTLIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f=$(am__strip_dir) \
-	    echo " $(LIBTOOL) --mode=install $(pkglibLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(pkglibdir)/$$f'"; \
-	    $(LIBTOOL) --mode=install $(pkglibLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(pkglibdir)/$$f"; \
-	  else :; fi; \
-	done
-
-uninstall-pkglibLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@set -x; list='$(pkglib_LTLIBRARIES)'; for p in $$list; do \
-	  p=$(am__strip_dir) \
-	  echo " $(LIBTOOL) --mode=uninstall rm -f '$(DESTDIR)$(pkglibdir)/$$p'"; \
-	  $(LIBTOOL) --mode=uninstall rm -f "$(DESTDIR)$(pkglibdir)/$$p"; \
-	done
-
-clean-pkglibLTLIBRARIES:
-	-test -z "$(pkglib_LTLIBRARIES)" || rm -f $(pkglib_LTLIBRARIES)
-	@list='$(pkglib_LTLIBRARIES)'; for p in $$list; do \
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
 	  test "$$dir" != "$$p" || dir=.; \
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
 grosscheck.la: $(grosscheck_la_OBJECTS) $(grosscheck_la_DEPENDENCIES) 
-	$(LINK) -rpath $(pkglibdir) $(grosscheck_la_LDFLAGS) $(grosscheck_la_OBJECTS) $(grosscheck_la_LIBADD) $(LIBS)
+	$(LINK) -rpath $(libdir) $(grosscheck_la_LDFLAGS) $(grosscheck_la_OBJECTS) $(grosscheck_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
@@ -526,9 +493,11 @@ distdir: $(DISTFILES)
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 check: check-am
-all-am: Makefile $(LIBRARIES) $(LTLIBRARIES) $(PROGRAMS)
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS)
+install-binPROGRAMS: install-libLTLIBRARIES
+
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -558,8 +527,8 @@ maintainer-clean-generic:
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-checkPROGRAMS clean-generic \
-	clean-libLIBRARIES clean-libtool clean-noinstPROGRAMS \
-	clean-pkglibLTLIBRARIES clean-sbinPROGRAMS mostlyclean-am
+	clean-libLTLIBRARIES clean-libtool clean-noinstPROGRAMS \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -579,8 +548,8 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-binPROGRAMS install-libLIBRARIES \
-	install-pkglibLTLIBRARIES install-sbinPROGRAMS
+install-exec-am: install-binPROGRAMS install-libLTLIBRARIES \
+	install-sbinPROGRAMS
 
 install-info: install-info-am
 
@@ -607,25 +576,23 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-info-am \
-	uninstall-libLIBRARIES uninstall-pkglibLTLIBRARIES \
-	uninstall-sbinPROGRAMS
+	uninstall-libLTLIBRARIES uninstall-sbinPROGRAMS
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-checkPROGRAMS clean-generic clean-libLIBRARIES \
-	clean-libtool clean-noinstPROGRAMS clean-pkglibLTLIBRARIES \
-	clean-sbinPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am \
-	install-libLIBRARIES install-man install-pkglibLTLIBRARIES \
-	install-sbinPROGRAMS install-strip installcheck \
+	clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
+	clean-libtool clean-noinstPROGRAMS clean-sbinPROGRAMS ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-binPROGRAMS \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-libLTLIBRARIES \
+	install-man install-sbinPROGRAMS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-info-am uninstall-libLIBRARIES \
-	uninstall-pkglibLTLIBRARIES uninstall-sbinPROGRAMS
+	uninstall-info-am uninstall-libLTLIBRARIES \
+	uninstall-sbinPROGRAMS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
