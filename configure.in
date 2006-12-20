@@ -1,5 +1,4 @@
 AC_INIT([gross],[0.6.1])
-
 AM_INIT_AUTOMAKE
 
 dnl AC_PROG_MAKE_SET
@@ -19,15 +18,15 @@ CPPFLAGS="$CPPFLAGS -I/usr/local/include"
 LDFLAGS="$LDFLAGS -L/usr/local/lib"
 
 AC_SEARCH_LIBS(sem_init, [rt], ,
-	AC_MSG_ERROR([Can't compile without semaphores.])
+    AC_MSG_ERROR([Can't compile without semaphores.])
 )
 
 AC_SEARCH_LIBS(bind, [socket], , 
-	AC_MSG_ERROR([Can't compile without BSD sockets.])
+    AC_MSG_ERROR([Can't compile without BSD sockets.])
 )
 
-AC_SEARCH_LIBS(pthread_create, [pthread c_r], ,
-	AC_MSG_ERROR([Can't compile without pthreads.])
+AC_CHECK_LIB(pthread, pthread_create, [LIBS="$LIBS -lpthread"],
+    AC_MSG_ERROR([Can't compile without pthreads.])
 )
 
 AC_CHECK_LIB(m, pow)
@@ -38,20 +37,20 @@ AC_CHECK_DECLS([CLOCK_MONOTONIC, CLOCK_HIGHRES],,, [#include <time.h>])
 
 AC_MSG_CHECKING([whether to disable dnsbl checking])
 AC_ARG_ENABLE(dnsbl,
-	AS_HELP_STRING([--disable-dnsbl], [Disable dnsbl checking]),
-	[AC_MSG_RESULT([yes]) ; dnsbl="no"],
-	[AC_MSG_RESULT([no]) ; dnsbl="yes"]
+    AS_HELP_STRING([--disable-dnsbl], [Disable dnsbl checking]),
+    [AC_MSG_RESULT([yes]) ; dnsbl="no"],
+    [AC_MSG_RESULT([no]) ; dnsbl="yes"]
 )
 
 if test "$dnsbl" == "yes"
 then
-	AC_CHECK_HEADERS(ares.h,
-		DNSBLSOURCES='dnsblc.o'
-	)
-	AC_SUBST([DNSBLSOURCES])
-	AC_CHECK_LIB(cares, ares_init, ,
-		AC_MSG_ERROR([c-ares library needed for dnsbl checking.])
-	)
+    AC_CHECK_HEADERS(ares.h,
+	DNSBLSOURCES='dnsblc.o'
+    )
+    AC_SUBST([DNSBLSOURCES])
+    AC_CHECK_LIB(cares, ares_init, ,
+	AC_MSG_ERROR([c-ares library needed for dnsbl checking.])
+    )
 fi
 
 dnl Determine which protocol should the server (and client) use
@@ -62,26 +61,26 @@ AM_CONDITIONAL(SJSMS, false)
 
 AC_MSG_CHECKING([which protocol should the server use])
 AC_ARG_WITH(worker,
-	AS_HELP_STRING([--with-worker=<protocol>], [Select protocol for worker (default=postfix)]),
-	[AC_MSG_RESULT([$withval]) ; workerproto="$withval"],
-	[AC_MSG_RESULT([postfix]) ; workerproto="postfix"]
+    AS_HELP_STRING([--with-worker=<protocol>], [Select protocol for worker (default=postfix)]),
+    [AC_MSG_RESULT([$withval]) ; workerproto="$withval"],
+    [AC_MSG_RESULT([postfix]) ; workerproto="postfix"]
 )
 
 case "$workerproto" in
 "postfix")
-	PROTOCOL='postfix'
-	AC_SUBST([PROTOCOL])
-	AC_DEFINE([PROTOCOL], [POSTFIX], [Postfix])
-	;;
+    PROTOCOL='postfix'
+    AC_SUBST([PROTOCOL])
+    AC_DEFINE([PROTOCOL], [POSTFIX], [Postfix])
+    ;;
 "sjsms")
-	PROTOCOL='sjsms'
-	AC_SUBST([PROTOCOL])
-	AC_DEFINE([PROTOCOL], [SJSMS], [Sun Java System Messaging Server])
-	AM_CONDITIONAL(SJSMS, true)
-	;;
+    PROTOCOL='sjsms'
+    AC_SUBST([PROTOCOL])
+    AC_DEFINE([PROTOCOL], [SJSMS], [Sun Java System Messaging Server])
+    AM_CONDITIONAL(SJSMS, true)
+    ;;
 *)
-	AC_MSG_ERROR([unknown worker protocol: "$workerproto"])
-	;;
+    AC_MSG_ERROR([unknown worker protocol: "$workerproto"])
+    ;;
 esac
 
 AC_CHECK_TYPES(useconds_t)
@@ -92,8 +91,12 @@ AC_HEADER_STDC
 AC_C_CONST
 AC_TYPE_SIGNAL
 
+dnl multithreaded code
+dnl we may have to make this differently depending on the os
+REENTRANT_FLAG=-D_REENTRANT
+AC_SUBST(REENTRANT_FLAG)
+
 dnl default config file location
-dnl eval "config_file_path=`eval echo $sysconfdir/grossd.conf`"
 AC_DEFINE_UNQUOTED([CONFIGFILE], "`eval echo $sysconfdir/grossd.conf`", [Default config file])
 
 AC_CONFIG_FILES([Makefile src/Makefile])
