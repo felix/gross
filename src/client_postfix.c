@@ -75,10 +75,10 @@ client_postfix(int argc, char **argv)
 		snprintf(mbuf,
 			MAXLINELEN*4,
 #ifdef RANDOM
-			"sender=%d\r\nrecipient=%d\r\nclient_address=%d\r\n\r\n",
+			"sender=%d\nrecipient=%d\nclient_address=%d\n\n",
 			random(), random(), random());
 #else
-			"sender=%s\r\nrecipient=%s\r\nclient_address=%s\r\n\r\n",
+			"sender=%s\nrecipient=%s\nclient_address=%s\n\n",
 			sender, recipient, caddr);
 #endif /* RANDOM */
 

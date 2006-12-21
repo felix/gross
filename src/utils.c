@@ -148,12 +148,12 @@ writeline(int fd, const char *line)
 }
 
 /* 
- * respond	- write a line to a descriptor, terminate with \r\n\r\n
+ * respond	- write a line to a descriptor, terminate with \n\n
  */
 ssize_t
 respond(int fd, const char *response)
 {
-	const char terminator[] = "\r\n\r\n";
+	const char terminator[] = "\n\n";
 	return writet(fd, response, terminator);
 }
 
