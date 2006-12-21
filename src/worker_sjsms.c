@@ -19,6 +19,7 @@
 #include "proto_sjsms.h"
 #include "srvutils.h"
 #include "worker.h"
+#include "utils.h"
 
 /*
  *timeout action for sending the 1 second "PROGRESS" packet
@@ -51,6 +52,8 @@ handle_connection(client_info_t *client_info)
 	int status;
 	tmout_action_t ta1, ta2;
 	char *str;
+	struct timespec start, end;
+	int delay;
 
 	assert(client_info);
 	assert(0 <= client_info->msglen);
@@ -72,6 +75,7 @@ handle_connection(client_info_t *client_info)
 
 	switch (msg->msgtype) {
 	case QUERY:
+		clock_gettime(CLOCK_TYPE, &start);
 		memcpy(&request, &msg->message, MIN(msg->msglen, MAXLINELEN));
 		request.message[MAXLINELEN-1] = '\0';
 
@@ -99,6 +103,10 @@ handle_connection(client_info_t *client_info)
 		len = sizeof(struct sockaddr_in);
 		sendto(client_info->connfd, &response, 1,
 			0, (struct sockaddr *)client_info->caddr, len);
+		clock_gettime(CLOCK_TYPE, &end);
+
+		delay = ms_diff(&end, &start);
+		logstr(GLOG_INFO, "processing delay: %d ms", delay);
 
 		free_request(tuple);
 		break;
