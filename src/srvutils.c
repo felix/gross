@@ -141,6 +141,11 @@ new_address(void* val1, off_t val2)
 	return (void *) (((off_t)val1) + val2);
 }
 
+/*
+ * walk_mmap_info	- Walks through the state information datastore and
+ * changes pointers according the offset. Offset is calculated based on the
+ * current address and the saved address in the mmapped state file.
+ */
 int
 walk_mmap_info(void)
 {
@@ -177,6 +182,11 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 
         assert(num_bits > 3);
 
+	/*
+	 * lumpsize is the size of the needed contiguous memory block
+	 * for the state information. We want to allocate just one 
+	 * mmap()'ed file for all the state info
+	 */
         lumpsize = sizeof(bloom_ring_queue_t) +         /* filter group metadata */
                 sizeof(bloom_filter_group_t) +          /* filter group data */
                 num * sizeof(bloom_filter_t *) +        /* pointers to filters */
