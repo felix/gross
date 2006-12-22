@@ -36,12 +36,15 @@ handle_connection(client_info_t *client_info)
 	char *response;
 	int ret;
 	int status;
+	struct timespec start, end;
+	int delay;
 
 	while(1) {
 		request = Malloc(sizeof(grey_tuple_t));
 		ret = parse_postfix(client_info, request);
 		if (ret == PARSE_OK) {
 			/* We are go */
+			clock_gettime(CLOCK_TYPE, &start);
 			status = test_tuple(request, NULL);
 
 			switch (status) {
@@ -58,9 +61,13 @@ handle_connection(client_info_t *client_info)
 
 			ret = respond(client_info->connfd, response);
 			if ( -1 == ret ) {
-			  logstr(GLOG_ERROR, "Respond failure in handle_connection");
-			  perror("handle_connection");
+				logstr(GLOG_ERROR, "respond() failed in handle_connection");
+				perror("handle_connection");
 			}
+
+			clock_gettime(CLOCK_TYPE, &end);
+			delay = ms_diff(&end, &start);
+			logstr(GLOG_INFO, "processing delay: %d ms", delay);
 		
 			free_request(request);
 		} else if (ret == PARSE_ERROR) {
