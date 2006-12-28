@@ -70,7 +70,7 @@ AC_CHECK_DECLS([CLOCK_MONOTONIC, CLOCK_HIGHRES],,, [#include <time.h>])
 
 AC_MSG_CHECKING([whether to disable dnsbl checking])
 AC_ARG_ENABLE(dnsbl,
-    AS_HELP_STRING([--disable-dnsbl], [Disable dnsbl checking]),
+    AC_HELP_STRING([--disable-dnsbl], [Disable dnsbl checking]),
     [AC_MSG_RESULT([yes]) ; dnsbl="no"],
     [AC_MSG_RESULT([no]) ; dnsbl="yes"]
 )
@@ -94,7 +94,7 @@ AM_CONDITIONAL(SJSMS, false)
 
 AC_MSG_CHECKING([which protocol should the server use])
 AC_ARG_WITH(worker,
-    AS_HELP_STRING([--with-worker=<protocol>], [Select protocol for worker (default=postfix)]),
+    AC_HELP_STRING([--with-worker=<protocol>], [Select protocol for worker (default=postfix)]),
     [AC_MSG_RESULT([$withval]) ; workerproto="$withval"],
     [AC_MSG_RESULT([postfix]) ; workerproto="postfix"]
 )
@@ -118,7 +118,7 @@ esac
 
 AC_CHECK_TYPES(useconds_t)
 
-AC_HEADER_STDC
+dnl AC_HEADER_STDC
 AC_C_CONST
 AC_TYPE_SIGNAL
 
