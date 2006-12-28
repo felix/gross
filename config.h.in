@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Default config file */
 #undef CONFIGFILE
@@ -94,6 +94,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Use sem_open() instead of sem_init() */
+#undef USE_SEM_OPEN
 
 /* Version number of package */
 #undef VERSION

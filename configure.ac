@@ -1,6 +1,7 @@
 AC_INIT([gross],[0.6.3-svn])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
+AM_CONFIG_HEADER([config.h])
 
 CONFIGURE_LINE="$0 $*"
 
@@ -25,6 +26,10 @@ case ${target_os} in
 	SYS=linux
 	REENTRANT_FLAG="-D_REENTRANT"
 	;;
+    darwin*)
+	SYS=darwin
+	REENTRANT_FLAG="-D_REENTRANT"
+	;;
     solaris*)
 	SYS=solaris
 	REENTRANT_FLAG="-D_POSIX_PTHREAD_SEMANTICS"
@@ -38,9 +43,14 @@ case ${target_os} in
 	;;
 esac
 
-AC_SEARCH_LIBS(sem_init, [rt], ,
-    AC_MSG_ERROR([Can't compile without semaphores.])
-)
+if test "$SYS" = "darwin"
+then
+    AC_DEFINE([USE_SEM_OPEN], [], [Use sem_open() instead of sem_init()])
+else
+    AC_SEARCH_LIBS(sem_init, [rt], ,
+	AC_MSG_ERROR([Can't compile without semaphores.])
+    )
+fi
 
 AC_SEARCH_LIBS(bind, [socket], , 
     AC_MSG_ERROR([Can't compile without BSD sockets.])
@@ -106,12 +116,9 @@ esac
 
 AC_CHECK_TYPES(useconds_t)
 
-AC_CONFIG_HEADERS([config.h])
-
 AC_HEADER_STDC
 AC_C_CONST
 AC_TYPE_SIGNAL
-
 
 AC_SUBST(REENTRANT_FLAG)
 

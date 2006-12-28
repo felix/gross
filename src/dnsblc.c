@@ -32,6 +32,21 @@ add_dnsbl(dnsbl_t **current, const char *name, int weight)
 	new = Malloc(sizeof(dnsbl_t));
 	memset(new, 0, sizeof(dnsbl_t));
 
+#ifdef USE_SEM_OPEN
+	/* make sure we get a private semaphore */
+        ret = sem_unlink("sem_dnsbl");
+        if (ret == -1 && errno == EACCES) {
+                perror("sem_unlink");
+		return -1;
+	}
+        sp = sem_open("sem_dnsbl", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, (unsigned int) ERRORTOLERANCE);
+        if (sp == (sem_t *)SEM_FAILED) {
+                daemon_perror("sem_open");
+		return -1;
+	}
+	/* we do not need the named semaphore, so it's fine to delete the name */
+        ret = sem_unlink("sem_dnsbl");
+#else
 	sp = Malloc(sizeof(sem_t));
 
 	ret = sem_init(sp, 0, (unsigned int) ERRORTOLERANCE);
@@ -39,6 +54,7 @@ add_dnsbl(dnsbl_t **current, const char *name, int weight)
 		perror("sem_init");
 		return -1;
 	}
+#endif /* USE_SEM_OPEN */
 
 	new->name = strdup(name);
 	new->failurecount_sem = sp;

@@ -46,7 +46,11 @@
 #elif HAVE_DECL_CLOCK_HIGHRES
 # define CLOCK_TYPE CLOCK_HIGHRES
 #else
-# error No suitable clock type found (CLOCK_MONOTONIC or CLOCK_HIGHRES)
+# ifndef HAVE_CLOCK_GETTIME
+#  define CLOCK_TYPE CLOCK_KLUDGE
+# else
+#  error No suitable clock type found (CLOCK_MONOTONIC or CLOCK_HIGHRES)
+# endif
 #endif
 
 /*
@@ -70,8 +74,12 @@
 #define FLG_UPDATE_ALWAYS (int)0x04
 #define FLG_CREATE_STATEFILE (int)0x08
 
-#define MAX(a,b) 	((a) > (b) ? (a) : (b))
-#define MIN(a,b) 	((a) < (b) ? (a) : (b))
+#ifndef MAX
+#define MAX(a,b) 	(((a) > (b)) ? ((a) : (b)))
+#endif
+#ifndef MIN
+#define MIN(a,b) 	(((a) < (b)) ? ((a) : (b)))
+#endif
 
 /*
  * common types

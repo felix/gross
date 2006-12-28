@@ -16,13 +16,7 @@
  */
 
 #include "common.h"
-
-
-#define SI_KILO 1000
-#define SI_MEGA (SI_KILO * SI_KILO)
-#define SI_GIGA (SI_KILO * SI_MEGA)
-
-enum readlineret_t { ERROR = -1, EMPTY = 0, DATA = 1};
+#include "utils.h"
 
 /*
  * readline	- implementation by W. Richard Stevens, 
@@ -265,3 +259,21 @@ tstotv(const struct timespec *ts, struct timeval *tv)
         tv->tv_sec = ts->tv_sec;
         tv->tv_usec = ts->tv_nsec / SI_KILO;
 }
+
+#ifndef HAVE_CLOCK_GETTIME
+int
+clock_gettime(clockid_t clk_id, struct timespec *ts)
+{
+        struct timeval tv;
+ 
+        if (clk_id == CLOCK_KLUDGE) {
+                if (gettimeofday(&tv, NULL) != 0)
+                        return -1;
+                tvtots(&tv, ts);
+                return 0;
+        } else {
+                errno = EINVAL;
+                return -1; 
+        }
+}
+#endif /* ! HAVE_CLOCK_GETTIME */
