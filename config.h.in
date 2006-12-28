@@ -9,6 +9,9 @@
 /* Define to 1 if you have the <ares.h> header file. */
 #undef HAVE_ARES_H
 
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
 /* Define to 1 if you have the declaration of `CLOCK_HIGHRES', and to 0 if you
    don't. */
 #undef HAVE_DECL_CLOCK_HIGHRES

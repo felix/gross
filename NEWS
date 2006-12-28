@@ -1,3 +1,8 @@
+Version 0.6.3-svn
+
+Ported to OS X. Since sem_getvalue() is not implemented on 
+OS X, skipping unresponsive dnsbls does not work, yet.
+
 Version 0.6.2
 
 Issues fixed:

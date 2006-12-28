@@ -64,6 +64,8 @@ AC_CHECK_LIB(m, pow)
 AC_CHECK_LIB(nsl, inet_pton)
 AC_CHECK_HEADERS(netinet/in.h)
 
+AC_CHECK_FUNCS([clock_gettime])
+
 AC_CHECK_DECLS([CLOCK_MONOTONIC, CLOCK_HIGHRES],,, [#include <time.h>])
 
 AC_MSG_CHECKING([whether to disable dnsbl checking])

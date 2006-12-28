@@ -75,10 +75,10 @@
 #define FLG_CREATE_STATEFILE (int)0x08
 
 #ifndef MAX
-#define MAX(a,b) 	(((a) > (b)) ? ((a) : (b)))
+#define MAX(a,b) 	((a) > (b) ? (a) : (b))
 #endif
 #ifndef MIN
-#define MIN(a,b) 	(((a) < (b)) ? ((a) : (b)))
+#define MIN(a,b) 	((a) < (b) ? (a) : (b))
 #endif
 
 /*
