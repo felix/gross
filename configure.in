@@ -1,5 +1,8 @@
-AC_INIT([gross],[0.6.2])
+AC_INIT([gross],[0.6.3-svn])
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
+
+CONFIGURE_LINE="$0 $*"
 
 dnl AC_PROG_MAKE_SET
 AC_PROG_CC([cc gcc])
@@ -16,6 +19,24 @@ AC_PROG_LIBTOOL
 
 CPPFLAGS="$CPPFLAGS -I/usr/local/include"
 LDFLAGS="$LDFLAGS -L/usr/local/lib"
+
+case ${target_os} in
+    linux*)
+	SYS=linux
+	REENTRANT_FLAG="-D_REENTRANT"
+	;;
+    solaris*)
+	SYS=solaris
+	REENTRANT_FLAG="-D_POSIX_PTHREAD_SEMANTICS"
+	;;
+    *bsd*)
+	SYS=${target_os}
+	REENTRANT_FLAG="-D_REENTRANT"
+	;;
+    *)
+	AC_MSG_ERROR([Unsupported target OS ${target_os}])
+	;;
+esac
 
 AC_SEARCH_LIBS(sem_init, [rt], ,
     AC_MSG_ERROR([Can't compile without semaphores.])
@@ -91,16 +112,17 @@ AC_HEADER_STDC
 AC_C_CONST
 AC_TYPE_SIGNAL
 
-dnl multithreaded code
-dnl we may have to make this differently depending on the os
-REENTRANT_FLAG=-D_REENTRANT
+
 AC_SUBST(REENTRANT_FLAG)
 
+dnl various defines used by gross
+dnl
 dnl default config file location
 if test "x$prefix" == xNONE; then
     prefix=$ac_default_prefix
 fi
 AC_DEFINE_UNQUOTED([CONFIGFILE], "`eval echo $sysconfdir/grossd.conf`", [Default config file])
+AC_DEFINE_UNQUOTED([CONFIGURE_LINE], "${CONFIGURE_LINE}", [./configure command and args])
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

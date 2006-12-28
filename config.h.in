@@ -3,6 +3,9 @@
 /* Default config file */
 #undef CONFIGFILE
 
+/* ./configure command and args */
+#undef CONFIGURE_LINE
+
 /* Define to 1 if you have the <ares.h> header file. */
 #undef HAVE_ARES_H
 
