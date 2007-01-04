@@ -105,8 +105,10 @@ unfold(grey_req_t *request)
 
         if (sender >= MAXLINELEN ||
                         recipient >= MAXLINELEN ||
-                        client_address >= MAXLINELEN)
+                        client_address >= MAXLINELEN) {
+		errno = ENOMSG;
                 return NULL;
+	}
         tuple->sender = strdup(request->message + sender);
         tuple->recipient = strdup(request->message + recipient);
         tuple->client_address = strdup(request->message + client_address);

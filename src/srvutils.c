@@ -136,9 +136,9 @@ connected(peer_t* peer)
 }
 
 void *
-new_address(void* val1, off_t val2)
+new_address(void* val1, size_t val2)
 {
-	return (void *) (((off_t)val1) + val2);
+	return (void *) (((size_t)val1) + val2);
 }
 
 /*
@@ -150,7 +150,7 @@ int
 walk_mmap_info(void)
 {
         int i;
-        off_t offset = (((off_t) &(ctx->mmap_info->brq[1])) - ((off_t)ctx->mmap_info->brq->group));
+        size_t offset = (((size_t) &(ctx->mmap_info->brq[1])) - ((size_t)ctx->mmap_info->brq->group));
 
         logstr(GLOG_DEBUG, "fixing bloom ring queue memory pointers, offset=%x", offset);
 
