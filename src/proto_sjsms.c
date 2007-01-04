@@ -26,7 +26,7 @@ int
 fold(grey_req_t *req, const char *sender,
         const char *rcpt, const char *caddr)
 {
-        int sender_len, rcpt_len, caddr_len;
+        uint16_t sender_len, rcpt_len, caddr_len;
 
         sender_len = strlen(sender);
         rcpt_len = strlen(rcpt);
@@ -36,15 +36,15 @@ fold(grey_req_t *req, const char *sender,
         memcpy(req->message + req->sender, sender, sender_len);
         *(req->message + req->sender + sender_len) = '\0';
 
-        req->recipient = req->sender + sender_len + 1;
+        req->recipient = htons(req->sender + sender_len + 1);
         memcpy(req->message + req->recipient, rcpt , rcpt_len);
         *(req->message + req->recipient + rcpt_len) = '\0';
 
-        req->client_address = req->recipient + rcpt_len + 1;
+        req->client_address = htons(req->recipient + rcpt_len + 1);
         memcpy(req->message + req->client_address, caddr , caddr_len);
         *(req->message + req->client_address + caddr_len) = '\0';
 
-        req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1;
+        req->msglen = htons(sender_len + 1 + rcpt_len + 1 + caddr_len + 1);
 
         return 1;
 }
@@ -93,18 +93,23 @@ grey_tuple_t *
 unfold(grey_req_t *request)
 {
         grey_tuple_t *tuple;
+	uint16_t sender, recipient, client_address;
 
         tuple = malloc(sizeof(grey_tuple_t));
 	if (! tuple)
 		return NULL;
 
-        if (request->sender >= MAXLINELEN ||
-                        request->recipient >= MAXLINELEN ||
-                        request->client_address >= MAXLINELEN)
+	sender = ntohs(request->sender);
+	recipient = ntohs(request->recipient);
+	client_address = ntohs(request->client_address);
+
+        if (sender >= MAXLINELEN ||
+                        recipient >= MAXLINELEN ||
+                        client_address >= MAXLINELEN)
                 return NULL;
-        tuple->sender = strdup(request->message + request->sender);
-        tuple->recipient = strdup(request->message + request->recipient);
-        tuple->client_address = strdup(request->message + request->client_address);
+        tuple->sender = strdup(request->message + sender);
+        tuple->recipient = strdup(request->message + recipient);
+        tuple->client_address = strdup(request->message + client_address);
 
         return tuple;
 }

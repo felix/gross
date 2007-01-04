@@ -21,10 +21,10 @@
 #include "worker.h"
 
 typedef struct {
-        int msglen;
-        int sender;
-        int recipient;
-        int client_address;
+        uint16_t msglen;
+        uint16_t sender;
+        uint16_t recipient;
+        uint16_t client_address;
         char message[MAXLINELEN];
 } grey_req_t;
 
