@@ -1,4 +1,4 @@
-AC_INIT([gross],[0.6.3-svn])
+AC_INIT([gross],[sophos-blocker-svn])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([config.h])
