@@ -173,8 +173,7 @@ configure_grossd(configlist_t *config)
 	} else if ((updatestr == NULL) || (strncmp(updatestr, "gray", 5) == 0))
 		logstr(GLOG_INFO, "updatestyle: GREY");
 	else {
-		fprintf(stderr, "Invalid updatestyle: %s\n", updatestr);
-		exit(1);
+		daemon_shutdown(1, "Invalid updatestyle: %s", updatestr);
 	}
 
 	ctx->config.status_host.sin_family = AF_INET;
@@ -268,10 +267,8 @@ main(int argc, char *argv[])
 
 	ctx = initialize_context();
 
-	if ( ! ctx ) {
-		fprintf(stderr, "Couldn't initialize context\n");
-		return 1;
-	}
+	if ( ! ctx )
+		daemon_shutdown(1, "Couldn't initialize context");
 
 	/* command line arguments */
 	while ((c = getopt(argc, argv, ":drf:VCD")) != -1) {
@@ -302,20 +299,20 @@ main(int argc, char *argv[])
 			break;
 		case '?':
 			fprintf(stderr,
-				"Unrecongnized option: -%c\n", optopt);
+				"Unrecognized option: -%c\n", optopt);
 			usage();
 			break;
 		}
 	}
+
+	config = read_config(configfile);
+	configure_grossd(config);
 
 	/* daemonize must be run before any pthread_create */
         if ((ctx->config.flags & FLG_NODAEMON) == 0) {
 		daemonize();
 		openlog("grossd", 0x00, LOG_MAIL);
 	}
-
-	config = read_config(configfile);
-	configure_grossd(config); 		/* implicit pthread_create */
 
 	/* start the bloom manager thread */
 	bloommgr_init();
