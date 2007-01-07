@@ -17,21 +17,35 @@
 #ifndef CONF_H
 #define CONF_H
 
+#define DEFAULT_CONFIG	"update",		"grey", 	\
+			"host",			"127.0.0.1",	\
+			"port",			"1111",		\
+			"sync_port",		"1112",		\
+			"status_port",		"1121",		\
+			"rotate_interval", 	"3600",		\
+			"filter_bits",		"22",		\
+			"number_buffers",	"8"
+
+#define MULTIVALUES	"dnsbl"
+
 #define VALID_NAMES     "dnsbl",             \
-			"peerhost",	     \
-			"peerport",          \
 			"host",              \
 			"port",              \
-			"syncport",          \
-			"synchost",          \
                         "filter_bits",       \
                         "rotate_interval",   \
                         "number_buffers",    \
                         "update",            \
                         "peer_name",         \
                         "statefile",         \
-                        "status_host",       \
-                        "status_port"
+                        "sync",		     \
+			"status"
+
+#define DEPRECATED_NAMES 	"syncport",		\
+				"synchost",		\
+				"peerport",		\
+				"peerhost",		\
+				"statushost",		\
+				"statusport"		
 
 typedef struct configlist_s {
 	const char *name;
@@ -39,8 +53,7 @@ typedef struct configlist_s {
 	struct configlist_s *next;  /* linked list */
 } configlist_t;
 
-int add_config_item(configlist_t **current, const char *name, const char *value);
 configlist_t *read_config(const char *filename);
-const char *dconf(configlist_t *config, const char *name, const char *def);
+const char *gconf(configlist_t *config, const char *name);
 
 #endif /* CONF_H */
