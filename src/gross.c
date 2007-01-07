@@ -35,6 +35,8 @@
 #define SECONDS_IN_HOUR ((time_t)60*60)
 #define MAX_PEER_NAME_LEN 1024
 
+#define CONF(item)	gconf(config, item)
+
 /* function prototypes */
 void bloommgr_init();
 void syncmgr_init();
@@ -137,56 +139,57 @@ configure_grossd(configlist_t *config)
 	pthread_mutex_init(&ctx->config.peer.peer_in_mutex, NULL);
 
 	ctx->config.gross_host.sin_family = AF_INET;
-	inet_pton(AF_INET, dconf(config, "host", "127.0.0.1"),
-		  &(ctx->config.gross_host.sin_addr));
+	inet_pton(AF_INET, CONF("host"), &(ctx->config.gross_host.sin_addr));
 
 	ctx->config.sync_host.sin_family = AF_INET;
-	inet_pton(AF_INET, dconf(config, "synchost", "127.0.0.1"),
+	inet_pton(AF_INET, CONF("sync_host") ? CONF("sync_host") : CONF("host"),
 		  &(ctx->config.sync_host.sin_addr));
 
 	ctx->config.sync_host.sin_port =
-		htons(atoi(dconf(config, "syncport", "1112")));
+		htons(atoi(CONF("sync_port")));
 	ctx->config.gross_host.sin_port =
-		htons(atoi(dconf(config, "port", "1111")));
+		htons(atoi(CONF("port")));
 	ctx->config.max_connq = 50;
 	ctx->config.max_threads = 10;
 	ctx->config.peer.connected = 0;
 
-	ctx->config.peer.peer_addr.sin_family = AF_INET;
-	inet_pton(AF_INET, dconf(config, "peerhost", "127.0.0.1"),
-		&(ctx->config.peer.peer_addr.sin_addr));
+	/* peer port is the same as the local sync_port */
+	ctx->config.peer.peer_addr.sin_port = htons(atoi(CONF("sync_port")));
 
-	ctx->config.peer.peer_addr.sin_port = htons(atoi(dconf(config, "peerport", "1112")));
-
-	if (strncmp(dconf(config, "peerhost", ""), "", 1) == 0) {
-	  logstr(GLOG_INFO, "No peerhost configured. Replication suppressed.");
-	  ctx->config.flags |= FLG_NOREPLICATE;	  
+	if (CONF("peerhost") == NULL) {
+		logstr(GLOG_INFO, "No peerhost configured. Replication suppressed.");
+		ctx->config.flags |= FLG_NOREPLICATE;	  
 	} else {
-	  logstr(GLOG_INFO, "Peerhost %s configured. Replicating.", dconf(config, "peerhost", ""));
+		logstr(GLOG_INFO, "Peerhost %s configured. Replicating.", CONF("peerhost"));
+		ctx->config.peer.peer_addr.sin_family = AF_INET;
+		inet_pton(AF_INET, CONF("peerhost"),
+			&(ctx->config.peer.peer_addr.sin_addr));
 	}
 
-	updatestr = dconf(config, "update", "grey");
+	updatestr = CONF("update");
 	if (strncmp(updatestr, "always", 7) == 0) {
 		logstr(GLOG_INFO, "updatestyle: ALWAYS");
 		ctx->config.flags |= FLG_UPDATE_ALWAYS;
-	} else {
+	} else if ((updatestr == NULL) || (strncmp(updatestr, "gray", 5) == 0))
 		logstr(GLOG_INFO, "updatestyle: GREY");
+	else {
+		fprintf(stderr, "Invalid updatestyle: %s\n", updatestr);
+		exit(1);
 	}
 
 	ctx->config.status_host.sin_family = AF_INET;
-	inet_pton(AF_INET, dconf(config, "status_host", "127.0.0.1"),
+	inet_pton(AF_INET, CONF("status_host") ? CONF("status_host") : CONF("host"),
 		  &(ctx->config.status_host.sin_addr));
 
 	ctx->config.status_host.sin_port =
-		htons(atoi(dconf(config, "status_port", "1121")));
+		htons(atoi(CONF("status_port")));
 
-	ctx->config.rotate_interval = atoi(dconf(config, "rotate_interval", "3600"));
-	ctx->config.filter_size = atoi(dconf(config, "filter_bits", "22"));
-	ctx->config.num_bufs = atoi(dconf(config, "number_buffers", "8"));
+	ctx->config.rotate_interval = atoi(CONF("rotate_interval"));
+	ctx->config.filter_size = atoi(CONF("filter_bits"));
+	ctx->config.num_bufs = atoi(CONF("number_buffers"));
 
-	tmp = dconf(config, "statefile", NULL);
-	if (tmp)
-		ctx->config.statefile = strdup(tmp);
+	if (CONF("statefile"))
+		ctx->config.statefile = strdup(CONF("statefile"));
 	else
 		ctx->config.statefile = NULL;
 
@@ -210,15 +213,6 @@ configure_grossd(configlist_t *config)
 		cp = cp->next;
 	}
 #endif /* DNSBL */
-
-	cp = config;
-	while (cp) {
-	  configlist_t* next = cp->next;
-	  free((char *)cp->name);
-	  free((char *)cp->value);
-	  free(cp);
-	  cp = next;
-	}
 }
 
 /* 

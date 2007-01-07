@@ -21,6 +21,26 @@
 #include "utils.h"
 
 /*
+ * multivalue		- checks if name is a multivalue property
+ */
+int
+multivalue(const char *name) {
+	int i;
+	const char *multivalues[] = {
+		MULTIVALUES,
+		NULL
+	};
+
+	i = 0;
+	while (multivalues[i]) {
+		if (strcmp(name, multivalues[i]) == 0) 
+			return 1;
+		i++;
+	}
+	return 0;
+}
+
+/*
  * add_config_item	- add an item to a linked list
  */
 int
@@ -39,18 +59,47 @@ add_config_item(configlist_t **current, const char *name, const char *value)
 }
 
 /*
- * dconf	- Return the configvalue if name is found from the config,
- *		  default otherwise.
+ * record_config_item	- replace if name already exists in config and name not
+ * a multivalue property, add otherwise
+ */
+int
+record_config_item(configlist_t **config, const char *name, const char *value)
+{
+	configlist_t *cp;
+
+	cp = *config;
+
+	if (multivalue(name)) {
+		add_config_item(config, name, value);
+	} else {
+		while (cp) {
+			if (strcmp(cp->name, name) == 0) {
+				cp->value = value;
+				break;
+			}
+			cp = cp->next;
+		}
+		if (cp == NULL) {
+			/* name not found in configlist */
+			add_config_item(config, name, value);
+		}
+	}
+	return 1;
+}
+
+/*
+ * gconf	- Return the configvalue if name is found from the config,
+ *		  NULL otherwise.
  */
 const char *
-dconf(configlist_t *config, const char *name, const char *def)
+gconf(configlist_t *config, const char *name)
 {
 	while (config) {
 		if (strcmp(config->name, name) == 0)
 			return config->value;
 		config = config->next;
 	}	
-	return def;
+	return NULL;
 }
 
 
@@ -97,6 +146,32 @@ namevalue(char *buffer, char **name, char **value)
 }
 
 /*
+ * default_config	- build the default configuration
+ */
+configlist_t *
+default_config(void)
+{
+	configlist_t *config;
+	int i;
+	const char *defaults[] = {
+		DEFAULT_CONFIG,
+		NULL
+	};
+	
+	/* init */
+	config = NULL;
+
+	i = 0;
+	while (defaults[i]) {
+		assert(defaults[i]);
+		assert(defaults[i+1]);
+		add_config_item(&config, defaults[i], defaults[i+1]);
+		i += 2;
+	}
+	return config;
+}
+
+/*
  * read_config	- parse a configfile
  */
 configlist_t *
@@ -106,8 +181,6 @@ read_config(const char *filename)
 	int fd;
 	char buffer[MAXLINELEN];
 	char line[MAXLINELEN];
-/* 	size_t llen, nlen, vlen; */
-/* 	char *ptr; */
 	int rlstatus, ret, i, count = 0;
 	char *name[1];
 	char *value[1];
@@ -115,9 +188,13 @@ read_config(const char *filename)
 		VALID_NAMES,
 		NULL
 	};
+	const char *deprecated[] = {
+		DEPRECATED_NAMES,
+		NULL
+	};
 
 	/* init */
-	config = NULL;
+	config = default_config();
 
 	/* open configfile for reading */
 	fd = open(filename, O_RDONLY);
@@ -153,14 +230,25 @@ read_config(const char *filename)
 				 * part of the working buffer which will be overwritten on
 				 * every cycle of this loop
 				 */
-				ret = add_config_item(&config, strdup(*name), strdup(*value));
+				record_config_item(&config, strdup(*name), strdup(*value));
 				if (ret < 0) {
-					perror("add_config_item");
+					perror("record_config_item");
 					exit(1);
 				}
 			} else {
-				fprintf(stderr, "Unknown configuration parameter: %s\n", *name);
-				exit(1);
+				i = 0;
+				while (deprecated[i]) {
+					if (strcmp(*name, deprecated[i]) == 0)
+						break;
+					i++;
+				}
+				if (deprecated[i]) {
+					fprintf(stderr, "Deprecated configuration parameter: %s\n", *name);
+					exit(1);
+				} else {
+					fprintf(stderr, "Unknown configuration parameter: %s\n", *name);
+					exit(1);
+				}
 			}
 		}
 	} while (rlstatus == DATA);
