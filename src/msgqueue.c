@@ -281,7 +281,6 @@ put_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
 	msg_t *new;
 	void *msgp;
 	int ret;
-	size_t truesize;
 
 	mq = queues[msqid];
 	assert(mq);
@@ -292,17 +291,11 @@ put_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
 
 	clock_gettime(CLOCK_TYPE, &new->timestamp);
 
-	/*
-	 * msgsize is the length of the message, we must add
-	 * the length of the type field (long) also
-         */
-	truesize = msgsz + sizeof(long);
-
-	msgp = Malloc(truesize);
-	memcpy(msgp, omsgp, truesize);
+	msgp = Malloc(msgsz);
+	memcpy(msgp, omsgp, msgsz);
 
 	new->msgp = msgp;
-	new->msgsz = truesize;
+	new->msgsz = msgsz;
 
 	ret = put_msg_raw(mq, new);
 
@@ -316,7 +309,6 @@ instant_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
 	msg_t *new;
 	void *msgp;
 	int ret;
-	size_t truesize;
 
 	mq = queues[msqid];
 	assert(mq);
@@ -331,17 +323,11 @@ instant_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
 
 	clock_gettime(CLOCK_TYPE, &new->timestamp);
 
-	/*
-	 * msgsize is the length of the message, we must add
-	 * the length of the type field (long) also
-         */
-	truesize = msgsz + sizeof(long);
-
-	msgp = Malloc(truesize);
-	memcpy(msgp, omsgp, truesize);
+	msgp = Malloc(msgsz);
+	memcpy(msgp, omsgp, msgsz);
 
 	new->msgp = msgp;
-	new->msgsz = truesize;
+	new->msgsz = msgsz;
 
 	ret = put_msg_raw(mq, new);
 
@@ -394,13 +380,13 @@ get_msg_raw(msgqueue_t *mq, const struct timespec *timeout)
  * mimics the semantics of msgrcv().
  */
 size_t
-get_msg(int msqid, void *msgp, size_t maxsize, long int msgtype, int msgflag)
+get_msg(int msqid, void *msgp, size_t maxsize, int msgflag)
 {
-	return get_msg_timed(msqid, msgp, maxsize, msgtype, msgflag, NULL);
+	return get_msg_timed(msqid, msgp, maxsize, msgflag, NULL);
 }
 
 size_t
-get_msg_timed(int msqid, void *msgp, size_t maxsize, long int msgtype, int msgflag, const struct timespec *timeout)
+get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, const struct timespec *timeout)
 {
 	msgqueue_t *mq;
 	msg_t *msg;
@@ -419,11 +405,10 @@ get_msg_timed(int msqid, void *msgp, size_t maxsize, long int msgtype, int msgfl
 	if (msg == NULL) {
 		msglen = 0;
 	} else {
-		/* we need just the msgsize without the type field */
-		msgsize = msg->msgsz - sizeof(long);
+		msgsize = msg->msgsz;
 
 		msglen = (maxsize < msgsize) ? maxsize : msgsize;
-		memcpy(msgp, msg->msgp, msglen + sizeof(long));
+		memcpy(msgp, msg->msgp, msglen);
 		free(msg->msgp);
 		free(msg);
 	}

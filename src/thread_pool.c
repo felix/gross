@@ -24,6 +24,8 @@ thread_pool(void *arg)
 	assert(pool_ctx->routine);
 	assert(pool_ctx->info);
 
+	logstr(GLOG_DEBUG, "threadpool '%s' starting", pool_ctx->name);
+
 	POOL_MUTEX_LOCK;
 	pool_ctx->count_thread++;
 	POOL_MUTEX_UNLOCK;
@@ -37,17 +39,19 @@ thread_pool(void *arg)
 		pool_ctx->count_idle++;
 		POOL_MUTEX_UNLOCK;
 
-		/* ret = get_msg_timed(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, 0, &timelimit); */
-		ret = get_msg(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, 0);
+		ret = get_msg_timed(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, &timelimit); 
 		if (ret > 0) {
 			/* we've got a work order */
 			assert(order.job_ctx);
+
+			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->name);
 
 			POOL_MUTEX_LOCK;
 			
 			pool_ctx->count_idle--;
 			if (pool_ctx->count_idle < 1) {
 				/* We are the last idling thread, start another */
+				logstr(GLOG_DEBUG, "threadpool '%s' starting another thread", pool_ctx->name);
 				Pthread_create(NULL, &thread_pool, pool_ctx);
 			}
 
@@ -60,10 +64,13 @@ thread_pool(void *arg)
 
 			POOL_MUTEX_LOCK;
 
+			logstr(GLOG_DEBUG, "threadpool '%s' notices it's idling", pool_ctx->name);
+
 			pool_ctx->count_idle--;
 			/* there should be at least one idling thread left */
 			if (pool_ctx->count_idle > 1) {
 				pool_ctx->count_thread--;
+				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down", pool_ctx->name);
 				pthread_exit(NULL);
 			}
 			POOL_MUTEX_UNLOCK;
@@ -72,7 +79,7 @@ thread_pool(void *arg)
 }
 
 thread_pool_t *
-create_thread_pool(void *(*routine)(void *))
+create_thread_pool(const char *name, void *(*routine)(void *))
 {
 	thread_pool_t *pool;
 	pthread_mutex_t *pool_mx;
@@ -99,6 +106,7 @@ create_thread_pool(void *(*routine)(void *))
 	pool_ctx->info = pool;
 	pool_ctx->count_thread = 0;
 	pool_ctx->count_idle = 0;
+	pool_ctx->name = name;
 
 	/* start controller thread */
 	Pthread_create(NULL, &thread_pool, pool_ctx);

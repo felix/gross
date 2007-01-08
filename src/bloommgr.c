@@ -65,7 +65,7 @@ bloommgr(void *arg)
 
 	/* pseudo-loop */
 	for (;;) {
-	  size = get_msg(ctx->update_q, &message, MSGSZ, 0, 0);
+	  size = get_msg(ctx->update_q, &message, MSGSZ, 0);
 	  if (size < 0) {
 	    perror("get_msg bloommgr");
 	    continue;

@@ -116,7 +116,7 @@ udp_server(void *arg)
 
 	/* initialize thread pool */
 	logstr(GLOG_INFO, "initializing worker thread pool");
-	worker_pool = create_thread_pool(&worker);
+	worker_pool = create_thread_pool("worker", &worker);
 	if (worker_pool == NULL)
 		daemon_perror("create_thread_pool");
 
