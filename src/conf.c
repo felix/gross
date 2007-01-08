@@ -231,10 +231,8 @@ read_config(const char *filename)
 				 * every cycle of this loop
 				 */
 				record_config_item(&config, strdup(*name), strdup(*value));
-				if (ret < 0) {
-					perror("record_config_item");
-					exit(1);
-				}
+				if (ret < 0)
+					daemon_perror("record_config_item");
 			} else {
 				i = 0;
 				while (deprecated[i]) {
@@ -242,22 +240,17 @@ read_config(const char *filename)
 						break;
 					i++;
 				}
-				if (deprecated[i]) {
-					fprintf(stderr, "Deprecated configuration parameter: %s\n", *name);
-					exit(1);
-				} else {
-					fprintf(stderr, "Unknown configuration parameter: %s\n", *name);
-					exit(1);
-				}
+				if (deprecated[i])
+					daemon_shutdown(1, "Deprecated configuration parameter: %s", *name);
+				else
+					daemon_shutdown(1, "Unknown configuration parameter: %s", *name);
 			}
 		}
 	} while (rlstatus == DATA);
 
 	/* check if a real error occurred */
-	if (rlstatus == ERROR) {
-		perror("readline");
-		exit(1);
-	}
+	if (rlstatus == ERROR)
+		daemon_perror("readline");
 	
 	return config;
 }

@@ -92,8 +92,11 @@ configure_grossd(configlist_t *config)
 	exit(1);
 #endif
 
-	/* initialize the message queue system for 4 message queues */
-	ret = queue_init(4);
+	/*
+	 * initialize the message queue system
+	 * this must be greater than maxthreads
+	 */
+	ret = queue_init(128);
 	assert(ret == 0);
 	
 	/* initialize the update queue */
