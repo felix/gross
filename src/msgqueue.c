@@ -414,15 +414,20 @@ get_msg_timed(int msqid, void *msgp, size_t maxsize, long int msgtype, int msgfl
 	else
 		msg = get_msg_raw(mq, timeout);
 
-	/* we need just the msgsize without the type field */
-	msgsize = msg->msgsz - sizeof(long);
+	/* msg is NULL if timeout occurred */
+	if (msg == NULL) {
+		msglen = 0;
+	} else {
+		/* we need just the msgsize without the type field */
+		msgsize = msg->msgsz - sizeof(long);
 
-	msglen = (maxsize < msgsize) ? maxsize : msgsize;
-	memcpy(msgp, msg->msgp, msglen + sizeof(long));
-	free(msg->msgp);
-	free(msg);
+		msglen = (maxsize < msgsize) ? maxsize : msgsize;
+		memcpy(msgp, msg->msgp, msglen + sizeof(long));
+		free(msg->msgp);
+		free(msg);
+	}
 	
-	return msglen;
+		return msglen;
 }
 
 size_t

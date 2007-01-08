@@ -102,7 +102,7 @@ bin_PROGRAMS = gclient
 lib_LTLIBRARIES = grosscheck.la
 noinst_PROGRAMS = bloom
 
-grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c
+grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c
 EXTRA_grossd_SOURCES = dnsblc.c worker_postfix.c worker_sjsms.c proto_postfix.c
 grossd_LDFLAGS = @LDFLAGS@  
 grossd_LDADD = @DNSBLSOURCES@ worker_@PROTOCOL@.o proto_@PROTOCOL@.o
@@ -147,7 +147,7 @@ gclient_OBJECTS = $(am_gclient_OBJECTS)
 am_grossd_OBJECTS = sha256.$(OBJEXT) bloom.$(OBJEXT) utils.$(OBJEXT) \
 	srvutils.$(OBJEXT) worker.$(OBJEXT) bloommgr.$(OBJEXT) \
 	gross.$(OBJEXT) syncmgr.$(OBJEXT) conf.$(OBJEXT) \
-	msgqueue.$(OBJEXT) srvstatus.$(OBJEXT)
+	msgqueue.$(OBJEXT) srvstatus.$(OBJEXT) thread_pool.$(OBJEXT)
 grossd_OBJECTS = $(am_grossd_OBJECTS)
 am_sha256_OBJECTS = sha256-test.$(OBJEXT) sha256.$(OBJEXT) \
 	srvutils.$(OBJEXT) utils.$(OBJEXT)
@@ -174,8 +174,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/proto_sjsms.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/sha256-test.Po ./$(DEPDIR)/sha256.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/srvstatus.Po ./$(DEPDIR)/srvutils.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/syncmgr.Po ./$(DEPDIR)/utils.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/worker.Po ./$(DEPDIR)/worker_postfix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/syncmgr.Po ./$(DEPDIR)/thread_pool.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/utils.Po ./$(DEPDIR)/worker.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/worker_postfix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/worker_sjsms.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -339,6 +340,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srvstatus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srvutils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syncmgr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thread_pool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/worker.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/worker_postfix.Po@am__quote@
