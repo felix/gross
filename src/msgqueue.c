@@ -362,10 +362,12 @@ get_msg_raw(msgqueue_t *mq, const struct timespec *timeout)
 
 	/* the queue is now empty, wait for messages */
 	while (mq->head == NULL)
-		if (timeout == NULL)
+		if (timeout == NULL) {
 			ret = pthread_cond_wait(&mq->cv, &mq->mx);
-		else
+		} else {
 			ret = pthread_cond_timedwait(&mq->cv, &mq->mx, timeout);
+			break;
+		}
 			
 	if (ret == 0) {
 		assert(mq->head);
@@ -426,7 +428,7 @@ get_msg_timed(int msqid, void *msgp, size_t maxsize, long int msgtype, int msgfl
 		free(msg);
 	}
 	
-		return msglen;
+	return msglen;
 }
 
 size_t

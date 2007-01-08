@@ -37,7 +37,8 @@ thread_pool(void *arg)
 		pool_ctx->count_idle++;
 		POOL_MUTEX_UNLOCK;
 
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, 0, &timelimit);
+		/* ret = get_msg_timed(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, 0, &timelimit); */
+		ret = get_msg(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, 0);
 		if (ret > 0) {
 			/* we've got a work order */
 			assert(order.job_ctx);
@@ -58,6 +59,8 @@ thread_pool(void *arg)
 			/* timeout occurred */
 
 			POOL_MUTEX_LOCK;
+
+			pool_ctx->count_idle--;
 			/* there should be at least one idling thread left */
 			if (pool_ctx->count_idle > 1) {
 				pool_ctx->count_thread--;
