@@ -101,3 +101,18 @@ create_thread_pool(void *(*routine)(void *))
 	Pthread_create(NULL, &thread_pool, pool_ctx);
 	return pool;
 }
+
+/*
+ * submit_job	- add a job to the work queue
+ */
+int
+submit_job(thread_pool_t *pool, void *job, struct timespec *timeout)
+{
+	work_order_t edict;
+
+	edict.job_ctx = job;
+	edict.timelimit = 0;
+	edict.result = NULL;
+
+	return put_msg(pool->work_queue_id, &edict, sizeof(edict), 0);
+}

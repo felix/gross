@@ -69,7 +69,6 @@ get_delay_queue(const struct timespec *ts)
 {
 	int putqid, getqid;
 	queue_info_t *queue_info;
-	pthread_t handlertid;
 	int *impose_delay;
 
 	if (! ts) {

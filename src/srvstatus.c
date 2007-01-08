@@ -74,7 +74,7 @@ void get_srvstatus(char* buf, int len)
     snprintf(buf, len - strlen(buf), "%d: Update queue length %d.", state, update_len);
   } else if (log_len > QUEUE_WARN) {
     state |= SRV_WARN;
-    snprintf(buf, len - strlen(buf), "%d: Log queue length.", state, log_len);
+    snprintf(buf, len - strlen(buf), "%d: Log queue length %d.", state, log_len);
   } else if ( (ctx->config.peer.connected < 1) && (( ctx->config.flags & FLG_NOREPLICATE ) == 0 ) ) {
     state |= SRV_WARN;
     snprintf(buf, len - strlen(buf), "%d: Peer unreachable.", state);

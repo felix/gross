@@ -1,3 +1,7 @@
+
+#ifndef THREAD_POOL_H
+#define THREAD_POOL_H
+
 typedef struct thread_pool_s {
 	int work_queue_id;
 } thread_pool_t;
@@ -15,3 +19,8 @@ typedef struct pool_ctx_s {
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
 } pool_ctx_t;
+
+int submit_job(thread_pool_t *pool, void *job, struct timespec *timeout);
+thread_pool_t *create_thread_pool(void *(*routine)(void *));
+
+#endif /* THREAD_POOL_H */

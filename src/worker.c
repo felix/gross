@@ -18,6 +18,7 @@
 #include "common.h"
 #include "srvutils.h"
 #include "syncmgr.h"
+#include "thread_pool.h"
 
 #ifdef DNSBL
 #include "dnsblc.h"
@@ -61,7 +62,6 @@ ipstr(struct sockaddr_in *saddr)
 static void *
 worker(void *arg)
 {
-        int ret;
 	client_info_t *client_info;
 
 	logstr(GLOG_DEBUG, "worker starting");
@@ -74,12 +74,10 @@ worker(void *arg)
 	logstr(GLOG_INFO, "client connected from %s", client_info->ipstr);
 #endif
 
-
         /* serve while good */
 	handle_connection(client_info);
 
         /* tidy up */
-        TIDY_UP:
 #ifndef WORKER_PROTO_UDP
         close(client_info->connfd);
 #endif
@@ -100,8 +98,8 @@ udp_server(void *arg)
 	int grossfd, ret, msglen;
 	socklen_t clen;
 	client_info_t *client_info;
-	struct sockaddr_in caddr;
 	char mesg[MAXLINELEN];
+	thread_pool_t *worker_pool;
 
 	grossfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (grossfd < 0) {
@@ -115,6 +113,12 @@ udp_server(void *arg)
 	if (ret < 0) {
 		daemon_perror("bind");
 	}
+
+	/* initialize thread pool */
+	logstr(GLOG_INFO, "initializing worker thread pool");
+	worker_pool = create_thread_pool(&worker);
+	if (worker_pool == NULL)
+		daemon_perror("create_thread_pool");
 
 	/* server loop */
 	for ( ; ; ) {
@@ -139,7 +143,7 @@ udp_server(void *arg)
 			client_info->ipstr = ipstr(client_info->caddr);
 
 			memcpy(client_info->message, mesg, msglen);
-			Pthread_create(NULL, &worker, (void *)client_info);
+			submit_job(worker_pool, (void *)client_info, NULL);
 		}
 	}
 	/* never reached */
@@ -295,8 +299,6 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 void
 worker_init()
 {
-	int ret;
-
 #ifdef WORKER_PROTO_TCP
 	logstr(GLOG_DEBUG, "starting tcp server");
         Pthread_create(&ctx->process_parts.worker, &tcp_server, NULL);
