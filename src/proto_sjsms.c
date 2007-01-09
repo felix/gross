@@ -36,15 +36,21 @@ fold(grey_req_t *req, const char *sender,
         memcpy(req->message + req->sender, sender, sender_len);
         *(req->message + req->sender + sender_len) = '\0';
 
-        req->recipient = htons(req->sender + sender_len + 1);
+        req->recipient = req->sender + sender_len + 1;
         memcpy(req->message + req->recipient, rcpt , rcpt_len);
         *(req->message + req->recipient + rcpt_len) = '\0';
 
-        req->client_address = htons(req->recipient + rcpt_len + 1);
+        req->client_address = req->recipient + rcpt_len + 1;
         memcpy(req->message + req->client_address, caddr , caddr_len);
         *(req->message + req->client_address + caddr_len) = '\0';
 
-        req->msglen = htons(sender_len + 1 + rcpt_len + 1 + caddr_len + 1);
+        req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1;
+
+#define HTONS_SWAP(X) { X = htons(X); }
+	HTONS_SWAP(req->sender);
+	HTONS_SWAP(req->recipient);
+	HTONS_SWAP(req->client_address);
+	HTONS_SWAP(req->msglen);
 
         return 1;
 }
@@ -70,23 +76,42 @@ int
 sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request)
 {
 	sjsms_msg_t message;
-	void *ret;
-
+	message.msglen = MIN(ntohs(request->msglen) + 4 * sizeof(uint16_t), MAXLINELEN);
 	message.msgtype = QUERY;
-	message.msglen = MIN(request->msglen + 4 * sizeof(int), MAXLINELEN);
 	memcpy(&message.message, request, message.msglen);
 	return send_sjsms_msg(fd, gserv, &message);
+}
+
+int
+recvquery(sjsms_msg_t *message, grey_req_t *request)
+{
+  memcpy(request, message->message, MIN(message->msglen, MAXLINELEN));
+  request->message[MAXLINELEN-1] = '\0';
+  
+  return 1;
 }
 
 int
 send_sjsms_msg(int fd, struct sockaddr_in *gserv, sjsms_msg_t *message)
 {
 	int slen;
+	int mlen;
 
 	slen = sizeof(struct sockaddr_in);
+	mlen = message->msglen + 2 * sizeof(uint16_t);
+	message->msgtype = htons(message->msgtype);
+	message->msglen = htons(message->msglen);
+	
+	return sendto(fd, message, mlen, 0, (struct sockaddr *)gserv, slen);
+}
 
-	return sendto(fd, message, message->msglen + 2 * sizeof(int),
-		0, (struct sockaddr *)gserv, slen);
+int
+sjsms_to_host_order(sjsms_msg_t *message)
+{
+  	message->msgtype = ntohs(message->msgtype);
+	message->msglen = ntohs(message->msglen);
+
+	return 1;
 }
 
 grey_tuple_t *

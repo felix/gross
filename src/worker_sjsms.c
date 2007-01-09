@@ -72,12 +72,13 @@ handle_connection(client_info_t *client_info)
 	/* clean the input */
 	msg = (sjsms_msg_t *)Malloc(client_info->msglen);
 	memcpy(msg, client_info->message, client_info->msglen);
+	
+	sjsms_to_host_order(msg);
 
 	switch (msg->msgtype) {
 	case QUERY:
+		recvquery(msg, &request);
 		clock_gettime(CLOCK_TYPE, &start);
-		memcpy(&request, &msg->message, MIN(msg->msglen, MAXLINELEN));
-		request.message[MAXLINELEN-1] = '\0';
 
 		tuple = unfold(&request);
 
@@ -123,4 +124,6 @@ handle_connection(client_info_t *client_info)
 		break;
 	}
 	free(msg);
+
+	return 1;
 }

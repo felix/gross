@@ -31,8 +31,8 @@ typedef struct {
 enum msgtype_t { QUERY, LOGMSG };
 
 typedef struct {
-	int msgtype;
-	int msglen;
+	uint16_t msgtype;
+	uint16_t msglen;
 	char message[MAXLINELEN];
 } sjsms_msg_t;
 
@@ -40,5 +40,7 @@ grey_tuple_t *unfold(grey_req_t *request);
 int fold(grey_req_t *request, const char *sender, const char *recipient, const char *caddr);
 int sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request);
 int senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...);
+int sjsms_to_host_order(sjsms_msg_t *message);
+int recvquery(sjsms_msg_t *message, grey_req_t *request);
 
 #endif

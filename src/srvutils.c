@@ -404,6 +404,8 @@ Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg)
 		free(tid);
 
 	pthread_attr_destroy(&tattr);
+
+	return (void*)tid;
 }
 
 int

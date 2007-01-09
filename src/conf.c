@@ -200,7 +200,7 @@ read_config(const char *filename)
 	fd = open(filename, O_RDONLY);
 
 	if (fd < 0)
-		return NULL;
+		return config;
 
 	/*
          * Process the config file.

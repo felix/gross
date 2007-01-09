@@ -222,9 +222,11 @@ main(int argc, char **argv)
 	assert(foolen < 252);
 
 	if (grosscheck(arg, &foolen, bar, &barlen) ==  MAP_SUCCESS) {
-		printf("%d: %s\n", barlen, bar);
+		printf("%ld: %s\n", barlen, bar);
 	} else {
 		printf("error\n");
 	}
+	
+	return 0;
 }
 #endif

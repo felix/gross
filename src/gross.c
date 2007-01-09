@@ -47,8 +47,8 @@ gross_ctx_t *
 initialize_context()
 {
 	gross_ctx_t *ctx;
-	sem_t *sp;
-	int ret;
+/* 	sem_t *sp; */
+/* 	int ret; */
 	
 	ctx = Malloc(sizeof(gross_ctx_t));
 
@@ -83,7 +83,7 @@ configure_grossd(configlist_t *config)
 	sem_t *sp;
 	int ret;
 	configlist_t *cp;
-	const char *tmp;
+/* 	const char *tmp; */
 	const char *updatestr;
 	
 #ifdef DEBUG_CONFIG
@@ -151,7 +151,7 @@ configure_grossd(configlist_t *config)
 	if (strncmp(updatestr, "always", 7) == 0) {
 		logstr(GLOG_INFO, "updatestyle: ALWAYS");
 		ctx->config.flags |= FLG_UPDATE_ALWAYS;
-	} else if ((updatestr == NULL) || (strncmp(updatestr, "gray", 5) == 0))
+	} else if ((updatestr == NULL) || (strncmp(updatestr, "grey", 5) == 0))
 		logstr(GLOG_INFO, "updatestyle: GREY");
 	else {
 		daemon_shutdown(1, "Invalid updatestyle: %s", updatestr);
@@ -227,8 +227,8 @@ int
 main(int argc, char *argv[])
 {
 	int ret;
-	char ipstr[INET_ADDRSTRLEN];
-	int cont = 1;
+/* 	char ipstr[INET_ADDRSTRLEN]; */
+/* 	int cont = 1; */
 	update_message_t rotatecmd;
 	time_t toleration;
 	configlist_t *config;
