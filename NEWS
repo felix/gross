@@ -1,4 +1,12 @@
-Version 0.6.3-svn
+Version 0.7.0
+
+Implemented a thread pool feature. Worker threads are now 
+reused, instead of firing up one on each connection. Numerous
+bug fixes, most notably byte order related bugs in proto_sjsms.c.
+Some configuration file changes: peerhost and synchost has been
+replaced by sync_listen and sync_peer.
+
+Version 0.6.3
 
 Ported to OS X. Since sem_getvalue() is not implemented on 
 OS X, skipping unresponsive dnsbls does not work, yet.

@@ -37,9 +37,9 @@ port=1111
 filter_bits=21
 number_buffers=8
 rotate_interval=120 # 2 minutes
-#synchost=
-#syncport=
-#peerhost=
+#sync_listen=
+#sync_peer=
+#sync_port=
 #statefile=/tmp/grossd.state
 
 This is a single server configuration. dnsbl entries are just what you'd
@@ -69,9 +69,8 @@ dnsbl=dnsbl.njabl.org
 dnsbl=cbl.abuseat.org
 dnsbl=xbl.smaphaus.org
 dnsbl=dnsbl.sorbs.net
-host=localhost
-synchost=10.10.13.1
-peerhost=10.10.13.2
+sync_listen=10.10.13.1
+sync_peer=10.10.13.2
 number_buffers=12
 filter_bits=24
 statefile=grossd.state
@@ -83,6 +82,10 @@ If you get this far, you can start the server. I suggest you
 run the server first in foreground with -d option. If you
 configured statefile, you have to start grossd with -C option
 in order to create the state file.
+
+Grossd query server defaults to port 1111/tcp with proto=postfix,
+port 1111/udp with proto=sjsms and replication service
+(if configured) to port 1112/tcp.
 
 After starting, you can test it with $PREFIX/bin/gclient.
 Good luck, and don't hesitate to ask me if in doubt!

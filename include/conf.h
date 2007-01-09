@@ -39,6 +39,7 @@
                         "statefile",         \
                         "sync_listen",	     \
                         "sync_peer",	     \
+                        "sync_port",	     \
 			"status"
 
 #define DEPRECATED_NAMES 	"syncport",		\

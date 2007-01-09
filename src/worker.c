@@ -169,6 +169,7 @@ tcp_server(void *arg)
         client_info_t *client_info;
         socklen_t clen;
 	thread_pool_t *worker_pool;
+	edict_t *edict;
 
         /* create socket for incoming requests */
         grossfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -221,7 +222,10 @@ tcp_server(void *arg)
 			 * connection over to a worker thread
 			 */
 			client_info->ipstr = ipstr(client_info->caddr);
-			submit_job(worker_pool, (void *)client_info, NULL);
+			/* Write the edict */
+			edict = edict_get();
+			edict->job = (void *)client_info;
+			submit_job(worker_pool, edict);
                 }
         }
 }

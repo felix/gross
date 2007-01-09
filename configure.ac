@@ -1,4 +1,4 @@
-AC_INIT([gross],[0.7.0-svn])
+AC_INIT([gross],[svn])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([config.h])
