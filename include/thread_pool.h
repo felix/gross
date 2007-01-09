@@ -6,15 +6,24 @@ typedef struct thread_pool_s {
 	int work_queue_id;
 } thread_pool_t;
 
+typedef struct cond_bundle_s {
+	bool		used;
+	bool 		ready;
+	pthread_mutex_t	mx;
+	pthread_cond_t	cv;
+} cond_bundle_t;
+
 typedef struct edict_s {
-	struct timespec *timelimit;
-	void *job_ctx;
+	void *job;
 	void *result;
+	cond_bundle_t cond_bundle;
+	time_t timelimit;
+	int retvalue;
 } edict_t;
 
 typedef struct pool_ctx_s {
 	pthread_mutex_t *mx;
-	void *(*routine)(void *);
+	int (*routine)(void *, void *, time_t);
 	thread_pool_t *info; 	/* public info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
@@ -24,10 +33,13 @@ typedef struct pool_ctx_s {
 /* message queue wrap for edicts */
 typedef struct edict_message_s {
 	long       mtype;
-	edict_t    edict;
+	edict_t    *edict;
 } edict_message_t;
 
-int submit_job(thread_pool_t *pool, void *job, struct timespec *timeout);
-thread_pool_t *create_thread_pool(const char *name, void *(*routine)(void *));
+int submit_job(thread_pool_t *pool, edict_t *edict);
+int submit_job_wait(thread_pool_t *pool, edict_t *edict);
+thread_pool_t *create_thread_pool(const char *name, int (*routine)(void *, void *, time_t));
+edict_t *edict_get();
+edict_t *edict_get();
 
 #endif /* THREAD_POOL_H */

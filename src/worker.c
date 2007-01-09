@@ -59,8 +59,8 @@ ipstr(struct sockaddr_in *saddr)
 /*
  * worker	- wrapper for process_connection()
  */
-static void *
-worker(void *arg)
+int
+worker(void *arg, void *result, time_t timelimit)
 {
 	client_info_t *client_info;
 
@@ -100,6 +100,7 @@ udp_server(void *arg)
 	client_info_t *client_info;
 	char mesg[MAXLINELEN];
 	thread_pool_t *worker_pool;
+	edict_t *edict;
 
 	grossfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (grossfd < 0) {
@@ -143,7 +144,11 @@ udp_server(void *arg)
 			client_info->ipstr = ipstr(client_info->caddr);
 
 			memcpy(client_info->message, mesg, msglen);
-			submit_job(worker_pool, (void *)client_info, NULL);
+
+			/* Write the edict */
+			edict = edict_get();
+			edict->job = (void *)client_info;
+			submit_job(worker_pool, edict);
 		}
 	}
 	/* never reached */

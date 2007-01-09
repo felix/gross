@@ -42,8 +42,8 @@ thread_pool(void *arg)
 		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message), 0, timelimit); 
 		if (ret > 0) {
 			/* we've got a message */
-			edict = &message.edict;
-			assert(edict->job_ctx);
+			edict = message.edict;
+			assert(edict->job);
 
 			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->name);
 
@@ -58,8 +58,23 @@ thread_pool(void *arg)
 
 			POOL_MUTEX_UNLOCK;
 
+			/* check if caller waits for response */
+			if (edict->cond_bundle.used == true) {
+				pthread_mutex_lock(&edict->cond_bundle.mx);
+			}
+
 			/* run the routine with args */
-			pool_ctx->routine(edict->job_ctx);
+			edict->retvalue = pool_ctx->routine(edict->job, edict->result, edict->timelimit);
+
+			/* check if caller waits for response */
+			if (edict->cond_bundle.used == false) {
+				/* caller does not wait, so we must free the edict */
+				free(edict);
+			} else {
+				edict->cond_bundle.ready = true;
+				pthread_cond_signal(&edict->cond_bundle.cv);
+				pthread_mutex_unlock(&edict->cond_bundle.mx);
+			}
 		} else {
 			/* timeout occurred */
 
@@ -81,7 +96,7 @@ thread_pool(void *arg)
 }
 
 thread_pool_t *
-create_thread_pool(const char *name, void *(*routine)(void *))
+create_thread_pool(const char *name, int (*routine)(void *, void *, time_t))
 {
 	thread_pool_t *pool;
 	pthread_mutex_t *pool_mx;
@@ -119,14 +134,25 @@ create_thread_pool(const char *name, void *(*routine)(void *))
  * submit_job	- add a job to the work queue
  */
 int
-submit_job(thread_pool_t *pool, void *job, struct timespec *timeout)
+submit_job(thread_pool_t *pool, edict_t *job)
 {
 	edict_message_t message;
 
 	message.mtype = 0;
-	message.edict.job_ctx = job;
-	message.edict.timelimit = 0;
-	message.edict.result = NULL;
+	message.edict = job;
 
 	return put_msg(pool->work_queue_id, &message, sizeof(message.edict), 0);
+}
+
+/*
+ * edict_get	- convenience function for creating an edict
+ */
+edict_t *
+edict_get(bool forget)
+{
+	edict_t *edict;
+
+	edict = (edict_t *)Malloc(sizeof(edict_t));
+	bzero(edict, sizeof(edict_t));
+	return edict;
 }
