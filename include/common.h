@@ -147,7 +147,6 @@ typedef struct {
 
 typedef struct {
         bloom_ring_queue_t *filter;
-        sem_t *workercount_sem;
         int log_q;
         int update_q;
         sem_t* sync_guard;
