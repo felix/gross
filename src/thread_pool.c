@@ -16,7 +16,8 @@ thread_pool(void *arg)
 {
 	int ret;
 	pool_ctx_t *pool_ctx;
-	work_order_t order;
+	edict_message_t message;
+	edict_t *edict;
 	time_t timelimit;
 	
 	pool_ctx = (pool_ctx_t *)arg;
@@ -38,10 +39,11 @@ thread_pool(void *arg)
 		pool_ctx->count_idle++;
 		POOL_MUTEX_UNLOCK;
 
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, timelimit); 
+		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message), 0, timelimit); 
 		if (ret > 0) {
-			/* we've got a work order */
-			assert(order.job_ctx);
+			/* we've got a message */
+			edict = &message.edict;
+			assert(edict->job_ctx);
 
 			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->name);
 
@@ -57,7 +59,7 @@ thread_pool(void *arg)
 			POOL_MUTEX_UNLOCK;
 
 			/* run the routine with args */
-			pool_ctx->routine(order.job_ctx);
+			pool_ctx->routine(edict->job_ctx);
 		} else {
 			/* timeout occurred */
 
@@ -119,11 +121,12 @@ create_thread_pool(const char *name, void *(*routine)(void *))
 int
 submit_job(thread_pool_t *pool, void *job, struct timespec *timeout)
 {
-	work_order_t edict;
+	edict_message_t message;
 
-	edict.job_ctx = job;
-	edict.timelimit = 0;
-	edict.result = NULL;
+	message.mtype = 0;
+	message.edict.job_ctx = job;
+	message.edict.timelimit = 0;
+	message.edict.result = NULL;
 
-	return put_msg(pool->work_queue_id, &edict, sizeof(edict), 0);
+	return put_msg(pool->work_queue_id, &message, sizeof(message.edict), 0);
 }
