@@ -368,8 +368,7 @@ get_msg_raw(msgqueue_t *mq, time_t timeout)
 	assert(ret == 0);
 	msg = NULL;
 
-	time(&to.tv_sec);
-	to.tv_sec += timeout;
+	to.tv_sec = time(NULL) + timeout;
 	to.tv_nsec = 0;
 
 	/* the queue is now empty, wait for messages */
@@ -409,7 +408,7 @@ get_msg_raw(msgqueue_t *mq, time_t timeout)
 size_t
 get_msg(int msqid, void *msgp, size_t maxsize, int msgflag)
 {
-	return get_msg_timed(msqid, msgp, maxsize, msgflag, NULL);
+	return get_msg_timed(msqid, msgp, maxsize, msgflag, 0);
 }
 
 size_t
