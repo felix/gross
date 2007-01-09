@@ -48,8 +48,8 @@ int enable_delay(int msqid);
 int set_delay(int msqid, const struct timespec *ts);
 int put_msg(int msqid, void *msgp, size_t msgsz, int msgflg);
 int instant_msg(int msqid, void *msgp, size_t msgsz, int msgflg);
-size_t get_msg(int msqid, void *msgp, size_t maxsize, long int msgtype, int msgflag);
-size_t get_msg_timed(int msqid, void *msgp, size_t maxsize, long int msgtype, int msgflag, const struct timespec *timeout);
+size_t get_msg(int msqid, void *msgp, size_t maxsize, int msgflag);
+size_t get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, time_t timeout);
 size_t in_queue_len(int msgid);
 size_t out_queue_len(int msgid);
 

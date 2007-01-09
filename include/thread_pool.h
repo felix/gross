@@ -18,9 +18,10 @@ typedef struct pool_ctx_s {
 	thread_pool_t *info; 	/* public info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
+	const char *name;	/* name of the pool for logging purposes */
 } pool_ctx_t;
 
 int submit_job(thread_pool_t *pool, void *job, struct timespec *timeout);
-thread_pool_t *create_thread_pool(void *(*routine)(void *));
+thread_pool_t *create_thread_pool(const char *name, void *(*routine)(void *));
 
 #endif /* THREAD_POOL_H */
