@@ -55,6 +55,9 @@ initialize_context()
 	/* Clear flags  */
 	ctx->config.flags = 0;
 
+	/* default loglevel */
+	ctx->config.loglevel = LOGLEVEL;
+
 	ctx->filter = NULL;
 	
 	memset(&ctx->config.gross_host, 0, sizeof(ctx->config.gross_host));
@@ -81,7 +84,6 @@ configure_grossd(configlist_t *config)
 	int ret;
 	configlist_t *cp;
 	const char *tmp;
-	struct timespec *delay;
 	const char *updatestr;
 	
 #ifdef DEBUG_CONFIG
@@ -98,14 +100,6 @@ configure_grossd(configlist_t *config)
 	 */
 	ret = queue_init(128);
 	assert(ret == 0);
-	
-	/* initialize the update queue */
-	delay = Malloc(sizeof(struct timespec));
-	delay->tv_sec = 10;
-	delay->tv_nsec = 0;
-	ctx->update_q = get_delay_queue(delay);
-	if (ctx->update_q < 0)
-		daemon_perror("get_delay_queue");
 
 	/* initialize semaphore for worker thread counting */
 #ifdef USE_SEM_OPEN
@@ -200,8 +194,6 @@ configure_grossd(configlist_t *config)
 	}
 
 	ctx->config.acctmask = 0x003f;
-	if (ctx->config.loglevel != GLOG_DEBUG) 
-		ctx->config.loglevel = LOGLEVEL;
 
 	*(ctx->last_rotate) = time(NULL);
 
@@ -260,6 +252,7 @@ main(int argc, char *argv[])
 	extern char *optarg;
 	extern int optind, optopt;
 	int c;
+	struct timespec *delay;
 
 	/* mind the signals */
 	signal(SIGHUP, SIG_IGN);
@@ -298,7 +291,10 @@ main(int argc, char *argv[])
                         ctx->config.flags |= FLG_CREATE_STATEFILE;
 			break;
 		case 'D':
-			ctx->config.loglevel = GLOG_DEBUG;
+			if (ctx->config.loglevel == GLOG_DEBUG)
+				ctx->config.loglevel = GLOG_INSANE;
+			else
+				ctx->config.loglevel = GLOG_DEBUG;
 			break;
 		case '?':
 			fprintf(stderr,
@@ -316,6 +312,14 @@ main(int argc, char *argv[])
 		daemonize();
 		openlog("grossd", 0x00, LOG_MAIL);
 	}
+	
+	/* initialize the update queue */
+	delay = Malloc(sizeof(struct timespec));
+	delay->tv_sec = 10;
+	delay->tv_nsec = 0;
+	ctx->update_q = get_delay_queue(delay);
+	if (ctx->update_q < 0)
+		daemon_perror("get_delay_queue");
 
 	/* start the bloom manager thread */
 	bloommgr_init();

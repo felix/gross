@@ -115,10 +115,14 @@ delay(void *arg) {
 	struct timespec sleeptime, reftime, sleepleft, now;
 	int ret;
 	
+	logstr(GLOG_DEBUG, "delay queue manager thread starting");
+
 	queue_info = (queue_info_t *)arg;
 
 	for ( ; ; ) {
+		logstr(GLOG_INSANE, "waiting for messages");
 		msg = get_msg_raw(queue_info->inq, 0);
+		logstr(GLOG_INSANE, "got a message from inq");
 
 		if (*queue_info->inq->impose_delay &&
 				queue_info->inq->delay_ts &&
@@ -131,6 +135,7 @@ delay(void *arg) {
 			if (ret == 0) {
 				/* we enter here only if reftime is in the future */
 				do {
+					logstr(GLOG_INSANE, "reftime in future, sleeping for %d seconds", sleeptime.tv_sec);
 					ret = nanosleep(&sleeptime, &sleepleft);
 					if (ret) {
 						/* sleep was interrupted */
@@ -141,6 +146,7 @@ delay(void *arg) {
 			}
 		}
 		assert(msg->next == NULL);
+		logstr(GLOG_INSANE, "passing message to outq", sleeptime.tv_sec);
 		put_msg_raw(queue_info->outq, msg);
 	}
 }
