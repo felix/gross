@@ -135,7 +135,8 @@ delay(void *arg) {
 			if (ret == 0) {
 				/* we enter here only if reftime is in the future */
 				do {
-					logstr(GLOG_INSANE, "reftime in future, sleeping for %d seconds", sleeptime.tv_sec);
+					logstr(GLOG_INSANE, "reftime in future, sleeping for %d.%d seconds",
+						sleeptime.tv_sec, sleeptime.tv_nsec);
 					ret = nanosleep(&sleeptime, &sleepleft);
 					if (ret) {
 						/* sleep was interrupted */

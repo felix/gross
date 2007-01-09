@@ -101,22 +101,6 @@ configure_grossd(configlist_t *config)
 	ret = queue_init(128);
 	assert(ret == 0);
 
-	/* initialize semaphore for worker thread counting */
-#ifdef USE_SEM_OPEN
-	ret = sem_unlink("sem_thread");
-	if (ret == -1 && errno == EACCES) 
-		daemon_perror("sem_unlink");
-	sp = sem_open("sem_thread", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, (unsigned int) MAXWORKERS);
-	if (sp == (sem_t *)SEM_FAILED)
-		daemon_perror("sem_open");
-#else
-	sp = Malloc(sizeof(sem_t));
-	ret = sem_init(sp, 0, (unsigned int) MAXWORKERS);
-	if (ret != 0)
-		daemon_perror("sem_init");
-#endif /* USE_SEM_OPEN */
-	ctx->workercount_sem = sp;
-
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
 	if (ret == -1 && errno == EACCES) 

@@ -82,7 +82,6 @@ worker(void *arg)
         close(client_info->connfd);
 #endif
         free_client_info(client_info);
-        sem_post(ctx->workercount_sem);
         logstr(GLOG_DEBUG, "worker returning");
         return 0;
 }
@@ -164,6 +163,7 @@ tcp_server(void *arg)
         int opt;
         client_info_t *client_info;
         socklen_t clen;
+	thread_pool_t *worker_pool;
 
         /* create socket for incoming requests */
         grossfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -190,6 +190,12 @@ tcp_server(void *arg)
                 return NULL;
         }
 
+	/* initialize the thread pool */
+	logstr(GLOG_INFO, "initializing worker thread pool");
+	worker_pool = create_thread_pool("worker", &worker);
+	if (worker_pool == NULL)
+		daemon_perror("create_thread_pool");
+
         /* server loop */
         for ( ; ; ) {
                 /* client_info struct is free()d by the worker thread */
@@ -198,26 +204,19 @@ tcp_server(void *arg)
 
                 clen = sizeof(struct sockaddr_in);
 
+		logstr(GLOG_INSANE, "waiting for connections");
                 client_info->connfd = accept(grossfd, (struct sockaddr *)client_info->caddr, &clen);
                 if (client_info->connfd < 0) {
                         if (errno != EINTR) {
-                                perror("accept()");
-                                return NULL;
+                                daemon_perror("accept()");
                         }
                 } else {
-                        ret = sem_trywait(ctx->workercount_sem);
-                        if (ret < 0) {
-                                /* error */
-                                logstr(GLOG_ERROR, "thread count limit reached");
-                                close(client_info->connfd);
-                                free(client_info);
-                        } else {
-                                /* a client is connected, handle the
-                                 * connection over to a worker thread
-                                 */
-				client_info->ipstr = ipstr(client_info->caddr);
-                                Pthread_create(NULL, &worker, (void *)client_info);
-                        }
+			logstr(GLOG_INSANE, "new connection");
+			/* a client is connected, handle the
+			 * connection over to a worker thread
+			 */
+			client_info->ipstr = ipstr(client_info->caddr);
+			submit_job(worker_pool, (void *)client_info, NULL);
                 }
         }
 }
