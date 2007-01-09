@@ -123,7 +123,7 @@ configure_grossd(configlist_t *config)
 	inet_pton(AF_INET, CONF("host"), &(ctx->config.gross_host.sin_addr));
 
 	ctx->config.sync_host.sin_family = AF_INET;
-	inet_pton(AF_INET, CONF("sync_host") ? CONF("sync_host") : CONF("host"),
+	inet_pton(AF_INET, CONF("sync_listen") ? CONF("sync_listen") : CONF("host"),
 		  &(ctx->config.sync_host.sin_addr));
 
 	ctx->config.sync_host.sin_port =
@@ -137,13 +137,13 @@ configure_grossd(configlist_t *config)
 	/* peer port is the same as the local sync_port */
 	ctx->config.peer.peer_addr.sin_port = htons(atoi(CONF("sync_port")));
 
-	if (CONF("peerhost") == NULL) {
-		logstr(GLOG_INFO, "No peerhost configured. Replication suppressed.");
+	if (CONF("sync_peer") == NULL) {
+		logstr(GLOG_INFO, "No peer configured. Replication suppressed.");
 		ctx->config.flags |= FLG_NOREPLICATE;	  
 	} else {
-		logstr(GLOG_INFO, "Peerhost %s configured. Replicating.", CONF("peerhost"));
+		logstr(GLOG_INFO, "Peer %s configured. Replicating.", CONF("sync_peer"));
 		ctx->config.peer.peer_addr.sin_family = AF_INET;
-		inet_pton(AF_INET, CONF("peerhost"),
+		inet_pton(AF_INET, CONF("sync_peer"),
 			&(ctx->config.peer.peer_addr.sin_addr));
 	}
 
@@ -288,14 +288,14 @@ main(int argc, char *argv[])
 		}
 	}
 
-	config = read_config(configfile);
-	configure_grossd(config);
-
 	/* daemonize must be run before any pthread_create */
-        if ((ctx->config.flags & FLG_NODAEMON) == 0) {
+	if ((ctx->config.flags & FLG_NODAEMON) == 0) {
 		daemonize();
 		openlog("grossd", 0x00, LOG_MAIL);
 	}
+
+	config = read_config(configfile);
+	configure_grossd(config);
 	
 	/* initialize the update queue */
 	delay = Malloc(sizeof(struct timespec));
