@@ -17,7 +17,7 @@ thread_pool(void *arg)
 	int ret;
 	pool_ctx_t *pool_ctx;
 	work_order_t order;
-	struct timespec timelimit;
+	time_t timelimit;
 	
 	pool_ctx = (pool_ctx_t *)arg;
 	assert(pool_ctx->mx);
@@ -32,14 +32,13 @@ thread_pool(void *arg)
 
 	for (;;) {
 		/* wait for new jobs */
-		clock_gettime(CLOCK_TYPE, &timelimit);
-		timelimit.tv_sec += 60; /* one minute in future */
+		timelimit = 60; /* one minute */
 
 		POOL_MUTEX_LOCK;
 		pool_ctx->count_idle++;
 		POOL_MUTEX_UNLOCK;
 
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, &timelimit); 
+		ret = get_msg_timed(pool_ctx->info->work_queue_id, &order, sizeof(order), 0, timelimit); 
 		if (ret > 0) {
 			/* we've got a work order */
 			assert(order.job_ctx);
@@ -70,6 +69,7 @@ thread_pool(void *arg)
 			/* there should be at least one idling thread left */
 			if (pool_ctx->count_idle > 1) {
 				pool_ctx->count_thread--;
+				POOL_MUTEX_UNLOCK;
 				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down", pool_ctx->name);
 				pthread_exit(NULL);
 			}

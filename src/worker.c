@@ -89,8 +89,9 @@ worker(void *arg)
 
 #ifdef WORKER_PROTO_UDP
 /*
- * The main worker thread for udp protocol. Listens for requests
- * and starts a new thread to handle each.
+ * The main worker thread for udp protocol. It first initializes
+ * worker thread pool. Then, it listens for requests and
+ * and feeds them to the thread pool.
  */
 static void *
 udp_server(void *arg)
@@ -114,7 +115,7 @@ udp_server(void *arg)
 		daemon_perror("bind");
 	}
 
-	/* initialize thread pool */
+	/* initialize the thread pool */
 	logstr(GLOG_INFO, "initializing worker thread pool");
 	worker_pool = create_thread_pool("worker", &worker);
 	if (worker_pool == NULL)

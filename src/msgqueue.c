@@ -30,7 +30,7 @@
 /* prototypes of internals */
 void *delay(void *arg);
 int put_msg_raw(msgqueue_t *mq, msg_t *msg);
-msg_t *get_msg_raw(msgqueue_t *mq, const struct timespec *timeout);
+msg_t *get_msg_raw(msgqueue_t *mq, time_t timeout);
 int set_delay_status(int msqid, int state);
 
 /* array of queues */
@@ -118,7 +118,7 @@ delay(void *arg) {
 	queue_info = (queue_info_t *)arg;
 
 	for ( ; ; ) {
-		msg = get_msg_raw(queue_info->inq, NULL);
+		msg = get_msg_raw(queue_info->inq, 0);
 
 		if (*queue_info->inq->impose_delay &&
 				queue_info->inq->delay_ts &&
@@ -337,22 +337,28 @@ instant_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
  * get_msg_raw	- retuns the first message from the message queue
  */
 msg_t *
-get_msg_raw(msgqueue_t *mq, const struct timespec *timeout)
+get_msg_raw(msgqueue_t *mq, time_t timeout)
 {
 	msg_t *msg;
 	int ret;
+	struct timespec to;
 
 	ret = pthread_mutex_lock(&mq->mx);
 	assert(ret == 0);
 	msg = NULL;
 
+	time(&to.tv_sec);
+	to.tv_sec += timeout;
+	to.tv_nsec = 0;
+
 	/* the queue is now empty, wait for messages */
 	while (mq->head == NULL)
-		if (timeout == NULL) {
+		if (timeout == 0) {
 			ret = pthread_cond_wait(&mq->cv, &mq->mx);
 		} else {
-			ret = pthread_cond_timedwait(&mq->cv, &mq->mx, timeout);
-			break;
+			ret = pthread_cond_timedwait(&mq->cv, &mq->mx, &to);
+			if (ret == ETIMEDOUT)
+				break;
 		}
 			
 	if (ret == 0) {
@@ -386,7 +392,7 @@ get_msg(int msqid, void *msgp, size_t maxsize, int msgflag)
 }
 
 size_t
-get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, const struct timespec *timeout)
+get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, time_t timeout)
 {
 	msgqueue_t *mq;
 	msg_t *msg;
