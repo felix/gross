@@ -210,7 +210,6 @@ QUERY:
 	return MAP_SUCCESS;
 }
 
-#define GROSSC_MAIN
 #ifdef GROSSC_MAIN
 int
 main(int argc, char **argv)
