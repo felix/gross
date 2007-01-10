@@ -302,6 +302,10 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		}
 	}
 
+	/* check if DRYRUN is enabled */
+	if (ctx->config.flags & FLG_DRYRUN)
+		retvalue = STATUS_TRUST;
+
 	return retvalue;
 }
 

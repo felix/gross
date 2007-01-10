@@ -212,12 +212,13 @@ mrproper(int signo)
 void
 usage(void)
 {
-	printf("Usage: grossd [-dDrCV] [-f configfile]\n");
+	printf("Usage: grossd [-dCDnrV] [-f configfile]\n");
 	printf("       -d	Run grossd as a foreground process.\n");
+	printf("       -C	create statefile\n");
 	printf("       -D	Enable debug logging.\n");
 	printf("       -f	override default configfile\n");
+	printf("       -n	dry run: always send TRUST\n");
 	printf("       -r	disable replication\n");
-	printf("       -C	create statefile\n");
 	printf("       -V	version information\n");
 	exit(1);
 }
@@ -250,10 +251,13 @@ main(int argc, char *argv[])
 		daemon_shutdown(1, "Couldn't initialize context");
 
 	/* command line arguments */
-	while ((c = getopt(argc, argv, ":drf:VCD")) != -1) {
+	while ((c = getopt(argc, argv, ":drf:VCDn")) != -1) {
 		switch (c) {
 		case 'd':
 			ctx->config.flags |= FLG_NODAEMON;
+			break;
+		case 'n':
+			ctx->config.flags |= FLG_DRYRUN;
 			break;
 		case 'f':
 			configfile = optarg;
