@@ -6,7 +6,7 @@ bin_PROGRAMS = gclient
 lib_LTLIBRARIES = grosscheck.la
 noinst_PROGRAMS = bloom
 
-grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c
+grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c stats.c
 EXTRA_grossd_SOURCES = dnsblc.c worker_postfix.c worker_sjsms.c proto_postfix.c
 grossd_LDFLAGS = @LDFLAGS@  
 grossd_LDADD = @DNSBLSOURCES@ worker_@PROTOCOL@.o proto_@PROTOCOL@.o

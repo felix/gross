@@ -1,0 +1,42 @@
+/* -*- mode:c; coding:utf-8 -*-
+ *
+ * Copyright (c) 2007 Antti Siira <antti@utu.fi>
+ *                    Eino Tuominen <eino@utu.fi>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#ifndef STATS_H
+#define STATS_H
+
+typedef struct {
+  time_t startup;
+  time_t begin;
+  time_t end;
+  pthread_mutex_t mx;
+  uint64_t greylist;
+  uint64_t match;
+  uint64_t trust;
+  uint64_t all_greylist;
+  uint64_t all_match;
+  uint64_t all_trust;
+} stats_t;
+
+void init_stats();
+stats_t zero_stats();
+stats_t log_stats();
+
+#define WITH_STATS_GUARD(X) { pthread_mutex_lock( &(ctx->stats.mx) ); X; pthread_mutex_unlock( &(ctx->stats.mx) ); }
+#define INCF_STATS(member) { WITH_STATS_GUARD( ++(ctx->stats.member) ;) }
+
+#endif /* STATS_H */

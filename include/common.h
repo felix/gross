@@ -49,6 +49,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <semaphore.h>
+#include <time.h>
 
 #ifdef HAVE_ARES_H
 # include <ares.h>
@@ -80,6 +81,7 @@
  * project includes 
  */
 #include "bloom.h"
+#include "stats.h"
 
 /*
  * common defines and macros
@@ -117,12 +119,6 @@ typedef struct {
 } peer_t;
 
 typedef struct {
-  unsigned int greylisted;
-  unsigned int match;
-  unsigned int trust;
-} statistics_t;
-
-typedef struct {
 	struct sockaddr_in gross_host;
 	struct sockaddr_in sync_host;
 	struct sockaddr_in status_host;
@@ -130,10 +126,12 @@ typedef struct {
 	int max_connq;
 	int max_threads;
 	time_t rotate_interval;
+	time_t stat_interval;
 	bitindex_t filter_size;
 	unsigned int num_bufs;
 	char *statefile;
 	int loglevel;
+        int statlevel;
 	int acctmask;
 	int flags;
 } gross_config_t;
@@ -182,7 +180,7 @@ typedef struct {
         gross_config_t config;
         mmapped_brq_t *mmap_info;
         thread_collection_t process_parts;
-        statistics_t stats;
+        stats_t stats;
 } gross_ctx_t;
 
 #ifndef HAVE_USECONDS_T

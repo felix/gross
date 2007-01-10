@@ -190,7 +190,6 @@ reverse_inet_addr(char *ipstr)
 		return -1;
 	}
 	
-	fflush(stdout);
         assert(strlen(tmpstr) == iplen);
         strncpy(ipstr, tmpstr, iplen);
 

@@ -176,9 +176,29 @@ configure_grossd(configlist_t *config)
 	  daemon_shutdown(1, "filter_bits should be in range [4,32]");
 	}
 
+	if (CONF("stat_interval"))
+	  ctx->config.stat_interval = atoi(CONF("stat_interval"));
+
+	ctx->config.statlevel = STATS_NONE;
+	cp = config;
+
+	while (cp) {
+	  if (strcmp(cp->name, "stat_level") != 0) {
+	    cp = cp->next;
+	    continue;
+	  }
+
+	  if (strncmp(cp->value, "full", 5) == 0) ctx->config.statlevel |= STATS_FULL;
+	  if (strncmp(cp->value, "status", 7) == 0) ctx->config.statlevel |= STATS_STATUS;
+	  if (strncmp(cp->value, "since_startup", 14) == 0) ctx->config.statlevel |= STATS_STATUS_BEGIN;
+	  cp = cp->next;
+	}
+
 	ctx->config.acctmask = 0x003f;
 
 	*(ctx->last_rotate) = time(NULL);
+
+	init_stats();
 
 #ifdef DNSBL
 	ctx->dnsbl = NULL;
@@ -341,6 +361,10 @@ main(int argc, char *argv[])
 			ret = instant_msg(ctx->update_q, &rotatecmd, 0, 0);
 			if (ret < 0)
 				perror("rotate put_msg");
+		}
+
+		if (time(NULL) > ctx->stats.begin + ctx->config.stat_interval) {
+		  log_stats();
 		}
 
 #ifdef DNSBL

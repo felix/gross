@@ -23,26 +23,30 @@
 #include "common.h"
 
 enum logmsgtype_t {
-	LOG_TYPE	= 0x10000,
-	GLOG_EMERG      = LOG_TYPE | LOG_EMERG,
-	GLOG_ALERT      = LOG_TYPE | LOG_ALERT,
-	GLOG_CRIT   	= LOG_TYPE | LOG_CRIT,
-	GLOG_ERROR  	= LOG_TYPE | LOG_ERR,
-	GLOG_WARNING  	= LOG_TYPE | LOG_WARNING,
-	GLOG_NOTICE  	= LOG_TYPE | LOG_NOTICE,
-	GLOG_INFO   	= LOG_TYPE | LOG_INFO,
-	GLOG_DEBUG	= LOG_TYPE | LOG_DEBUG,
-	GLOG_INSANE     = LOG_TYPE | (LOG_DEBUG + 1),
-	GLOG_FULL	= 0x1ffff,
-	ACCT_TYPE	= 0x20000,
-	ACCT_GREY	= 0x20001,
-	ACCT_MATCH	= 0x20002,
-	ACCT_TRUST	= 0x20004,
-	ACCT_DNS_TMOUT	= 0x20008,
-	ACCT_DNS_MATCH	= 0x20010,
-	ACCT_DNS_SKIP	= 0x20020,
-	ACCT_DNS_QUERY	= 0x20040,
-	ACCT_FULL	= 0x2ffff
+	LOG_TYPE	   = 0x10000,
+	GLOG_EMERG         = LOG_TYPE | LOG_EMERG,
+	GLOG_ALERT         = LOG_TYPE | LOG_ALERT,
+	GLOG_CRIT   	   = LOG_TYPE | LOG_CRIT,
+	GLOG_ERROR  	   = LOG_TYPE | LOG_ERR,
+	GLOG_WARNING  	   = LOG_TYPE | LOG_WARNING,
+	GLOG_NOTICE  	   = LOG_TYPE | LOG_NOTICE,
+	GLOG_INFO   	   = LOG_TYPE | LOG_INFO,
+	GLOG_DEBUG	   = LOG_TYPE | LOG_DEBUG,
+	GLOG_INSANE        = LOG_TYPE | (LOG_DEBUG + 1),
+	GLOG_FULL	   = 0x1ffff,
+	ACCT_TYPE	   = 0x20000,
+	ACCT_GREY	   = 0x20001,
+	ACCT_MATCH	   = 0x20002,
+	ACCT_TRUST	   = 0x20004,
+	ACCT_DNS_TMOUT	   = 0x20008,
+	ACCT_DNS_MATCH	   = 0x20010,
+	ACCT_DNS_SKIP	   = 0x20020,
+	ACCT_DNS_QUERY	   = 0x20040,
+	ACCT_FULL	   = 0x2ffff,
+	STATS_NONE         = 0x40000,
+	STATS_STATUS       = 0x40001,
+	STATS_STATUS_BEGIN = 0x40002,
+	STATS_FULL         = 0x4ffff
 };
 
 enum { UPDATE = 1, ROTATE, ABSOLUTE_UPDATE, SYNC_AGGREGATE, UPDATE_OPER };
@@ -73,6 +77,9 @@ extern gross_ctx_t *ctx;
 
 int logstr(int level, const char *fmt, ...);
 int logmsg(log_message_t *mbuf);
+
+int statstr(int level, const char *fmt, ...);
+
 /* acctstr disabled for now as redundant, see srvutils.c */
 /* int acctstr(int level, const char *fmt, ...); */
 #define acctstr(foo, bar, ...) 0

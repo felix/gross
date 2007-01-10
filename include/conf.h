@@ -24,9 +24,12 @@
 			"status_port",		"1121",		\
 			"rotate_interval", 	"3600",		\
 			"filter_bits",		"22",		\
-			"number_buffers",	"8"
+			"number_buffers",	"8",            \
+			"stat_interval",	"300",          \
+			"stat_level",           "status"
 
-#define MULTIVALUES	"dnsbl"
+#define MULTIVALUES	"dnsbl", \
+                        "stat_level"
 
 #define VALID_NAMES     "dnsbl",             \
 			"host",              \
@@ -40,6 +43,8 @@
                         "sync_listen",	     \
                         "sync_peer",	     \
                         "sync_port",	     \
+                        "stat_interval",     \
+                        "stat_level",	     \
 			"status"
 
 #define DEPRECATED_NAMES 	"syncport",		\

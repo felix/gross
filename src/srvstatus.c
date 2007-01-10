@@ -20,6 +20,7 @@
 #include <signal.h>
 
 #include "common.h"
+#include "stats.h"
 #include "srvutils.h"
 #include "msgqueue.h"
 #include "utils.h"
@@ -83,6 +84,8 @@ void get_srvstatus(char* buf, int len)
     state |= SRV_OK;
     snprintf(buf, len - strlen(buf), "%d: Grossd OK. Update queue: %d Log queue: %d", 
 	     state, update_len, log_len);
+    WITH_STATS_GUARD(snprintf(buf+strlen(buf), len - strlen(buf), " Trust: %llu Match: %llu Greylist: %llu Queries/sec: %lf", 
+			     ctx->stats.all_trust, ctx->stats.all_match, ctx->stats.all_greylist, (double)(ctx->stats.all_trust + ctx->stats.all_match + ctx->stats.all_greylist)/(double)(time(NULL) - ctx->stats.startup)); );
   }
 
 }

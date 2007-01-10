@@ -306,6 +306,22 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	if (ctx->config.flags & FLG_DRYRUN)
 		retvalue = STATUS_TRUST;
 
+	/* Update counters */
+	switch (retvalue) {
+	case STATUS_MATCH:
+	  INCF_STATS(match);
+	  INCF_STATS(all_match);
+	  break;
+	case STATUS_GREY:
+	  INCF_STATS(greylist);
+	  INCF_STATS(all_greylist);
+	  break;
+	case STATUS_TRUST:
+	  INCF_STATS(trust);
+	  INCF_STATS(all_trust);
+	  break;
+	}
+
 	return retvalue;
 }
 

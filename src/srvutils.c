@@ -61,6 +61,31 @@ logstr(int level, const char *fmt, ...) {
 	return 0;
 }
 
+int statstr(int level, const char *fmt, ...)
+{
+	char mbuf[MSGSZ] = { 0x00 };
+	va_list vap;
+
+	if ((level & ctx->config.statlevel) == STATS_NONE){
+		return 0;
+	}
+
+	va_start(vap, fmt);
+	vsnprintf(mbuf, MSGSZ, fmt, vap);
+	va_end(vap);
+
+	if (ctx->config.flags & FLG_NODAEMON)
+		return log_put(mbuf); 
+
+	level = GLOG_NOTICE;
+
+	level ^= LOG_TYPE;
+
+	syslog(level, "%s", mbuf);
+	
+	return 0;
+}
+
 /*
  * remove acctstr as redundant for now
  * accounting must be redesigned 
@@ -419,6 +444,7 @@ log_put(const char *msg)
         date_fmt(final, MSGSZ);
         printf("%s", final);
         free(final);
+	fflush(stdout);
         return 0;
 }
 
