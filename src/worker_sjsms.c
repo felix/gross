@@ -43,7 +43,6 @@ void calm_client(void *arg, mseconds_t timeused) {
 int
 handle_connection(client_info_t *client_info)
 {
-	int n;
 	socklen_t len;
 	grey_req_t request;
 	sjsms_msg_t *msg;

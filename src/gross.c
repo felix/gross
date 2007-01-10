@@ -80,10 +80,8 @@ initialize_context()
 void
 configure_grossd(configlist_t *config)
 {
-	sem_t *sp;
 	int ret;
 	configlist_t *cp;
-/* 	const char *tmp; */
 	const char *updatestr;
 	
 #ifdef DEBUG_CONFIG

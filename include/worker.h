@@ -37,7 +37,6 @@ typedef struct {
         char *client_address;
 } grey_tuple_t;
 
-static void *postfix_policy_server(void *arg);
 int worker(void *arg, void *result, time_t timelimit);
 void free_request(grey_tuple_t *arg);
 int test_tuple(grey_tuple_t *tuple, tmout_action_t *ta);

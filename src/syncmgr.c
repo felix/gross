@@ -22,6 +22,7 @@
 
 /* prototypes of internals */
 int recv_config_sync(peer_t* peer);
+static void *syncmgr(void *arg);
 
 int 
 min(int x, int y) 

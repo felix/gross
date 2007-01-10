@@ -61,7 +61,6 @@ typedef struct {
   uint32_t count;
 } aggregate_sync_t;
 
-static void *syncmgr(void *arg);
 int min(int x, int y);
 
 int send_startup_sync(peer_t* peer,startup_sync_t* sync);
