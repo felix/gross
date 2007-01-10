@@ -291,8 +291,8 @@ bitindex_t optimal_size(unsigned int n, double c)
 			return result;
 	}
 
+	/* Never reached */
 	assert(0);
-	//Never here
 }
 
 /* Adds filter rvalue to lvalue and return the address of lvalue */
@@ -369,22 +369,15 @@ advance_bloom_ring_queue(bloom_ring_queue_t * brq)
 	return brq;
 }
 
-
-//This is not thread safe
 bloom_ring_queue_t * rotate_bloom_ring_queue(bloom_ring_queue_t * brq)
 {
-/* 	unsigned int index = brq->current_index; */
 	unsigned int i;
 	bloom_filter_t* tmp = copy_bloom_filter(brq->aggregate, TRUE);
 
 	zero_bloom_filter(brq->group->filter_group[bloom_ring_queue_next_index(brq)]);
 
 	for (i = 0; i < brq->group->group_size; i++) {
-		tmp = add_filter(tmp, brq->group->filter_group[i]);/* was: index */
-
-/* 		index++; */
-/* 		if (index >= brq->group->group_size) */
-/* 			index = 0; */
+		tmp = add_filter(tmp, brq->group->filter_group[i]);
 	}
 
 	advance_bloom_ring_queue(brq);

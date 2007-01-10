@@ -26,7 +26,7 @@ enum readlineret_t { ERROR = -1, EMPTY = 0, DATA = 1};
 #ifndef HAVE_CLOCK_GETTIME
 /* OS X does not have clock_gettime, so we will fake one */
 typedef enum {
-	CLOCK_KLUDGE,
+	CLOCK_KLUDGE
 } clockid_t;
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp);

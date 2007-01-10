@@ -27,12 +27,10 @@ readline(int fd, void *vptr, size_t maxlen)
 {
 	ssize_t n, rc;
 	char	c, *ptr;
-	//	ssize_t len;
 
 	ptr = vptr;
 	for (n = 1; n < maxlen; n++) {
 	    again:
-		//if ((rc = readchar(fd, &c)) == 1) {
 		if ((rc = read(fd, &c, 1)) == 1) {
 			if (c == '\n')
 				break;	/* we don't want newline */

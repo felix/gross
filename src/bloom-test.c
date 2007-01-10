@@ -27,17 +27,15 @@ int main(int argc, char* argv[]) {
   char test[512] = { 0x00 }; 
   gross_ctx_t myctx = { 0x00 };
 
-  ctx = &myctx;
-
   bloom_filter_t* bf;
   bloom_filter_t* bf2;
-  //  bloom_filter_t* bf3;
-  //  bloom_filter_t* bf4;
 
   bloom_filter_group_t* bfg;
 
   bloom_ring_queue_t* brq;
   
+  ctx = &myctx;
+
   printf("bloom-test: ");
   if ( optimal_size(1000,c) != 10 ) { error_count++; if (argc > 2) printf("\nError: size 1000"); }
   if ( optimal_size(2000,c) != 11 ) { error_count++; if (argc > 2) printf("\nError: size 2000"); }
@@ -65,7 +63,8 @@ int main(int argc, char* argv[]) {
 
   if ( argc > 1 && strcmp(argv[1], "visualize") == 0 ) {
     printf("\n");
-    bf = create_bloom_filter(7); // 7-bit filter
+    /* 7-bit filter */
+    bf = create_bloom_filter(7);
     for ( i = 0 ; i < 83 ; i++ ) {
       sprintf(test, "%d", i);
       insert_digest(bf, sha256_string(test));
@@ -74,15 +73,15 @@ int main(int argc, char* argv[]) {
     release_bloom_filter(bf);
   }
 
-  // Test insertion
-  bf = create_bloom_filter(7); // 7-bit filter
+  /* Test insertion with a 7-bit filter */
+  bf = create_bloom_filter(7); 
   for ( i = 0 ; i < 16 ; i++ ) {
     sprintf(test, "%d", i);
     insert_digest(bf, sha256_string(test));
     if ( !is_in_array(bf, sha256_string(test)) ) { error_count++; if (argc > 2) printf("\nError: %s not in array", test); }
   }
 
-  // Test false positives
+  /* Test false positives */
   for ( i = 17 ; i < 32 ; i++ ) {
     sprintf(test, "%d", i);
     if ( is_in_array(bf, sha256_string(test)) ) { error_count++; if (argc > 2) printf("\nError: %s is in array", test); }
@@ -90,34 +89,34 @@ int main(int argc, char* argv[]) {
   release_bloom_filter(bf);
 
 
-  // Test filter merge
+  /* Test filter merge */
 
   bf  = create_bloom_filter(7);
   bf2 = create_bloom_filter(7);
     
-  if ( is_in_array(bf, sha256_string("omena")) ) { error_count++; if (argc > 2) printf("\nError: omena in array bf"); } // initially empty empty
+  if ( is_in_array(bf, sha256_string("omena")) ) { error_count++; if (argc > 2) printf("\nError: omena in array bf"); } /* initially empty */
   insert_digest(bf, sha256_string("omena"));
 
   if ( argc > 1 && strcmp(argv[1], "visualize") == 0 ) { printf("\nbf after omena: "); debug_print_filter(bf,FALSE); }
 
-  if ( is_in_array(bf2, sha256_string("omena")) ) { error_count++; if (argc > 2) printf("\nError: omena in array bf2"); } // so is the other one
+  if ( is_in_array(bf2, sha256_string("omena")) ) { error_count++; if (argc > 2) printf("\nError: omena in array bf2"); } /* so is the other one */
   insert_digest(bf2, sha256_string("luumu"));
   if ( argc > 1 && strcmp(argv[1], "visualize") == 0 ) { printf("\nbf2 after luumu: "); debug_print_filter(bf2,FALSE); }
 
   bf2 = add_filter(bf2, bf);
-  if ( !is_in_array(bf2, sha256_string("omena")) ) { error_count++; if (argc > 2) printf("\nError: omena not in array bf2"); } // bf2 should now contain omena
-  if ( is_in_array(bf2, sha256_string("appelsiini")) ) { error_count++; if (argc > 2) printf("\nError: appelsiini in array bf2"); } // ... but not appelsiini
+  if ( !is_in_array(bf2, sha256_string("omena")) ) { error_count++; if (argc > 2) printf("\nError: omena not in array bf2"); } /* bf2 should now contain omena */
+  if ( is_in_array(bf2, sha256_string("appelsiini")) ) { error_count++; if (argc > 2) printf("\nError: appelsiini in array bf2"); } /* ... but not appelsiini */
   if ( argc > 1 && strcmp(argv[1], "visualize") == 0 ) { printf("\nbf2 after merge: "); debug_print_filter(bf2,FALSE); } 
 
   release_bloom_filter(bf);
   release_bloom_filter(bf2);
   
-  bfg = create_bloom_filter_group(8,8); // 8 filters of 8bit length
+  bfg = create_bloom_filter_group(8,8); /* 8 filters of 8bit length */
 
   j = 64;
   for ( i=0 ; i<j ; i++ ) {
     sprintf(test, "%d", i); 
-    insert_digest_to_group_member(bfg, (i%(bfg->group_size - 1)) + 1, sha256_string(test)); // add digests to group members 1..group_size leaving member 0 untouched
+    insert_digest_to_group_member(bfg, (i%(bfg->group_size - 1)) + 1, sha256_string(test)); /* add digests to group members 1..group_size leaving member 0 untouched */
   }
 
   for ( i=1 ; i<bfg->group_size ; i++ ) {
@@ -133,12 +132,12 @@ int main(int argc, char* argv[]) {
    
   release_bloom_filter_group(bfg);
 
-  // Ring queue test
-  //brq = create_bloom_ring_queue(8,10); // Ring of 8 10-bit filters
-  brq = build_bloom_ring(8,21); // Ring of 8 10-bit filters
+  /* Ring queue test */
+  /* Ring of 8 10-bit filters */
+  brq = build_bloom_ring(8,21);
   k = 128;
 
-  // Init
+  /* Init */
   for ( i = 0 ; i<k ; i++ ) {
     if ( i % (k/8) == 0) rotate_bloom_ring_queue(brq);
 
@@ -146,15 +145,14 @@ int main(int argc, char* argv[]) {
     insert_digest_bloom_ring_queue(brq, sha256_string(test));
   }
 
-  //  debug_print_ring_queue(brq, TRUE);
   
-/*   // Test for all inclusion */
+  /* Test for all inclusion */
   for ( i = 0 ; i<k ; i++ ) {
     sprintf(test, "%d", i);
     if ( !is_in_ring_queue(brq, sha256_string(test)) ) { error_count++; if (argc > 2) printf("\nError: %s not in brq", test); }
   }
 
-/*   // Test with removal */
+  /* Test with removal */
   for ( i = 0 ; i<(k/8) ; i++ ) {
     rotate_bloom_ring_queue(brq);
     for ( j=i ; j<(i+1)*(k/8) ; j++ ) {
@@ -169,10 +167,7 @@ int main(int argc, char* argv[]) {
 
   }
 
-  //release_bloom_ring_queue(brq);
-
-  // Stress test
-  //brq = create_bloom_ring_queue(10, 22);
+  /* Stress test */
   brq = build_bloom_ring(10, 22);
   for ( i = 0 ; i<1000000 ; i++ ) {
     if ( (i%100000) == 0 ) rotate_bloom_ring_queue(brq);

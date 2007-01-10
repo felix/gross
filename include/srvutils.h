@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 Eino Tuominen <eino@utu.fi>
+ * Copyright (c) 2006,2007 Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -42,7 +42,7 @@ enum logmsgtype_t {
 	ACCT_DNS_MATCH	= 0x20010,
 	ACCT_DNS_SKIP	= 0x20020,
 	ACCT_DNS_QUERY	= 0x20040,
-	ACCT_FULL	= 0x2ffff,
+	ACCT_FULL	= 0x2ffff
 };
 
 enum { UPDATE = 1, ROTATE, ABSOLUTE_UPDATE, SYNC_AGGREGATE, UPDATE_OPER };

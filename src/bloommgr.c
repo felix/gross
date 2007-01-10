@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2006 Eino Tuominen <eino@utu.fi>
+ * Copyright (c) 2006,2007
  *                    Antti Siira <antti@utu.fi>
+ *                    Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -75,7 +76,7 @@ bloommgr(void *arg)
 	    logstr(GLOG_DEBUG, "received update command");
 	    memcpy(&digest, message.mtext, sizeof(sha_256_t));
 	    WITH_BLOOM_GUARD(insert_digest_bloom_ring_queue(ctx->filter, digest););
-	    // debug_print_digest(digest, TRUE);
+	    /* debug_print_digest(digest, TRUE); */
 	    break;
 	  case UPDATE_OPER:    
 	    /* logstr(GLOG_DEBUG, "received update oper command"); */
