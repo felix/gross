@@ -218,6 +218,7 @@ get_queue(void)
                 queues = calloc(queuespace, sizeof(msgqueue_t *));
 
                 metaqueue = create_queue();
+		metaqueue->active = true;
 
                 initialized = true;
         }

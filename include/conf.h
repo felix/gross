@@ -25,10 +25,14 @@
 			"rotate_interval", 	"3600",		\
 			"filter_bits",		"22",		\
 			"number_buffers",	"8",            \
-			"stat_interval",	"300"
+			"stat_interval",	"300",		\
+			"log_method",		"syslog",	\
+			"log_level",		"info",		\
+			"syslog_facility",	"mail"
 
-#define MULTIVALUES	"dnsbl", \
-                        "stat_level"
+#define MULTIVALUES	"dnsbl",	\
+                        "stat_level",	\
+			"log_method"
 
 #define VALID_NAMES     "dnsbl",             \
 			"host",              \
@@ -39,6 +43,9 @@
                         "update",            \
                         "peer_name",         \
                         "statefile",         \
+                        "log_method",	     \
+                        "log_level",	     \
+                        "syslog_facility",   \
                         "sync_listen",	     \
                         "sync_peer",	     \
                         "sync_port",	     \

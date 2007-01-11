@@ -52,9 +52,6 @@ enum logmsgtype_t {
 
 enum { UPDATE = 1, ROTATE, ABSOLUTE_UPDATE, SYNC_AGGREGATE, UPDATE_OPER };
 
-#ifndef LOGLEVEL
-	#define LOGLEVEL		GLOG_INFO
-#endif
 #define MAXFD 			64
 #define FILTER_SIZE 		((uint32_t)32)
 

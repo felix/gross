@@ -60,8 +60,9 @@ initialize_context()
 	/* Clear flags  */
 	ctx->config.flags = 0;
 
-	/* default loglevel */
-	ctx->config.loglevel = LOGLEVEL;
+	/* initial loglevel and facility, they will be set in configure_grossd() */
+	ctx->config.loglevel = 0;
+	ctx->config.syslogfacility = 0;
 
 	ctx->filter = NULL;
 	
@@ -226,6 +227,52 @@ configure_grossd(configlist_t *config)
 		cp = cp->next;
 	}
 #endif /* DNSBL */
+
+	/* log_ parameters */
+	cp = config;
+	while (cp) {
+		if (strcmp(cp->name, "log_method") == 0) {
+			if (strcmp(cp->value, "syslog") == 0) 
+				ctx->config.flags |= FLG_SYSLOG;
+		} else if (strcmp(cp->name, "log_level") == 0 && ctx->config.loglevel == 0) {
+			/* only set loglevel if it's still unset */
+			if (strcmp(cp->value, "debug") == 0)
+				ctx->config.loglevel = GLOG_DEBUG;
+			else if (strcmp(cp->value, "info") == 0)
+				ctx->config.loglevel = GLOG_INFO;
+			else if (strcmp(cp->value, "notice") == 0)
+				ctx->config.loglevel = GLOG_NOTICE;
+			else if (strcmp(cp->value, "warning") == 0)
+				ctx->config.loglevel = GLOG_WARNING;
+			else if (strcmp(cp->value, "error") == 0)
+				ctx->config.loglevel = GLOG_ERROR;
+			else daemon_shutdown(1, "Unknown log_level: %s", cp->value);
+		} else if (strcmp(cp->name, "syslog_facility") == 0) {
+			if (strcmp(cp->value, "mail") == 0)
+				ctx->config.syslogfacility = LOG_MAIL;
+			else if (strcmp(cp->value, "local0") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL0; 
+			else if (strcmp(cp->value, "local1") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL1; 
+			else if (strcmp(cp->value, "local2") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL2; 
+			else if (strcmp(cp->value, "local3") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL3; 
+			else if (strcmp(cp->value, "local4") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL4; 
+			else if (strcmp(cp->value, "local5") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL5; 
+			else if (strcmp(cp->value, "local6") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL6; 
+			else if (strcmp(cp->value, "local7") == 0)
+                                ctx->config.syslogfacility = LOG_LOCAL7; 
+			else daemon_shutdown(1, "Unknown syslog_facility: %s", cp->value);
+		}
+		cp = cp->next;
+	}
+	/* these should be set by now, at least via default config */
+	assert(ctx->config.loglevel);
+	assert(ctx->config.syslogfacility);
 }
 
 /* 
@@ -327,15 +374,18 @@ main(int argc, char *argv[])
 		}
 	}
 
-	/* daemonize must be run before any pthread_create */
-	if ((ctx->config.flags & FLG_NODAEMON) == 0) {
-		daemonize();
-		openlog("grossd", 0x00, LOG_MAIL);
-	}
-
 	config = read_config(configfile);
 	configure_grossd(config);
-	
+
+	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
+		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
+	}
+
+	/* daemonize must be run before any pthread_create */
+	if ((ctx->config.flags & FLG_NODAEMON) == 0) 
+		daemonize();
+
+
 	/* initialize the update queue */
 	delay = Malloc(sizeof(struct timespec));
 	delay->tv_sec = 10;

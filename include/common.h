@@ -99,6 +99,7 @@
 #define FLG_UPDATE_ALWAYS (int)0x04
 #define FLG_CREATE_STATEFILE (int)0x08
 #define FLG_DRYRUN (int)0x10
+#define FLG_SYSLOG (int)0x20
 
 #ifndef MAX
 #define MAX(a,b) 	((a) > (b) ? (a) : (b))
@@ -131,6 +132,7 @@ typedef struct {
 	unsigned int num_bufs;
 	char *statefile;
 	int loglevel;
+	int syslogfacility;
         int statlevel;
 	int acctmask;
 	int flags;
