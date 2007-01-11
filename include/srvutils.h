@@ -46,6 +46,7 @@ enum logmsgtype_t {
 	STATS_NONE         = 0x40000,
 	STATS_STATUS       = 0x40001,
 	STATS_STATUS_BEGIN = 0x40002,
+	STATS_DELAY        = 0x40004,
 	STATS_FULL         = 0x4ffff
 };
 

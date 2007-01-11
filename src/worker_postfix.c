@@ -68,6 +68,19 @@ handle_connection(client_info_t *client_info)
 			clock_gettime(CLOCK_TYPE, &end);
 			delay = ms_diff(&end, &start);
 			logstr(GLOG_INFO, "processing delay: %d ms", delay);
+			
+			switch (status) {
+			case STATUS_MATCH:
+			  match_delay_update((double)delay);
+			  break;
+			case STATUS_GREY:
+			  greylist_delay_update((double)delay);
+			  break;
+			case STATUS_TRUST:
+			  trust_delay_update((double)delay);
+			  break;
+			}
+
 		
 			free_request(request);
 		} else if (ret == PARSE_ERROR) {

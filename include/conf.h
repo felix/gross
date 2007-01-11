@@ -25,8 +25,7 @@
 			"rotate_interval", 	"3600",		\
 			"filter_bits",		"22",		\
 			"number_buffers",	"8",            \
-			"stat_interval",	"300",          \
-			"stat_level",           "status"
+			"stat_interval",	"300"
 
 #define MULTIVALUES	"dnsbl", \
                         "stat_level"

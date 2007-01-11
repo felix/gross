@@ -188,9 +188,19 @@ configure_grossd(configlist_t *config)
 	    continue;
 	  }
 
-	  if (strncmp(cp->value, "full", 5) == 0) ctx->config.statlevel |= STATS_FULL;
+	  if (strncmp(cp->value, "full", 5) == 0) {
+	    ctx->config.statlevel = STATS_FULL;
+	    break;
+	  }
+	  
+	  if (strncmp(cp->value, "none", 5) == 0) {
+	    ctx->config.statlevel = STATS_NONE;
+	    break;
+	  }
+	  
 	  if (strncmp(cp->value, "status", 7) == 0) ctx->config.statlevel |= STATS_STATUS;
 	  if (strncmp(cp->value, "since_startup", 14) == 0) ctx->config.statlevel |= STATS_STATUS_BEGIN;
+	  if (strncmp(cp->value, "delay", 6) == 0) ctx->config.statlevel |= STATS_DELAY;
 	  cp = cp->next;
 	}
 
@@ -348,7 +358,6 @@ main(int argc, char *argv[])
 
 	/* start the server status thread */
 	srvstatus_init();
-
 
 	/*
 	 * run some periodic maintenance tasks

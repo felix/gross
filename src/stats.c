@@ -44,9 +44,62 @@ zero_stats()
 		   ctx->stats.greylist = 0;
 		   ctx->stats.match = 0;
 		   ctx->stats.trust = 0;
+		   ctx->stats.greylist_avg_delay = 0.0;
+		   ctx->stats.match_avg_delay = 0.0;
+		   ctx->stats.trust_avg_delay = 0.0;
 		   time( &(ctx->stats.begin));
 		   ctx->stats.end = 0);
   return old;
+}
+
+double
+greylist_delay_update(double d)
+{
+  WITH_STATS_GUARD(
+		   if (ctx->stats.greylist == 0) {
+		     logstr(GLOG_WARNING, "Greylist average updated before updating counters");
+		     ctx->stats.greylist_avg_delay = d;
+		   } else {
+		     ctx->stats.greylist_avg_delay = (ctx->stats.greylist_avg_delay * (ctx->stats.greylist-1) + d)/(ctx->stats.greylist);
+		   }
+
+		   if (ctx->stats.greylist_max_delay<d) ctx->stats.greylist_max_delay = d;
+		   );
+
+  return ctx->stats.greylist_avg_delay;
+}
+
+double 
+match_delay_update(double d)
+{
+  WITH_STATS_GUARD(
+		   if (ctx->stats.match == 0) {
+		     logstr(GLOG_WARNING, "Match average updated before updating counters");
+		     ctx->stats.match_avg_delay = d;
+		   } else {
+		     ctx->stats.match_avg_delay = (ctx->stats.match_avg_delay * (ctx->stats.match-1) + d)/(ctx->stats.match);
+		   }
+
+		   if (ctx->stats.match_max_delay<d) ctx->stats.match_max_delay = d;
+		   );
+  return ctx->stats.match_avg_delay;
+}
+
+double 
+trust_delay_update(double d)
+{
+  WITH_STATS_GUARD(
+		   if (ctx->stats.trust == 0) {
+		     ctx->stats.trust_avg_delay = d;
+		     logstr(GLOG_WARNING, "Trust average updated before updating counters");
+		   } else {
+		     ctx->stats.trust_avg_delay = (ctx->stats.trust_avg_delay * (ctx->stats.trust-1) + d)/(ctx->stats.trust);
+		   }
+
+		   if (ctx->stats.trust_max_delay<d) ctx->stats.trust_max_delay = d;
+		   );
+
+  return ctx->stats.trust_avg_delay;
 }
 
 stats_t
@@ -57,6 +110,12 @@ log_stats()
 
   statstr(STATS_STATUS, "grossd status summary (begin, end, trust, match, greylist): %lu, %lu, %llu, %llu, %llu", 
 	  stats.begin, stats.end, stats.trust, stats.match, stats.greylist);
+
+  statstr(STATS_DELAY, "grossd processing average delay (begin, end, trust[ms], match[ms], greylist[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf", 
+	  stats.begin, stats.end, stats.trust_avg_delay, stats.match_avg_delay, stats.greylist_avg_delay);
+
+  statstr(STATS_DELAY, "grossd processing max delay (begin, end, trust[ms], match[ms], greylist[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf", 
+	  stats.begin, stats.end, stats.trust_max_delay, stats.match_max_delay, stats.greylist_max_delay);
 
   statstr(STATS_STATUS_BEGIN, "grossd summary since startup (startup, now, trust, match, greylist): %lu, %lu, %llu, %llu, %llu", 
 	  stats.startup, stats.end, stats.all_trust, stats.all_match, stats.all_greylist);

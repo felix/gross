@@ -30,11 +30,21 @@ typedef struct {
   uint64_t all_greylist;
   uint64_t all_match;
   uint64_t all_trust;
+  double greylist_avg_delay;
+  double match_avg_delay;
+  double trust_avg_delay;
+  double greylist_max_delay;
+  double match_max_delay;
+  double trust_max_delay;
 } stats_t;
 
 void init_stats();
 stats_t zero_stats();
 stats_t log_stats();
+
+double greylist_delay_update(double d);
+double match_delay_update(double d);
+double trust_delay_update(double d);
 
 #define WITH_STATS_GUARD(X) { pthread_mutex_lock( &(ctx->stats.mx) ); X; pthread_mutex_unlock( &(ctx->stats.mx) ); }
 #define INCF_STATS(member) { WITH_STATS_GUARD( ++(ctx->stats.member) ;) }
