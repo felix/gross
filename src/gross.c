@@ -98,13 +98,6 @@ configure_grossd(configlist_t *config)
 	exit(1);
 #endif
 
-	/*
-	 * initialize the message queue system
-	 * this must be greater than maxthreads
-	 */
-	ret = queue_init(128);
-	assert(ret == 0);
-
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
 	if (ret == -1 && errno == EACCES) 

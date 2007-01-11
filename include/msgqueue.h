@@ -33,6 +33,8 @@ typedef struct msgqueue_s {
 	struct msgqueue_s *delaypair;
 	const struct timespec *delay_ts;
 	int *impose_delay; /* both the queues point to the same int */
+	bool active;
+	int id;
 } msgqueue_t;
 
 typedef struct {
@@ -40,7 +42,6 @@ typedef struct {
 	msgqueue_t *outq;
 } queue_info_t;
 
-int queue_init(size_t num);
 int get_queue(void);
 int get_delay_queue(const struct timespec *ts);
 int disable_delay(int msqid);
@@ -48,6 +49,7 @@ int enable_delay(int msqid);
 int set_delay(int msqid, const struct timespec *ts);
 int put_msg(int msqid, void *msgp, size_t msgsz, int msgflg);
 int instant_msg(int msqid, void *msgp, size_t msgsz, int msgflg);
+int release_queue(int msqid);
 size_t get_msg(int msqid, void *msgp, size_t maxsize, int msgflag);
 size_t get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, time_t timeout);
 size_t in_queue_len(int msgid);

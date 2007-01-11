@@ -28,36 +28,67 @@
 #include "srvutils.h"
 #include "utils.h"
 
+#define GLOBAL_QUEUE_LOCK { assert(pthread_mutex_lock(&global_queue_lk) == 0); }
+#define GLOBAL_QUEUE_UNLOCK { pthread_mutex_unlock(&global_queue_lk); }
+
 /* prototypes of internals */
+msgqueue_t *queuebyid(int msqid);
 void *delay(void *arg);
 int put_msg_raw(msgqueue_t *mq, msg_t *msg);
 msg_t *get_msg_raw(msgqueue_t *mq, time_t timeout);
 int set_delay_status(int msqid, int state);
+void queue_realloc(void);
+msgqueue_t *try_available(void);
 
 /* array of queues */
 msgqueue_t **queues;
+msgqueue_t *metaqueue;
+int queuespace = 0;
 int numqueues = 0;
+bool initialized = false;
 
 pthread_mutex_t global_queue_lk = PTHREAD_MUTEX_INITIALIZER;
 
-int 
-queue_init(size_t num)
+void
+queue_realloc(void)
 {
-	int ret;
-	
-	if (numqueues)
-		return -1;
+	size_t queuesize;
 
-	ret = pthread_mutex_lock(&global_queue_lk);
-	assert(ret == 0);
+	/* queues must be initialized first */
+	if (queuespace == 0) queuespace = 1;
 
-	numqueues = num;
-	queues = calloc(numqueues, sizeof(msgqueue_t *)); 
+	logstr(GLOG_DEBUG, "doubling the space for message queues from %d to %d", queuespace, queuespace * 2);
 
-	ret = pthread_mutex_unlock(&global_queue_lk);
-	assert(ret == 0);
+	GLOBAL_QUEUE_LOCK;
 
-	return 0;
+	queuesize = queuespace * sizeof(msgqueue_t *);
+
+	/* double the size of the array */
+	queues = realloc(queues, queuesize * 2);
+	queuespace *= 2;
+
+	GLOBAL_QUEUE_UNLOCK;
+}
+
+
+/*
+ * queuebyid	- returns pointer to the queue referred by queue id
+ */
+msgqueue_t *
+queuebyid(int msqid)
+{
+	msgqueue_t *mq;
+
+	/*
+ 	 * we must lock the mutex because queues array might be replaced 
+	 */
+	GLOBAL_QUEUE_LOCK;
+
+	mq = queues[msqid];
+
+	GLOBAL_QUEUE_UNLOCK;
+
+	return mq;
 }
 
 /* 
@@ -92,11 +123,11 @@ get_delay_queue(const struct timespec *ts)
 
 	*impose_delay = 1;
 
-	queue_info->inq = queues[putqid];
+	queue_info->inq = queuebyid(putqid);
 	assert(queue_info->inq != NULL);
 	queue_info->inq->delay_ts = ts;
 	queue_info->inq->impose_delay = impose_delay;
-	queue_info->outq = queues[getqid];
+	queue_info->outq = queuebyid(getqid);
 	assert(queue_info->outq != NULL);
 	queue_info->outq->delay_ts = ts;
 	queue_info->outq->impose_delay = impose_delay;
@@ -153,34 +184,73 @@ delay(void *arg) {
 	}
 }
 	
+msgqueue_t *
+create_queue(void)
+{
+	msgqueue_t *mq;
+
+	mq = Malloc(sizeof(msgqueue_t));
+	memset(mq, 0, sizeof(msgqueue_t));
+	pthread_cond_init(&mq->cv, NULL);
+	pthread_mutex_init(&mq->mx, NULL);
+
+	return mq;
+}
+
+
+/*
+ * get_queue    - returns a new quqeue
+ * First it tries to get a free queue from the queue of the free queues (metaqueue)
+ * If there are not any, we create a new one. If there are no space for new queues,
+ * we call queue_realloc to double the space
+ */
 int
 get_queue(void)
 {
-	int ret;
-	int retval;
-	int i;
-	
-	ret = pthread_mutex_lock(&global_queue_lk);
-	assert(ret == 0);
+        int ret;
+        int retval;
+        int i;
+        msgqueue_t *mq;
 
-	for (i = 0; i < numqueues ; i++) {
-		if (queues[i] == NULL)
-			break;
-	}
+        GLOBAL_QUEUE_LOCK;
+        if (initialized == false) {
+                /* this is the first call */
+                queues = calloc(queuespace, sizeof(msgqueue_t *));
 
-	if (i == numqueues) {
-		/* all the queues are already in use */
-		errno = ENOSPC;
-		retval = -1;
-	} else {
-		queues[i] = Malloc(sizeof(msgqueue_t));
-		memset(queues[i], 0, sizeof(msgqueue_t));
-		pthread_cond_init(&queues[i]->cv, NULL);
-		pthread_mutex_init(&queues[i]->mx, NULL);
-		retval = i;
-	}
-	pthread_mutex_unlock(&global_queue_lk);
-	return retval;
+                metaqueue = create_queue();
+
+                initialized = true;
+        }
+
+        /* first try to get an available queue from the metaqueue */
+
+        mq = try_available();
+        if (mq) {
+                /* found one, so let's use it */
+                i = mq->id;
+        } else {
+                /* must create a new queue */
+
+                i = numqueues;
+                ++numqueues;
+
+                mq = create_queue();
+                mq->id = i;
+		mq->active = true;
+
+                if (numqueues > queuespace) {
+                        /* there is no space left in the array */
+                        GLOBAL_QUEUE_UNLOCK;
+                        queue_realloc();
+                        GLOBAL_QUEUE_LOCK;
+                }
+
+                queues[i] = mq;
+        }
+
+        GLOBAL_QUEUE_UNLOCK;
+
+        return i;
 }
 
 int
@@ -201,7 +271,7 @@ set_delay_status(int msqid, int state)
 	msgqueue_t *mq;
 	int ret;
 	
-        mq = queues[msqid];
+        mq = queuebyid(msqid);
 	if (! mq) {
 		errno = EINVAL;
 		return -1;
@@ -227,7 +297,7 @@ set_delay(int msqid, const struct timespec *ts)
 	msgqueue_t *mq;
 	int ret;
 
-        mq = queues[msqid];
+        mq = queuebyid(msqid);
         if (! mq) {
                 errno = EINVAL;
                 return -1;
@@ -257,6 +327,12 @@ put_msg_raw(msgqueue_t *mq, msg_t *msg)
 {
 	int ret;
 	msg_t *tail;
+	int retvalue;
+
+	if (mq->active == false) {
+		logstr(GLOG_ERROR, "message queue is marked inactive");
+		return -1;
+	}
 
 	ret = pthread_mutex_lock(&mq->mx);
 	assert(ret == 0);
@@ -291,7 +367,7 @@ put_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
 	int ret;
 	size_t truesize;
 
-	mq = queues[msqid];
+	mq = queuebyid(msqid);
 	assert(mq);
 
 	new = Malloc(sizeof(msg_t));
@@ -326,7 +402,7 @@ instant_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
 	int ret;
 	size_t truesize;
 
-	mq = queues[msqid];
+	mq = queuebyid(msqid);
 	assert(mq);
 
 	if (mq->delaypair != NULL)
@@ -355,6 +431,66 @@ instant_msg(int msqid, void *omsgp, size_t msgsz, int msgflg)
 
 	return ret;
 }
+
+/* 
+ * release_queue	- add the queue to the metaqueue. Make sure it's empty
+ */
+int 
+release_queue(int msqid)
+{
+	msg_t *msg;
+	int ret;
+	msgqueue_t *mq;
+
+	mq = queuebyid(msqid);
+        ret = pthread_mutex_lock(&mq->mx);
+        assert(ret == 0);
+	mq->active = false;
+        ret = pthread_mutex_unlock(&mq->mx);
+        assert(ret == 0);
+
+	if (mq->head) {
+		logstr(GLOG_ERROR, "release_queue: queue not empty, not released");
+		return -1;
+	}
+
+	if (mq->delaypair) {
+		logstr(GLOG_ERROR, "release_queue: attempt to free a delay queue");
+		return -1;
+	}
+
+	msg = Malloc(sizeof(msg_t));
+	/* zero out the message structure */
+	memset(msg, 0, sizeof(msg_t));
+
+	msg->msgp = mq;
+	ret = put_msg_raw(metaqueue, msg);
+	/* with metaqueue there can no be other return values */
+	assert(ret == 0);
+
+	return 0;
+}
+
+/*
+ * try_available	- tries to fetch a message from the metaqueue
+ */
+msgqueue_t *
+try_available(void)
+{
+	msg_t *msg;
+	msgqueue_t *mq = NULL;
+
+	msg = get_msg_raw(metaqueue, -1);
+
+	if (msg) {
+		mq = (msgqueue_t *)msg->msgp;
+		mq->active = true;
+		free(msg);
+	}
+
+	return mq;
+}
+
 /* 
  * get_msg_raw	- retuns the first message from the message queue
  */
@@ -365,6 +501,11 @@ get_msg_raw(msgqueue_t *mq, time_t timeout)
 	int ret;
 	struct timespec to;
 
+	if (mq->active == false) {
+		logstr(GLOG_ERROR, "get_msg_raw: message queue is marked inactive");
+		return NULL;
+	}
+
 	ret = pthread_mutex_lock(&mq->mx);
 	assert(ret == 0);
 	msg = NULL;
@@ -372,17 +513,26 @@ get_msg_raw(msgqueue_t *mq, time_t timeout)
 	to.tv_sec = time(NULL) + timeout;
 	to.tv_nsec = 0;
 
-	/* the queue is now empty, wait for messages */
-	while (mq->head == NULL)
-		if (timeout == 0) {
-			ret = pthread_cond_wait(&mq->cv, &mq->mx);
-		} else {
-			ret = pthread_cond_timedwait(&mq->cv, &mq->mx, &to);
-			if (ret == ETIMEDOUT)
-				break;
+	if (timeout >= 0) {
+		/* the queue is now empty, wait for messages */
+		while (mq->head == NULL)
+			if (timeout == 0) {
+				ret = pthread_cond_wait(&mq->cv, &mq->mx);
+			} else {
+				ret = pthread_cond_timedwait(&mq->cv, &mq->mx, &to);
+				if (ret == ETIMEDOUT)
+					break;
+			}
+	} else {
+		/* if timeout < 0, we do not wait for messages */
+		if (mq->head == 0) {
+			/* there is no message */
+			ret = -1;
 		}
-			
+	}
+
 	if (ret == 0) {
+		/* a message has been found on the queue */
 		assert(mq->head);
 		assert(mq->tail);
 		msg = mq->head;
@@ -420,7 +570,7 @@ get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, time_t timeout
 	size_t msglen;
 	size_t msgsize;
 
-	mq = queues[msqid];
+	mq = queuebyid(msqid);
 	assert(mq);
 
 	if (mq->delaypair)
@@ -447,26 +597,25 @@ get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, time_t timeout
 size_t
 in_queue_len(int msgid)
 {
-  msgqueue_t *mq;
+	msgqueue_t *mq;
 
-  mq = queues[msgid];
+	mq = queuebyid(msgid);
 
-  assert(mq);
+	assert(mq);
 
-  return mq->msgcount;
+	return mq->msgcount;
 }
 
 size_t
 out_queue_len(int msgid)
 {
-  msgqueue_t *mq;
+	msgqueue_t *mq;
 
-  mq = queues[msgid];
-  assert(mq);
+	mq = queuebyid(msgid);
+	assert(mq);
 
-  if (mq->delaypair)
-    return mq->delaypair->msgcount;
+	if (mq->delaypair)
+	return mq->delaypair->msgcount;
 
-
-  return in_queue_len(msgid);
+	return in_queue_len(msgid);
 }

@@ -242,7 +242,7 @@ dnsblc(const char *client_address, tmout_action_t *ta)
 		snprintf(buffer, MAXQUERYSTRLEN, "%s.%s", ipstr, dnsbl->name);
 		query = strdup(buffer);
 		if (query_clearance(dnsbl) == TRUE) {
-			logstr(GLOG_INSANE, "initiating dnsbl query: %s for %s (%s)", query);
+			logstr(GLOG_INSANE, "initiating dnsbl query: %s", query);
 			/* we should only count the queries, not log them */
 			/* acctstr(ACCT_DNS_QUERY, "%s for %s (%s)", dnsbl->name, client_address, query); */
 
