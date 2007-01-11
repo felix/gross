@@ -16,6 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <netdb.h>
 #include <signal.h>
 #include <syslog.h>
 
@@ -84,6 +85,7 @@ configure_grossd(configlist_t *config)
 	int ret;
 	configlist_t *cp;
 	const char *updatestr;
+	struct hostent *host;
 	
 #ifdef DEBUG_CONFIG
 	while (config) {
@@ -119,10 +121,12 @@ configure_grossd(configlist_t *config)
 	pthread_mutex_init(&ctx->config.peer.peer_in_mutex, NULL);
 
 	ctx->config.gross_host.sin_family = AF_INET;
-	inet_pton(AF_INET, CONF("host"), &(ctx->config.gross_host.sin_addr));
+	host = gethostbyname(CONF("host"));
+	inet_pton(AF_INET, host->h_addr_list[0], &(ctx->config.gross_host.sin_addr));
 
 	ctx->config.sync_host.sin_family = AF_INET;
-	inet_pton(AF_INET, CONF("sync_listen") ? CONF("sync_listen") : CONF("host"),
+	host = gethostbyname( CONF("sync_listen") ? CONF("sync_listen") : CONF("host") );
+	inet_pton(AF_INET,host->h_addr_list[0],
 		  &(ctx->config.sync_host.sin_addr));
 
 	ctx->config.sync_host.sin_port =
@@ -142,7 +146,8 @@ configure_grossd(configlist_t *config)
 	} else {
 		logstr(GLOG_INFO, "Peer %s configured. Replicating.", CONF("sync_peer"));
 		ctx->config.peer.peer_addr.sin_family = AF_INET;
-		inet_pton(AF_INET, CONF("sync_peer"),
+		host = gethostbyname( CONF("sync_peer") );
+		inet_pton(AF_INET, host->h_addr_list[0],
 			&(ctx->config.peer.peer_addr.sin_addr));
 	}
 
@@ -157,7 +162,8 @@ configure_grossd(configlist_t *config)
 	}
 
 	ctx->config.status_host.sin_family = AF_INET;
-	inet_pton(AF_INET, CONF("status_host") ? CONF("status_host") : CONF("host"),
+	host = gethostbyname( CONF("status_host") ? CONF("status_host") : CONF("host") );
+	inet_pton(AF_INET, host->h_addr_list[0],
 		  &(ctx->config.status_host.sin_addr));
 
 	ctx->config.status_host.sin_port =
