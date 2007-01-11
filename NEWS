@@ -1,3 +1,20 @@
+Version 0.7.2
+
+- Configurable log_level and syslog_method.
+- Message queue enhancements under the hood
+- Status counters for various events implemented
+- You can now use host names in the configuration
+
+Issues fixed:
+#20: allow host names in configuration
+#21: A dry run option for testing needed
+#22: configurable logging
+
+Version 0.7.1
+
+A replacement of 0.7.0, there was a bug that prevented grossd
+from compiling --with-worker=postfix.
+
 Version 0.7.0
 
 Implemented a thread pool feature. Worker threads are now 
@@ -6,10 +23,17 @@ bug fixes, most notably byte order related bugs in proto_sjsms.c.
 Some configuration file changes: peerhost and synchost has been
 replaced by sync_listen and sync_peer.
 
+#Issues fixed:
+#15: postfix protocol broken
+#17: proto-sjsms breaks between hosts of different endianess
+
 Version 0.6.3
 
 Ported to OS X. Since sem_getvalue() is not implemented on 
 OS X, skipping unresponsive dnsbls does not work, yet.
+
+Issues fixed:
+#14: processing delay should be included in the logs
 
 Version 0.6.2
 
