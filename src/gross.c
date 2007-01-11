@@ -19,6 +19,9 @@
 #include <netdb.h>
 #include <signal.h>
 #include <syslog.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 #include "conf.h"
@@ -85,7 +88,7 @@ configure_grossd(configlist_t *config)
 	int ret;
 	configlist_t *cp;
 	const char *updatestr;
-	struct hostent *host;
+	struct hostent *host = NULL;
 	
 #ifdef DEBUG_CONFIG
 	while (config) {
@@ -122,12 +125,15 @@ configure_grossd(configlist_t *config)
 
 	ctx->config.gross_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("host"));
-	inet_pton(AF_INET, host->h_addr_list[0], &(ctx->config.gross_host.sin_addr));
+	if (!host) daemon_perror("'host' configuration option invalid:");
+	inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]), &(ctx->config.gross_host.sin_addr));
+	logstr(GLOG_DEBUG, "Listening host address %s", inet_ntoa( *(struct in_addr*)host->h_addr_list[0]));
 
 	ctx->config.sync_host.sin_family = AF_INET;
 	host = gethostbyname( CONF("sync_listen") ? CONF("sync_listen") : CONF("host") );
-	inet_pton(AF_INET,host->h_addr_list[0],
+	inet_pton(AF_INET,inet_ntoa( *(struct in_addr*)host->h_addr_list[0]),
 		  &(ctx->config.sync_host.sin_addr));
+	logstr(GLOG_DEBUG, "Sync listen address %s", inet_ntoa( *(struct in_addr*)host->h_addr_list[0]));
 
 	ctx->config.sync_host.sin_port =
 		htons(atoi(CONF("sync_port")));
@@ -147,8 +153,9 @@ configure_grossd(configlist_t *config)
 		logstr(GLOG_INFO, "Peer %s configured. Replicating.", CONF("sync_peer"));
 		ctx->config.peer.peer_addr.sin_family = AF_INET;
 		host = gethostbyname( CONF("sync_peer") );
-		inet_pton(AF_INET, host->h_addr_list[0],
+		inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]),
 			&(ctx->config.peer.peer_addr.sin_addr));
+		logstr(GLOG_DEBUG, "Sync peer address %s", inet_ntoa( *(struct in_addr*)host->h_addr_list[0]));
 	}
 
 	updatestr = CONF("update");
@@ -163,7 +170,7 @@ configure_grossd(configlist_t *config)
 
 	ctx->config.status_host.sin_family = AF_INET;
 	host = gethostbyname( CONF("status_host") ? CONF("status_host") : CONF("host") );
-	inet_pton(AF_INET, host->h_addr_list[0],
+	inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]),
 		  &(ctx->config.status_host.sin_addr));
 
 	ctx->config.status_host.sin_port =
