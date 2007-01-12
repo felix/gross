@@ -26,26 +26,20 @@
  * the old protocol, we use these only if server retuns
  * 'short' answers
  */
-#define MAP_TRUST       "$Y"
-#define MAP_MATCH       "$Y"
-#define MAP_GREYLIST    "$X4.4.3|$NPlease$ try$ again$ later"
-#define MAP_UNKNOWN     "$Y"    /* accept if server not available */
-#define MAP_ERROR       "$Y" 
+#define STATUS_TRUST       "$Y"
+#define STATUS_MATCH       "$Y"
+#define STATUS_GREYLIST    "$X4.4.3|$NPlease$ try$ again$ later"
 
 #define MAP_SUCCESS     -1
 #define MAP_FAIL        0
 
-#define MAP_SEPARATOR ","
+#define MAP_SEPARATOR ','
 
-#define GROSSCHECK_ERROR() \
-                   { strncpy(res, MAP_ERROR, MTASTRLEN); \
-                     *reslen = strlen(res); \
-                     if (*reslen > MTASTRLEN) { \
-                         *reslen = MTASTRLEN; \
-                     } \
-	             senderrormsg(fd, gserv, "ERROR: request was: %s", requestcopy); \
-		     free(requestcopy); \
-                     return MAP_SUCCESS; }
+#define GROSSCHECK_ERROR { 						\
+	senderrormsg(fd, gserv, "ERROR: request was: %s", requestcopy); \
+	free(requestcopy); 						\
+	return MAP_FAIL; 						\
+}
 
 /* #define ARGDEBUG */
 
@@ -64,7 +58,10 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	int numservers = 0;
 	char *token = 0x00;
 	char *rstr = 0x00;
+	char *begin;
+	char *end;
 	grey_req_t request;
+	bool success = false;
 #ifdef ARGDEBUG
 	FILE *foo;
 #endif
@@ -82,16 +79,10 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	memset(&request, 0, sizeof(request));
         fd = socket(AF_INET, SOCK_DGRAM, 0);
 
-	if (fd < 0) {
-	  strncpy(res, MAP_UNKNOWN, MTASTRLEN);
-	  *reslen = strlen(res);
-	  if (*reslen > MTASTRLEN) {
-	    *reslen = MTASTRLEN;
-	  }
+	if (fd < 0)
+		return MAP_FAIL;
 
-	  return MAP_SUCCESS;
-	}
-
+	/* initialize */
         memset(&gserv1, 0, sizeof(struct sockaddr_in));
         gserv1.sin_family = AF_INET;
         memset(&gserv2, 0, sizeof(struct sockaddr_in));
@@ -109,42 +100,48 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	}
 #endif
 
+#define GETNEXT	{				\
+	begin = end + 1;			\
+	end = strchr(begin, MAP_SEPARATOR); 	\
+	if ( NULL == end) GROSSCHECK_ERROR; 	\
+	*end = '\0'; 				\
+}
+
 	/* primary server ip */
-	token = strtok(buffer, MAP_SEPARATOR);
-	if ( NULL == token ) GROSSCHECK_ERROR();
-        ret = inet_pton(AF_INET, token, &gserv1.sin_addr);
-	if ( ret < 1 ) GROSSCHECK_ERROR();
+	end = buffer - 1; /* an ugly kludge, I know */
+	GETNEXT;
+        ret = inet_pton(AF_INET, begin, &gserv1.sin_addr);
+	if ( ret < 1 ) GROSSCHECK_ERROR;
 
 	/* secondary server ip */
-	token = strtok(NULL, MAP_SEPARATOR);
-	if ( NULL == token ) GROSSCHECK_ERROR();
-	ret = inet_pton(AF_INET, token, &gserv2.sin_addr);
+	GETNEXT;
+	ret = inet_pton(AF_INET, begin, &gserv2.sin_addr);
 	if ( ret < 1 ) 
 		numservers = 1;
 	else
 		numservers = 2;
 	assert((numservers == 1) || (numservers == 2));
 
-	token = strtok(NULL, MAP_SEPARATOR);
-	if ( NULL == token ) GROSSCHECK_ERROR();
-	gserv1.sin_port = gserv2.sin_port = htons(atoi(token));
+	GETNEXT;
+	gserv1.sin_port = gserv2.sin_port = htons(atoi(begin));
 
-	token = strtok(NULL, MAP_SEPARATOR);
-	if ( NULL == token ) GROSSCHECK_ERROR();
-	strncpy(caddr, token, SBUFLEN-1);
+	GETNEXT;
+	strncpy(caddr, begin, SBUFLEN-1);
 
-	token = strtok(NULL, MAP_SEPARATOR);
-	if ( NULL == token ) GROSSCHECK_ERROR();
-	strncpy(recipient, token, SBUFLEN-1);
+	GETNEXT;
+	strncpy(recipient, begin, SBUFLEN-1);
 
-	token = strtok(NULL, MAP_SEPARATOR);
-	if ( NULL == token ) {
+	begin = end + 1;
+	end = strchr(begin, MAP_SEPARATOR); 
+	/* this is the last of the arguments */
+	if ( NULL != end) GROSSCHECK_ERROR; 
+	if ( *begin == '\0') {
 		strncpy(sender, "<>", SBUFLEN-1);
 		sender[SBUFLEN-1] = '\0';
 	} else {
-		strncpy(sender, token, SBUFLEN-1);
+		strncpy(sender, begin, SBUFLEN-1);
 	}
-
+	
 	gserv = &gserv1;
 
 	fold(&request, sender, recipient, caddr);
@@ -182,45 +179,49 @@ QUERY:
 
 	switch (recbuf[0]) {
 		case 'G':
-			if (NULL == recbuf[1])	
-				rstr = MAP_GREYLIST;
+			if ('\0' == recbuf[1])	
+				rstr = STATUS_GREYLIST;
 			else
 				rstr = &recbuf[2];
+			success = true;
 			break;
 		case 'T':
-			if (NULL == recbuf[1])	
-				rstr = MAP_TRUST;
+			if ('\0' == recbuf[1])	
+				rstr = STATUS_TRUST;
 			else
 				rstr = &recbuf[2];
+			success = true;
 			break;
 		case 'M':
-			if (NULL == recbuf[1])	
-				rstr = MAP_MATCH;
+			if ('\0' == recbuf[1])	
+				rstr = STATUS_MATCH;
 			else
 				rstr = &recbuf[2];
+			success = true;
 			break;
 		default:
-			rstr = MAP_UNKNOWN;
+			success = false;
 			break;
 	}
 
-	strncpy(res, rstr, MTASTRLEN);
-	*reslen = strlen(rstr);
-	if (*reslen > MTASTRLEN)
-		*reslen = MTASTRLEN;
+	if (success) {
+		strncpy(res, rstr, MTASTRLEN);
+		*reslen = strlen(rstr);
+		if (*reslen > MTASTRLEN)
+			*reslen = MTASTRLEN;
 
 #ifdef ARGDEBUG
-        if (foo) {
-                fprintf(foo, "res: %s\n", res);
-		fclose(foo);
-        }
-#endif
+		if (foo) {
+			fprintf(foo, "res: %s\n", res);
+			fclose(foo);
+		}
+	#endif
 
-	close(fd);
-
+		close(fd);
+	}
 	free(requestcopy);
 
-	return MAP_SUCCESS;
+	return success ? MAP_SUCCESS : MAP_FAIL;
 }
 
 #ifdef GROSSC_MAIN
@@ -237,7 +238,7 @@ main(int argc, char **argv)
 	if (grosscheck(arg, &foolen, bar, &barlen) ==  MAP_SUCCESS) {
 		printf("%ld: %s\n", barlen, bar);
 	} else {
-		printf("error\n");
+		printf("Unknown or No reponse \n");
 	}
 	
 	return 0;

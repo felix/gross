@@ -33,7 +33,7 @@ main(int argc, char **argv)
 	int (*grosscheck)(char *arg, long *arglen, char *res, long *reslen);
 	char *error;
 
-	char *arg = "127.0.0.1,127.0.0.1,1111,127.0.0.2,foo@foo,bar@bar\0";
+	char *arg = "127.0.0.1,,1111,127.0.0.2,foo@foo,bar@bar\0";
 	arglen = strlen(arg);
 
 	gc = dlopen("grosscheck.so", RTLD_LAZY);
