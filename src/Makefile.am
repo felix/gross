@@ -20,7 +20,7 @@ gclient_LDADD = client_@PROTOCOL@.o proto_@PROTOCOL@.o
 gclient_DEPENDENCIES = client_@PROTOCOL@.o proto_@PROTOCOL@.o
 
 grosscheck_la_SOURCES = grosscheck.c proto_sjsms.c
-grosscheck_la_LDFLAGS = -module -avoid-version -no-undefined
+grosscheck_la_LDFLAGS = -module -avoid-version
 
 check_PROGRAMS = sha256
 bloom_SOURCES = sha256.c bloom-test.c bloom.c srvutils.c utils.c
