@@ -180,8 +180,6 @@ QUERY:
 			tv.tv_sec = 10;
 	} while (recbuf[0] == 'P');
 
-	printf("recbuf: %s\n", recbuf);
-
 	switch (recbuf[0]) {
 		case 'G':
 			if (NULL == recbuf[1])	
