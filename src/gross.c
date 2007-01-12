@@ -183,6 +183,21 @@ configure_grossd(configlist_t *config)
 	  daemon_shutdown(1, "filter_bits should be in range [4,32]");
 	}
 
+#if PROTOCOL == SJSMS
+	if (!CONF("sjsms_response_grey"))
+		daemon_shutdown(1, "No sjsms_response_grey set!");
+	else
+		ctx->config.sjsms.responsegrey = strdup(CONF("sjsms_response_grey"));
+	if (!CONF("sjsms_response_trust"))
+		daemon_shutdown(1, "No sjsms_response_trust set!");
+	else
+		ctx->config.sjsms.responsetrust = strdup(CONF("sjsms_response_trust"));
+	if (!CONF("sjsms_response_match"))
+		daemon_shutdown(1, "No sjsms_response_match set!");
+	else
+		ctx->config.sjsms.responsematch = strdup(CONF("sjsms_response_match"));
+#endif
+
 	if (CONF("stat_interval"))
 	  ctx->config.stat_interval = atoi(CONF("stat_interval"));
 

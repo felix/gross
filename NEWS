@@ -1,3 +1,8 @@
+Version svn
+
+Issues fixed:
+#23: Customizable SMTP error messages
+
 Version 0.7.2
 
 - Configurable log_level and syslog_method.

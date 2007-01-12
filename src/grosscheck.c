@@ -22,6 +22,10 @@
 #define MTASTRLEN 252
 #define SBUFLEN 256
 
+/*
+ * the old protocol, we use these only if server retuns
+ * 'short' answers
+ */
 #define MAP_TRUST       "$Y"
 #define MAP_MATCH       "$Y"
 #define MAP_GREYLIST    "$X4.4.3|$NPlease$ try$ again$ later"
@@ -176,15 +180,26 @@ QUERY:
 			tv.tv_sec = 10;
 	} while (recbuf[0] == 'P');
 
+	printf("recbuf: %s\n", recbuf);
+
 	switch (recbuf[0]) {
 		case 'G':
-			rstr = MAP_GREYLIST;
+			if (NULL == recbuf[1])	
+				rstr = MAP_GREYLIST;
+			else
+				rstr = &recbuf[2];
 			break;
 		case 'T':
-			rstr = MAP_TRUST;
+			if (NULL == recbuf[1])	
+				rstr = MAP_TRUST;
+			else
+				rstr = &recbuf[2];
 			break;
 		case 'M':
-			rstr = MAP_MATCH;
+			if (NULL == recbuf[1])	
+				rstr = MAP_MATCH;
+			else
+				rstr = &recbuf[2];
 			break;
 		default:
 			rstr = MAP_UNKNOWN;
@@ -216,7 +231,7 @@ main(int argc, char **argv)
 {
 	char bar[256];
 	long foolen, barlen;
-	char *arg = "130.232.3.69,127.0.0.1,1111,127.0.0.2,foo@foo,bar@bar";
+	char *arg = "127.0.0.1,127.0.0.1,1111,127.0.0.2,foo@foo,bar@bar";
 	foolen = strlen(arg);
 
 	assert(foolen < 252);

@@ -26,6 +26,9 @@
 			"filter_bits",		"22",		\
 			"number_buffers",	"8",            \
 			"stat_interval",	"300",		\
+			"sjsms_response_grey",	"$X4.4.3|$NPlease$ try$ again$ later", \
+			"sjsms_response_match",	"$Y", 		\
+			"sjsms_response_trust",	"$Y",		\
 			"log_method",		"syslog",	\
 			"log_level",		"info",		\
 			"syslog_facility",	"mail"
@@ -43,6 +46,9 @@
                         "update",            \
                         "peer_name",         \
                         "statefile",         \
+			"sjsms_response_grey", \
+			"sjsms_response_match", \
+			"sjsms_response_trust", \
                         "log_method",	     \
                         "log_level",	     \
                         "syslog_facility",   \

@@ -119,6 +119,14 @@ typedef struct {
 	int connected;
 } peer_t;
 
+#if PROTOCOL == SJSMS
+typedef struct {
+	char *responsegrey;
+	char *responsematch;
+	char *responsetrust;
+} sjsms_config_t;
+#endif /* PROTOCOL == SJSMS */
+
 typedef struct {
 	struct sockaddr_in gross_host;
 	struct sockaddr_in sync_host;
@@ -136,6 +144,9 @@ typedef struct {
         int statlevel;
 	int acctmask;
 	int flags;
+#if PROTOCOL == SJSMS
+	sjsms_config_t sjsms;
+#endif /* PROTOCOL == SJSMS */
 } gross_config_t;
 
 #ifdef DNSBL

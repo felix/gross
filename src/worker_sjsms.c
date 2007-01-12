@@ -48,7 +48,7 @@ handle_connection(client_info_t *client_info)
 	grey_req_t request;
 	sjsms_msg_t *msg;
 	grey_tuple_t *tuple;
-	char response = 'F';
+	char response[MAXLINELEN];
 	int status;
 	tmout_action_t ta1, ta2;
 	char *str;
@@ -58,6 +58,9 @@ handle_connection(client_info_t *client_info)
 	assert(client_info);
 	assert(0 <= client_info->msglen);
 	assert(client_info->msglen <= MSGSZ);
+ 	
+	/* default response is 'FAIL' */
+	strncpy(response, "F", MAXLINELEN);
 
 	/* build the tmout_action_t list */
 	ta1.timeout = 1000;             /* 1 second */
@@ -91,18 +94,20 @@ handle_connection(client_info_t *client_info)
 
 		switch (status) {
 			case STATUS_MATCH:
-				response = 'M';
+				snprintf(response, MAXLINELEN, "M %s", ctx->config.sjsms.responsematch);
 				break;
 			case STATUS_GREY:
-				response = 'G';
+				snprintf(response, MAXLINELEN, "G %s", ctx->config.sjsms.responsegrey);
 				break;
 			case STATUS_TRUST:
-				response = 'T';
+				snprintf(response, MAXLINELEN, "T %s", ctx->config.sjsms.responsetrust);
 				break;
 		}
 
+		response[MAXLINELEN-1] = '\0';
+
 		len = sizeof(struct sockaddr_in);
-		sendto(client_info->connfd, &response, 1,
+		sendto(client_info->connfd, response, strlen(response),
 			0, (struct sockaddr *)client_info->caddr, len);
 		clock_gettime(CLOCK_TYPE, &end);
 
