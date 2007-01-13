@@ -298,6 +298,8 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 			edict->timelimit += ta->timeout;
 			tap = tap->next;
 		}
+
+		/* here should be loop over all checks */
 		submit_job(ctx->checks.dnsblc_pool, edict);
 
 		clock_gettime(CLOCK_TYPE, &start);
@@ -309,8 +311,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 				if (timeused > ta->timeout)
 					break;
 
-				/* ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, ta->timeout); */
-				ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, 0);
+				ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, ta->timeout);
 				if (ret > 0) {
 					/* We've got a response */
 					result = (chkresult_t *)message.result;
