@@ -35,7 +35,7 @@
 msgqueue_t *queuebyid(int msqid);
 void *delay(void *arg);
 int put_msg_raw(msgqueue_t *mq, msg_t *msg);
-msg_t *get_msg_raw(msgqueue_t *mq, time_t timeout);
+msg_t *get_msg_raw(msgqueue_t *mq, mseconds_t timeout);
 int set_delay_status(int msqid, int state);
 void queue_realloc(void);
 msgqueue_t *try_available(void);
@@ -444,21 +444,22 @@ release_queue(int msqid)
 	msgqueue_t *mq;
 
 	mq = queuebyid(msqid);
-        ret = pthread_mutex_lock(&mq->mx);
-        assert(ret == 0);
-	mq->active = false;
-        ret = pthread_mutex_unlock(&mq->mx);
-        assert(ret == 0);
-
-	if (mq->head) {
-		logstr(GLOG_ERROR, "release_queue: queue not empty, not released");
-		return -1;
-	}
 
 	if (mq->delaypair) {
 		logstr(GLOG_ERROR, "release_queue: attempt to free a delay queue");
 		return -1;
 	}
+
+	if (mq->head) {
+		logstr(GLOG_INSANE, "release_queue: queue not empty");
+		return -1;
+	}
+
+        ret = pthread_mutex_lock(&mq->mx);
+        assert(ret == 0);
+	mq->active = false;
+        ret = pthread_mutex_unlock(&mq->mx);
+        assert(ret == 0);
 
 	msg = Malloc(sizeof(msg_t));
 	/* zero out the message structure */
@@ -496,7 +497,7 @@ try_available(void)
  * get_msg_raw	- retuns the first message from the message queue
  */
 msg_t *
-get_msg_raw(msgqueue_t *mq, time_t timeout)
+get_msg_raw(msgqueue_t *mq, mseconds_t timeout)
 {
 	msg_t *msg;
 	int ret;
@@ -511,7 +512,9 @@ get_msg_raw(msgqueue_t *mq, time_t timeout)
 	assert(ret == 0);
 	msg = NULL;
 
-	to.tv_sec = time(NULL) + timeout;
+	mstotimespec(timeout, &to);
+
+	to.tv_sec += time(NULL);
 	to.tv_nsec = 0;
 
 	if (timeout >= 0) {
@@ -564,7 +567,7 @@ get_msg(int msqid, void *msgp, size_t maxsize, int msgflag)
 }
 
 size_t
-get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, time_t timeout)
+get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, mseconds_t timeout)
 {
 	msgqueue_t *mq;
 	msg_t *msg;

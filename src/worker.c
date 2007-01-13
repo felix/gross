@@ -26,6 +26,7 @@
 
 #include "msgqueue.h"
 #include "worker.h"
+#include "utils.h"
 
 /* function must be implemented in worker_[proto].c */
 int handle_connection(client_info_t *arg);
@@ -258,6 +259,10 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	poolresult_message_t message;
 	chkresult_t *result;
 	bool suspicious;
+	bool got_response = false;
+	struct timespec start, now, timeleft;
+	mseconds_t timeused;
+	tmout_action_t *tap;
 
 	/* greylist */
 	snprintf(tuple, MSGSZ, "%s %s %s",
@@ -277,41 +282,71 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		acctstr(ACCT_GREY, "%s", tuple);
 		retvalue = STATUS_GREY;
 #else
+		/* build default entry, if timeout not given */
+		if (! ta) {
+			ta = Malloc(sizeof(tmout_action_t));
+			ta->timeout = 5000;             /* 5 seconds */
+			ta->action = NULL;
+			ta->next = NULL;
+		}
+
 		/* Write the edict */
 		edict = edict_get(false);
 		edict->job = (void *)request->client_address;
+		tap = ta;
+		while (tap) {
+			edict->timelimit += ta->timeout;
+			tap = tap->next;
+		}
 		submit_job(ctx->checks.dnsblc_pool, edict);
 
-		ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, edict->timelimit);
-		if (ret > 0) {
-			/* We've got a response */
-			result = (chkresult_t *)message.result;
-			suspicious = result->suspicious;
-			free(result);
-			logstr(GLOG_INSANE, "suspicious = %d", suspicious);
-			if (true == suspicious) {
-				logstr(GLOG_INFO, "greylist: %s", tuple);
-				acctstr(ACCT_GREY, "%s", tuple);
-				retvalue = STATUS_GREY;
-			} else {
-				logstr(GLOG_INFO, "trust: %s", tuple);
-				acctstr(ACCT_TRUST, "%s", tuple);
-				retvalue = STATUS_TRUST;
-			}
-		} 
+		clock_gettime(CLOCK_TYPE, &start);
 
-		edict_unlink(edict);
-/*
-		if (dnsblc(request->client_address, ta)) {
-			logstr(GLOG_INFO, "greylist: %s", tuple);
-			acctstr(ACCT_GREY, "%s", tuple);
-			retvalue = STATUS_GREY;
-		} else {
-			logstr(GLOG_INFO, "trust: %s", tuple);
-			acctstr(ACCT_TRUST, "%s", tuple);
-			retvalue = STATUS_TRUST;
+		while (ta) {
+			do {
+				clock_gettime(CLOCK_TYPE, &now);
+				timeused = ms_diff(&now, &start);
+				if (timeused > ta->timeout)
+					break;
+
+				/* ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, ta->timeout); */
+				ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, 0);
+				if (ret > 0) {
+					/* We've got a response */
+					result = (chkresult_t *)message.result;
+					suspicious = result->suspicious;
+					free(result);
+					logstr(GLOG_INSANE, "suspicious = %d", suspicious);
+					if (true == suspicious) {
+						logstr(GLOG_INFO, "greylist: %s", tuple);
+						acctstr(ACCT_GREY, "%s", tuple);
+						retvalue = STATUS_GREY;
+					} else {
+						logstr(GLOG_INFO, "trust: %s", tuple);
+						acctstr(ACCT_TRUST, "%s", tuple);
+						retvalue = STATUS_TRUST;
+					}
+					got_response = true;
+
+				} 
+
+			} while (! got_response);
+
+			if (got_response)
+				break;
+
+			if (timeused > ta->timeout) {
+				if (ta->action)
+					ta->action(ta->arg, timeused);
+				if (! ta->next) {
+					/* final timeout, we trust */
+					retvalue = STATUS_TRUST;
+				}
+			}
+
+			ta = ta->next;
 		}
-*/
+		edict_unlink(edict);
 #endif /* DNSBL */
 	}
 

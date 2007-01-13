@@ -159,7 +159,6 @@ typedef struct dnsbl_s {
 } dnsbl_t;
 #endif /* DNSBL */
 
-typedef int mseconds_t;
 typedef void (*tmout_action)(void *arg, mseconds_t timeused);
 
 /* timeout action list */

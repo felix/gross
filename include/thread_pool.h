@@ -17,6 +17,8 @@
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
+typedef int mseconds_t;
+
 typedef struct thread_pool_s {
 	int work_queue_id;
 } thread_pool_t;
@@ -30,7 +32,7 @@ typedef struct edict_s {
         void *job;
         int resultmq;
 	reference_count_t reference;
-        time_t timelimit;
+        mseconds_t timelimit;
 } edict_t;
 
 typedef struct pool_ctx_s {

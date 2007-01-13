@@ -41,7 +41,7 @@ thread_pool(void *arg)
 	pool_ctx_t *pool_ctx;
 	edict_message_t message;
 	edict_t *edict;
-	time_t timelimit;
+	mseconds_t timelimit;
 	
 	pool_ctx = (pool_ctx_t *)arg;
 	assert(pool_ctx->mx);
@@ -56,7 +56,7 @@ thread_pool(void *arg)
 
 	for (;;) {
 		/* wait for new jobs */
-		timelimit = 60; /* one minute */
+		timelimit = 60 * SI_KILO; /* one minute */
 
 		POOL_MUTEX_LOCK;
 		pool_ctx->count_idle++;
@@ -186,6 +186,7 @@ edict_unlink(edict_t *edict)
 {
 	int ret;
 	int *refcount;
+        poolresult_message_t message;
 
 	ret = pthread_mutex_lock(&edict->reference.mx);
 	assert(0 == ret);
@@ -194,7 +195,14 @@ edict_unlink(edict_t *edict)
 	if (--edict->reference.count == 0) {
 		/* last reference */
 		if (edict->resultmq > 0)
-			release_queue(edict->resultmq);
+			while (release_queue(edict->resultmq) < 0) {
+				/* queue wasn't emtpy */
+				logstr(GLOG_INSANE, "queue not empty, flushing");
+				ret = get_msg_timed(edict->resultmq, &message,
+					sizeof(message.result), 0, -1);
+				if (ret > 0)
+					free((chkresult_t *)message.result);
+			}
 		pthread_mutex_unlock(&edict->reference.mx);
 		free(edict);
 	} else {

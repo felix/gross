@@ -241,24 +241,16 @@ dnsblc(edict_t *edict)
 		dnsbl = dnsbl->next;
 	}
 
-	/* build default entry, if timeout not given */
-	if (! ta) {
-		ta = Malloc(sizeof(tmout_action_t));
-		ta->timeout = 5000;		/* 5 seconds */
-		ta->action = NULL;
-		ta->next = NULL;
-	}
-
 	clock_gettime(CLOCK_TYPE, &start);
 
-	while (ta) {
+	while (! timeout) {
 		do {
 			clock_gettime(CLOCK_TYPE, &now);
 			timeused = ms_diff(&now, &start);
-			if (timeused > ta->timeout)
+			if (timeused > edict->timelimit)
 				break;
 
-			mstotimespec(ta->timeout - timeused, &timeleft);
+			mstotimespec(edict->timelimit - timeused, &timeleft);
 
 			FD_ZERO(&readers);
 			FD_ZERO(&writers);
@@ -273,28 +265,25 @@ dnsblc(edict_t *edict)
 
 			tstotv(&ts, &tv);
 			
+
 			count = select(nfds, &readers, &writers, NULL, &tv);
 			ares_process(channel, &readers, &writers);
 		} while (!match_found);
 
-		if (match_found)
+		if (match_found || nfds == 0)
 			break;
 	
-		if (timeused > ta->timeout) {
-			if (ta->action)
-				ta->action(ta->arg, timeused);
-			if (! ta->next)
-				/* the final timeout value */
-				timeout = 1;
+		logstr(GLOG_INSANE, "debug before %d", match_found);
+		if (timeused > edict->timelimit) {
+			/* the final timeout value */
+			timeout = 1;
 		}
-
-		ta = ta->next;
 	}
 
 	ares_destroy(channel);
 	free(ipstr);
 
-	result = Malloc(sizeof(chkresult_t));
+	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	result->suspicious = (match_found > 0);
 	send_result(edict, result);
 	
