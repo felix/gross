@@ -63,12 +63,12 @@ handle_connection(client_info_t *client_info)
 	strncpy(response, "F", MAXLINELEN);
 
 	/* build the tmout_action_t list */
-	ta1.timeout = 10;             /* 1 second */
+	ta1.timeout = 1000;             /* 1 second */
 	ta1.action = &calm_client;
 	ta1.arg = client_info;
 	ta1.next = &ta2;
 
-	ta2.timeout = 50;		/* 5 seconds */
+	ta2.timeout = 5000;		/* 5 seconds */
 	ta2.action = NULL;
 	ta2.next = NULL;
 

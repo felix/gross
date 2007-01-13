@@ -29,16 +29,14 @@ typedef struct cond_bundle_s {
 } cond_bundle_t;
 
 typedef struct edict_s {
-	void *job;
-	void *result;
-	cond_bundle_t cond_bundle;
-	time_t timelimit;
-	int retvalue;
+        void *job;
+        int resultmq;
+        time_t timelimit;
 } edict_t;
 
 typedef struct pool_ctx_s {
 	pthread_mutex_t *mx;
-	int (*routine)(void *, void *, time_t);
+	int (*routine)(edict_t *);
 	thread_pool_t *info; 	/* public info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
@@ -53,7 +51,7 @@ typedef struct edict_message_s {
 
 int submit_job(thread_pool_t *pool, edict_t *edict);
 int submit_job_wait(thread_pool_t *pool, edict_t *edict);
-thread_pool_t *create_thread_pool(const char *name, int (*routine)(void *, void *, time_t));
+thread_pool_t *create_thread_pool(const char *name, int (*routine)(edict_t *));
 edict_t *edict_get();
 edict_t *edict_get();
 

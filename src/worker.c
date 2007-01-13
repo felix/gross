@@ -19,7 +19,6 @@
 #include "common.h"
 #include "srvutils.h"
 #include "syncmgr.h"
-#include "thread_pool.h"
 
 #ifdef DNSBL
 #include "dnsblc.h"
@@ -61,13 +60,13 @@ ipstr(struct sockaddr_in *saddr)
  * worker	- wrapper for process_connection()
  */
 int
-worker(void *arg, void *result, time_t timelimit)
+worker(edict_t *edict)
 {
 	client_info_t *client_info;
 
 	logstr(GLOG_DEBUG, "worker starting");
 
-	client_info = (client_info_t *)arg;
+	client_info = (client_info_t *)edict->job;
 
 #ifdef WORKER_PROTO_UDP
 	logstr(GLOG_INFO, "query from %s", client_info->ipstr);

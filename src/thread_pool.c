@@ -81,23 +81,12 @@ thread_pool(void *arg)
 
 			POOL_MUTEX_UNLOCK;
 
-			/* check if caller waits for response */
-			if (edict->cond_bundle.used == true) {
-				pthread_mutex_lock(&edict->cond_bundle.mx);
-			}
-
 			/* run the routine with args */
-			edict->retvalue = pool_ctx->routine(edict->job, edict->result, edict->timelimit);
+			pool_ctx->routine(edict);
 
 			/* check if caller waits for response */
-			if (edict->cond_bundle.used == false) {
-				/* caller does not wait, so we must free the edict */
+			if (0 == edict->resultmq)
 				free(edict);
-			} else {
-				edict->cond_bundle.ready = true;
-				pthread_cond_signal(&edict->cond_bundle.cv);
-				pthread_mutex_unlock(&edict->cond_bundle.mx);
-			}
 		} else {
 			/* timeout occurred */
 
@@ -119,7 +108,7 @@ thread_pool(void *arg)
 }
 
 thread_pool_t *
-create_thread_pool(const char *name, int (*routine)(void *, void *, time_t))
+create_thread_pool(const char *name, int (*routine)(edict_t *))
 {
 	thread_pool_t *pool;
 	pthread_mutex_t *pool_mx;
@@ -174,8 +163,15 @@ edict_t *
 edict_get(bool forget)
 {
 	edict_t *edict;
+		
 
 	edict = (edict_t *)Malloc(sizeof(edict_t));
 	bzero(edict, sizeof(edict_t));
+
+	/* reserve a message queue, if results are wanted */
+	if (false == forget) {
+		edict->resultmq = get_queue();
+	}
+
 	return edict;
 }

@@ -17,6 +17,8 @@
 #ifndef WORKER_H
 #define WORKER_H
 
+#include "thread_pool.h"
+
 #define MAXCONNQ 5
 
 enum grey_status_t { STATUS_GREY, STATUS_MATCH, STATUS_TRUST };
@@ -37,7 +39,7 @@ typedef struct {
         char *client_address;
 } grey_tuple_t;
 
-int worker(void *arg, void *result, time_t timelimit);
+int worker(edict_t *edict);
 void free_request(grey_tuple_t *arg);
 int test_tuple(grey_tuple_t *tuple, tmout_action_t *ta);
 void free_client_info(client_info_t *arg);
