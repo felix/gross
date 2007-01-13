@@ -207,8 +207,6 @@ create_queue(void)
 int
 get_queue(void)
 {
-        int ret;
-        int retval;
         int i;
         msgqueue_t *mq;
 
@@ -328,7 +326,6 @@ put_msg_raw(msgqueue_t *mq, msg_t *msg)
 {
 	int ret;
 	msg_t *tail;
-	int retvalue;
 
 	if (mq->active == false) {
 		logstr(GLOG_ERROR, "message queue is marked inactive");

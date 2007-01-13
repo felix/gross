@@ -24,7 +24,6 @@ int
 add_dnsbl(dnsbl_t **current, const char *name, int weight)
 {
 	dnsbl_t *new;
-	int ret;
 
 	logstr(GLOG_INFO, "adding dnsbl: %s", name);
 	
@@ -46,8 +45,6 @@ add_dnsbl(dnsbl_t **current, const char *name, int weight)
 int
 query_clearance(dnsbl_t *dnsbl)
 {
-/* 	int ret; */
-	char *errorstr;
 	int retvalue;
 
 	if (dnsbl->tolerancecounter > 0) {
@@ -61,9 +58,6 @@ query_clearance(dnsbl_t *dnsbl)
 int
 tolerate_dnsbl(dnsbl_t *dnsbl)
 {
-	int sval;
-	int ret;
-
 	/* increment counter if needed */
 	if (dnsbl->tolerancecounter < ERRORTOLERANCE) {
 		logstr(GLOG_INFO, "incrementing tolerance counter for dnsbl %s", dnsbl->name);
@@ -187,7 +181,6 @@ dnsblc(edict_t *edict)
 	callback_arg_t *callback_arg;
 	int timeused;
 	const char *client_address;
-	tmout_action_t *ta;
 	chkresult_t *result;
 
 	logstr(GLOG_DEBUG, "dnsblc called");
@@ -294,9 +287,13 @@ dnsblc(edict_t *edict)
 void
 dnsblc_init()
 {
-        /* initialize the thread pool */
+	thread_pool_t *pool;
+
+	/* initialize the thread pool */
         logstr(GLOG_INFO, "initializing dnsbl checker thread pool");
-	ctx->checks.dnsblc_pool = create_thread_pool("dnsbl", &dnsblc);
-        if (ctx->checks.dnsblc_pool == NULL)
+	pool = create_thread_pool("dnsbl", &dnsblc);
+        if (pool == NULL)
                 daemon_perror("create_thread_pool");
+
+	register_check(pool);
 }

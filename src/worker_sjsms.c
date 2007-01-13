@@ -68,7 +68,7 @@ handle_connection(client_info_t *client_info)
 	ta1.arg = client_info;
 	ta1.next = &ta2;
 
-	ta2.timeout = 5000;		/* 5 seconds */
+	ta2.timeout = 4000;		/* 4 seconds more */
 	ta2.action = NULL;
 	ta2.next = NULL;
 

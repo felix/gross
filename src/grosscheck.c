@@ -56,7 +56,6 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	int n = -1;
 	int ret = -1;
 	int numservers = 0;
-	char *token = 0x00;
 	char *rstr = 0x00;
 	char *begin;
 	char *end;

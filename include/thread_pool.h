@@ -21,6 +21,7 @@ typedef int mseconds_t;
 
 typedef struct thread_pool_s {
 	int work_queue_id;
+	const char *name;	/* name of the pool for logging purposes */
 } thread_pool_t;
 
 typedef struct {
@@ -41,7 +42,6 @@ typedef struct pool_ctx_s {
 	thread_pool_t *info; 	/* public info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
-	const char *name;	/* name of the pool for logging purposes */
 } pool_ctx_t;
 
 /* message queue wrap for edicts */

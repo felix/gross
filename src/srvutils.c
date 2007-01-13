@@ -519,3 +519,17 @@ date_fmt(char *msg, size_t len) {
         free(buf);
         return ret;
 }
+
+void
+register_check(thread_pool_t *pool)
+{
+	int i;
+
+	for (i = 0; i < MAXCHECKS; i++)
+		if (NULL == ctx->checklist[i]) {
+			ctx->checklist[i] = pool;
+			break;
+		}
+	if (i == MAXCHECKS) 
+		logstr(GLOG_ERROR, "unable to register pool %s", pool->name);
+}

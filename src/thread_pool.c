@@ -48,7 +48,7 @@ thread_pool(void *arg)
 	assert(pool_ctx->routine);
 	assert(pool_ctx->info);
 
-	logstr(GLOG_DEBUG, "threadpool '%s' starting", pool_ctx->name);
+	logstr(GLOG_DEBUG, "threadpool '%s' starting", pool_ctx->info->name);
 
 	POOL_MUTEX_LOCK;
 	pool_ctx->count_thread++;
@@ -68,14 +68,14 @@ thread_pool(void *arg)
 			edict = message.edict;
 			assert(edict->job);
 
-			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->name);
+			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->info->name);
 	
 			POOL_MUTEX_LOCK;
 			
 			pool_ctx->count_idle--;
 			if (pool_ctx->count_idle < 1) {
 				/* We are the last idling thread, start another */
-				logstr(GLOG_DEBUG, "threadpool '%s' starting another thread", pool_ctx->name);
+				logstr(GLOG_DEBUG, "threadpool '%s' starting another thread", pool_ctx->info->name);
 				Pthread_create(NULL, &thread_pool, pool_ctx);
 			}
 
@@ -91,14 +91,14 @@ thread_pool(void *arg)
 
 			POOL_MUTEX_LOCK;
 
-			logstr(GLOG_DEBUG, "threadpool '%s' notices it's idling", pool_ctx->name);
+			logstr(GLOG_DEBUG, "threadpool '%s' notices it's idling", pool_ctx->info->name);
 
 			pool_ctx->count_idle--;
 			/* there should be at least one idling thread left */
 			if (pool_ctx->count_idle > 1) {
 				pool_ctx->count_thread--;
 				POOL_MUTEX_UNLOCK;
-				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down", pool_ctx->name);
+				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down", pool_ctx->info->name);
 				pthread_exit(NULL);
 			}
 			POOL_MUTEX_UNLOCK;
@@ -134,7 +134,7 @@ create_thread_pool(const char *name, int (*routine)(edict_t *))
 	pool_ctx->info = pool;
 	pool_ctx->count_thread = 0;
 	pool_ctx->count_idle = 0;
-	pool_ctx->name = name;
+	pool_ctx->info->name = name;
 
 	/* start controller thread */
 	Pthread_create(NULL, &thread_pool, pool_ctx);
@@ -185,7 +185,6 @@ void
 edict_unlink(edict_t *edict)
 {
 	int ret;
-	int *refcount;
         poolresult_message_t message;
 
 	ret = pthread_mutex_lock(&edict->reference.mx);

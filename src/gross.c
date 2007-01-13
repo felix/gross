@@ -60,6 +60,9 @@ initialize_context()
 	/* Clear flags  */
 	ctx->config.flags = 0;
 
+	/* Clear checks */
+	ctx->config.checks = 0;
+
 	/* initial loglevel and facility, they will be set in configure_grossd() */
 	ctx->config.loglevel = 0;
 	ctx->config.syslogfacility = 0;
@@ -242,6 +245,16 @@ configure_grossd(configlist_t *config)
 		cp = cp->next;
 	}
 #endif /* DNSBL */
+
+	/* checks */
+	cp = config;
+	while(cp) {
+		if (strcmp(cp->name, "check") == 0) {
+			if (strcmp(cp->value, "dnsbl") == 0) 
+				ctx->config.checks |= CHECK_DNSBL;
+		}
+		cp = cp->next;
+	}
 
 	/* log_ parameters */
 	cp = config;
@@ -426,7 +439,8 @@ main(int argc, char *argv[])
 
 	/* start the check pools */
 #ifdef DNSBL
-	dnsblc_init();
+	if (ctx->config.checks & CHECK_DNSBL)
+		dnsblc_init();
 #endif /* DNSBL */
 
 	/* start the worker thread */

@@ -31,9 +31,11 @@
 			"sjsms_response_trust",	"$Y",		\
 			"log_method",		"syslog",	\
 			"log_level",		"info",		\
+			"check",		"dnsbl",	\
 			"syslog_facility",	"mail"
 
 #define MULTIVALUES	"dnsbl",	\
+			"check",	\
                         "stat_level",	\
 			"log_method"
 

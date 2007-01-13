@@ -102,6 +102,9 @@
 #define FLG_DRYRUN (int)0x10
 #define FLG_SYSLOG (int)0x20
 
+#define CHECK_DNSBL (int)0x01
+#define CHECK_BLOCKER (int)0x02
+
 #ifndef MAX
 #define MAX(a,b) 	((a) > (b) ? (a) : (b))
 #endif
@@ -145,6 +148,7 @@ typedef struct {
         int statlevel;
 	int acctmask;
 	int flags;
+	int checks;
 #if PROTOCOL == SJSMS
 	sjsms_config_t sjsms;
 #endif /* PROTOCOL == SJSMS */
@@ -180,9 +184,7 @@ typedef struct {
   thread_info_t worker;
 } thread_collection_t;
 
-typedef struct {
-	thread_pool_t *dnsblc_pool;
-} checks_t;
+#define MAXCHECKS 128
 
 typedef struct {
         bloom_ring_queue_t *filter;
@@ -198,7 +200,7 @@ typedef struct {
         mmapped_brq_t *mmap_info;
         thread_collection_t process_parts;
         stats_t stats;
-	checks_t checks;
+	thread_pool_t *checklist[MAXCHECKS];
 } gross_ctx_t;
 
 #ifndef HAVE_USECONDS_T

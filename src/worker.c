@@ -260,9 +260,10 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	chkresult_t *result;
 	bool suspicious;
 	bool got_response = false;
-	struct timespec start, now, timeleft;
+	struct timespec start, now;
 	mseconds_t timeused;
 	tmout_action_t *tap;
+	int i;
 
 	/* greylist */
 	snprintf(tuple, MSGSZ, "%s %s %s",
@@ -300,7 +301,11 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		}
 
 		/* here should be loop over all checks */
-		submit_job(ctx->checks.dnsblc_pool, edict);
+		i = 0;
+		while (ctx->checklist[i]) {
+			submit_job(ctx->checklist[i], edict);
+			i++;
+		}
 
 		clock_gettime(CLOCK_TYPE, &start);
 
