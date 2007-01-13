@@ -153,7 +153,7 @@ typedef struct {
 typedef struct dnsbl_s {
         const char *name;
         int weight;
-        sem_t *failurecount_sem;
+	int tolerancecounter;
         struct dnsbl_s *next; /* linked list */
 } dnsbl_t;
 #endif /* DNSBL */

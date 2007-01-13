@@ -24,7 +24,6 @@ int
 add_dnsbl(dnsbl_t **current, const char *name, int weight)
 {
 	dnsbl_t *new;
-	sem_t *sp;
 	int ret;
 
 	logstr(GLOG_INFO, "adding dnsbl: %s", name);
@@ -32,32 +31,13 @@ add_dnsbl(dnsbl_t **current, const char *name, int weight)
 	new = Malloc(sizeof(dnsbl_t));
 	memset(new, 0, sizeof(dnsbl_t));
 
-#ifdef USE_SEM_OPEN
-	/* make sure we get a private semaphore */
-        ret = sem_unlink("sem_dnsbl");
-        if (ret == -1 && errno == EACCES) {
-                perror("sem_unlink");
-		return -1;
-	}
-        sp = sem_open("sem_dnsbl", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, (unsigned int) ERRORTOLERANCE);
-        if (sp == (sem_t *)SEM_FAILED) {
-                daemon_perror("sem_open");
-		return -1;
-	}
-	/* we do not need the named semaphore, so it's fine to delete the name */
-        ret = sem_unlink("sem_dnsbl");
-#else
-	sp = Malloc(sizeof(sem_t));
-
-	ret = sem_init(sp, 0, (unsigned int) ERRORTOLERANCE);
-	if (ret != 0) {
-		perror("sem_init");
-		return -1;
-	}
-#endif /* USE_SEM_OPEN */
+	/*
+	 * this is not threadsafe, but we do not need
+	 * an exact result, we can afford errors here 
+	 */
+	new->tolerancecounter = ERRORTOLERANCE;
 
 	new->name = strdup(name);
-	new->failurecount_sem = sp;
 	new->next = *current;
 	*current = new;
 	return 1;
@@ -68,14 +48,14 @@ query_clearance(dnsbl_t *dnsbl)
 {
 /* 	int ret; */
 	char *errorstr;
-	
-	if (sem_trywait(dnsbl->failurecount_sem) < 0) {
-		if (errno == EAGAIN)
-			return FALSE;
-		errorstr = strerror(errno);
-		logstr(GLOG_ERROR, "Error in query_clearance() -> sem_trywait(): %s", errorstr);
+	int retvalue;
+
+	if (dnsbl->tolerancecounter > 0) {
+		retvalue = TRUE;
+	} else {
+		retvalue = FALSE;
 	}
-	return TRUE;
+	return retvalue;
 }
 
 int
@@ -85,15 +65,9 @@ tolerate_dnsbl(dnsbl_t *dnsbl)
 	int ret;
 
 	/* increment counter if needed */
-	ret = sem_getvalue(dnsbl->failurecount_sem, &sval);
-	if (ret < 0) {
-		logstr(GLOG_CRIT, "sem_getvalue failed for dnsbl %s", dnsbl->name);
-		/* increment anyway */
-		sval = 0;
-	} 
-	if (sval < ERRORTOLERANCE) {
+	if (dnsbl->tolerancecounter < ERRORTOLERANCE) {
 		logstr(GLOG_INFO, "incrementing tolerance counter for dnsbl %s", dnsbl->name);
-		sem_post(dnsbl->failurecount_sem);
+		dnsbl->tolerancecounter++;
 	}
 	return 0;
 }
@@ -127,8 +101,8 @@ addrinfo_callback(void *arg, int status, struct hostent *host)
 		logstr(GLOG_INFO, "dns-timeout: %s for %s",
 			cba->dnsbl->name, cba->client_address);
 		acctstr(ACCT_DNS_TMOUT, "%s for %s", cba->dnsbl->name, cba->client_address);
-	} else {
-		sem_post(cba->dnsbl->failurecount_sem);
+		/* decrement tolerancecounter */
+		cba->dnsbl->tolerancecounter--;
 	}
 
 	free(cba);
