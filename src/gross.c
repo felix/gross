@@ -424,6 +424,11 @@ main(int argc, char *argv[])
 	 *
 	 */
 
+	/* start the check pools */
+#ifdef DNSBL
+	dnsblc_init();
+#endif /* DNSBL */
+
 	/* start the worker thread */
 	worker_init();
 

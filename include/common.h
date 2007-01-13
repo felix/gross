@@ -82,6 +82,7 @@
  */
 #include "bloom.h"
 #include "stats.h"
+#include "thread_pool.h"
 
 /*
  * common defines and macros
@@ -181,6 +182,10 @@ typedef struct {
 } thread_collection_t;
 
 typedef struct {
+	thread_pool_t *dnsblc_pool;
+} checks_t;
+
+typedef struct {
         bloom_ring_queue_t *filter;
         int log_q;
         int update_q;
@@ -194,6 +199,7 @@ typedef struct {
         mmapped_brq_t *mmap_info;
         thread_collection_t process_parts;
         stats_t stats;
+	checks_t checks;
 } gross_ctx_t;
 
 #ifndef HAVE_USECONDS_T

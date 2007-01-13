@@ -21,16 +21,15 @@ typedef struct thread_pool_s {
 	int work_queue_id;
 } thread_pool_t;
 
-typedef struct cond_bundle_s {
-	bool		used;
-	bool 		ready;
+typedef struct {
+	int		count;
 	pthread_mutex_t	mx;
-	pthread_cond_t	cv;
-} cond_bundle_t;
+} reference_count_t;
 
 typedef struct edict_s {
         void *job;
         int resultmq;
+	reference_count_t reference;
         time_t timelimit;
 } edict_t;
 
@@ -54,5 +53,7 @@ int submit_job_wait(thread_pool_t *pool, edict_t *edict);
 thread_pool_t *create_thread_pool(const char *name, int (*routine)(edict_t *));
 edict_t *edict_get();
 edict_t *edict_get();
+void send_result(edict_t *edict, void *result);
+void edict_unlink(edict_t *edict);
 
 #endif /* THREAD_POOL_H */

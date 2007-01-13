@@ -62,14 +62,14 @@ thread_pool(void *arg)
 		pool_ctx->count_idle++;
 		POOL_MUTEX_UNLOCK;
 
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message), 0, timelimit); 
+		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit); 
 		if (ret > 0) {
 			/* we've got a message */
 			edict = message.edict;
 			assert(edict->job);
 
 			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->name);
-
+	
 			POOL_MUTEX_LOCK;
 			
 			pool_ctx->count_idle--;
@@ -84,9 +84,8 @@ thread_pool(void *arg)
 			/* run the routine with args */
 			pool_ctx->routine(edict);
 
-			/* check if caller waits for response */
-			if (0 == edict->resultmq)
-				free(edict);
+			/* we are done */
+			edict_unlink(edict);
 		} else {
 			/* timeout occurred */
 
@@ -153,6 +152,11 @@ submit_job(thread_pool_t *pool, edict_t *job)
 	message.mtype = 0;
 	message.edict = job;
 
+	/* increment reference counter */
+	pthread_mutex_lock(&job->reference.mx);
+	job->reference.count++;
+	pthread_mutex_unlock(&job->reference.mx);
+
 	return put_msg(pool->work_queue_id, &message, sizeof(message.edict), 0);
 }
 
@@ -163,7 +167,6 @@ edict_t *
 edict_get(bool forget)
 {
 	edict_t *edict;
-		
 
 	edict = (edict_t *)Malloc(sizeof(edict_t));
 	bzero(edict, sizeof(edict_t));
@@ -172,6 +175,42 @@ edict_get(bool forget)
 	if (false == forget) {
 		edict->resultmq = get_queue();
 	}
+	pthread_mutex_init(&edict->reference.mx, NULL);
+	edict->reference.count = 1;
 
 	return edict;
+}
+
+void
+edict_unlink(edict_t *edict)
+{
+	int ret;
+	int *refcount;
+
+	ret = pthread_mutex_lock(&edict->reference.mx);
+	assert(0 == ret);
+	assert(edict->reference.count > 0);
+
+	if (--edict->reference.count == 0) {
+		/* last reference */
+		if (edict->resultmq > 0)
+			release_queue(edict->resultmq);
+		pthread_mutex_unlock(&edict->reference.mx);
+		free(edict);
+	} else {
+		pthread_mutex_unlock(&edict->reference.mx);
+	}
+}
+
+void
+send_result(edict_t *edict, void *result)
+{
+	int ret;
+	poolresult_message_t message;
+
+	message.result = result;
+	
+	ret = put_msg(edict->resultmq, &message, sizeof(message), 0);
+	if (ret < 0)
+		perror("send_result");
 }

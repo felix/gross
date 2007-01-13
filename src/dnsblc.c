@@ -171,11 +171,12 @@ reverse_inet_addr(char *ipstr)
 }
 
 int 
-dnsblc(const char *client_address, tmout_action_t *ta)
+dnsblc(edict_t *edict)
 {
 	ares_channel channel;
 	int nfds, count, ret;
-	int match_found = 0, timeout = 0;
+	int match_found = 0;
+	int timeout = 0;
 	fd_set readers, writers;
 	struct timeval tv;
 	struct timespec ts, start, now, timeleft;
@@ -185,8 +186,14 @@ dnsblc(const char *client_address, tmout_action_t *ta)
 	dnsbl_t *dnsbl;
 	callback_arg_t *callback_arg;
 	int timeused;
+	const char *client_address;
+	tmout_action_t *ta;
+	chkresult_t *result;
 
 	logstr(GLOG_DEBUG, "dnsblc called");
+
+	client_address = (char *)edict->job;
+	assert(client_address);
 
 	ipstr = strdup(client_address);
 
@@ -237,7 +244,7 @@ dnsblc(const char *client_address, tmout_action_t *ta)
 	/* build default entry, if timeout not given */
 	if (! ta) {
 		ta = Malloc(sizeof(tmout_action_t));
-		ta->timeout = 10000;		/* 10 seconds */
+		ta->timeout = 5000;		/* 5 seconds */
 		ta->action = NULL;
 		ta->next = NULL;
 	}
@@ -287,6 +294,20 @@ dnsblc(const char *client_address, tmout_action_t *ta)
 	ares_destroy(channel);
 	free(ipstr);
 
+	result = Malloc(sizeof(chkresult_t));
+	result->suspicious = (match_found > 0);
+	send_result(edict, result);
+	
 	logstr(GLOG_DEBUG, "dnsblc returning");
 	return match_found;
+}
+
+void
+dnsblc_init()
+{
+        /* initialize the thread pool */
+        logstr(GLOG_INFO, "initializing dnsbl checker thread pool");
+	ctx->checks.dnsblc_pool = create_thread_pool("dnsbl", &dnsblc);
+        if (ctx->checks.dnsblc_pool == NULL)
+                daemon_perror("create_thread_pool");
 }

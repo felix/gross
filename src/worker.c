@@ -146,9 +146,10 @@ udp_server(void *arg)
 			memcpy(client_info->message, mesg, msglen);
 
 			/* Write the edict */
-			edict = edict_get();
+			edict = edict_get(true);
 			edict->job = (void *)client_info;
 			submit_job(worker_pool, edict);
+			edict_unlink(edict);
 		}
 	}
 	/* never reached */
@@ -223,9 +224,10 @@ tcp_server(void *arg)
 			 */
 			client_info->ipstr = ipstr(client_info->caddr);
 			/* Write the edict */
-			edict = edict_get();
+			edict = edict_get(true);
 			edict->job = (void *)client_info;
 			submit_job(worker_pool, edict);
+			edict_unlink(edict);
                 }
         }
 }
@@ -250,8 +252,12 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	sha_256_t digest;
 	update_message_t update;
 	int ret;
-	int retvalue = 0;
+	int retvalue = STATUS_UNKNOWN;
 	oper_sync_t os;
+	edict_t *edict;
+	poolresult_message_t message;
+	chkresult_t *result;
+	bool suspicious;
 
 	/* greylist */
 	snprintf(tuple, MSGSZ, "%s %s %s",
@@ -271,6 +277,31 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		acctstr(ACCT_GREY, "%s", tuple);
 		retvalue = STATUS_GREY;
 #else
+		/* Write the edict */
+		edict = edict_get(false);
+		edict->job = (void *)request->client_address;
+		submit_job(ctx->checks.dnsblc_pool, edict);
+
+		ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, edict->timelimit);
+		if (ret > 0) {
+			/* We've got a response */
+			result = (chkresult_t *)message.result;
+			suspicious = result->suspicious;
+			free(result);
+			logstr(GLOG_INSANE, "suspicious = %d", suspicious);
+			if (true == suspicious) {
+				logstr(GLOG_INFO, "greylist: %s", tuple);
+				acctstr(ACCT_GREY, "%s", tuple);
+				retvalue = STATUS_GREY;
+			} else {
+				logstr(GLOG_INFO, "trust: %s", tuple);
+				acctstr(ACCT_TRUST, "%s", tuple);
+				retvalue = STATUS_TRUST;
+			}
+		} 
+
+		edict_unlink(edict);
+/*
 		if (dnsblc(request->client_address, ta)) {
 			logstr(GLOG_INFO, "greylist: %s", tuple);
 			acctstr(ACCT_GREY, "%s", tuple);
@@ -280,6 +311,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 			acctstr(ACCT_TRUST, "%s", tuple);
 			retvalue = STATUS_TRUST;
 		}
+*/
 #endif /* DNSBL */
 	}
 

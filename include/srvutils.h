@@ -60,15 +60,24 @@ enum { UPDATE = 1, ROTATE, ABSOLUTE_UPDATE, SYNC_AGGREGATE, UPDATE_OPER };
 /* #define UNLESS_IN_SYNC(X) { if ( sem_trywait(ctx->sync_guard) != EBUSY && ctx->sync_status != IN_) { X; pthread_mutex_unlock(ctx->sync_guard); } } */
 /* #define WHEN_IN_SYNC(uX) { if ( pthread_mutex_trylock(ctx->sync_guard) != EBUSY && ctx->sync_status == IN_SYNC) { X; pthread_mutex_unlock(ctx->sync_guard); } } */
 
-typedef struct log_buf {
+typedef struct {
         long    mtype;
         char    mtext[MSGSZ];
 } log_message_t;
 
-typedef struct update_buf {
+typedef struct {
         long    mtype;
         char    mtext[MSGSZ];
 } update_message_t;
+
+typedef struct {
+        long    mtype;
+	void 	*result;
+} poolresult_message_t;
+
+typedef struct {
+	bool suspicious;
+} chkresult_t;
 
 /* global context */
 extern gross_ctx_t *ctx;
