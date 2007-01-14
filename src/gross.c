@@ -165,6 +165,10 @@ configure_grossd(configlist_t *config)
 		daemon_shutdown(1, "Invalid updatestyle: %s", updatestr);
 	}
 
+	ctx->config.grey_mask = strtol(CONF("grey_mask"), (char **)NULL, 10);
+	if (errno || ctx->config.grey_mask > 32 || ctx->config.grey_mask < 0)
+		daemon_shutdown(1, "Invalid grey_mask: %s", CONF("grey_mask"));
+
 	ctx->config.status_host.sin_family = AF_INET;
 	host = gethostbyname( CONF("status_host") ? CONF("status_host") : CONF("host") );
 	inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]),

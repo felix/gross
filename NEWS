@@ -2,6 +2,7 @@ Version svn
 
 Issues fixed:
 #23: Customizable SMTP error messages
+#26: connections could come from different IP addresses
 #29: dnsbl tolerance counters not working on OS X
 
 Version 0.7.2

@@ -31,6 +31,7 @@
 			"sjsms_response_trust",	"$Y",		\
 			"log_method",		"syslog",	\
 			"log_level",		"info",		\
+			"grey_mask",		"0",		\
 			"check",		"dnsbl",	\
 			"syslog_facility",	"mail"
 
@@ -39,26 +40,28 @@
                         "stat_level",	\
 			"log_method"
 
-#define VALID_NAMES     "dnsbl",             \
-			"host",              \
-			"port",              \
-                        "filter_bits",       \
-                        "rotate_interval",   \
-                        "number_buffers",    \
-                        "update",            \
-                        "peer_name",         \
-                        "statefile",         \
-			"sjsms_response_grey", \
-			"sjsms_response_match", \
-			"sjsms_response_trust", \
-                        "log_method",	     \
-                        "log_level",	     \
-                        "syslog_facility",   \
-                        "sync_listen",	     \
-                        "sync_peer",	     \
-                        "sync_port",	     \
-                        "stat_interval",     \
-                        "stat_level",	     \
+#define VALID_NAMES     "dnsbl",			\
+			"host",				\
+			"port",				\
+                        "filter_bits",			\
+                        "rotate_interval",		\
+                        "number_buffers",		\
+                        "update",			\
+                        "peer_name",			\
+                        "statefile",			\
+			"sjsms_response_grey",		\
+			"sjsms_response_match",		\
+			"sjsms_response_trust",		\
+                        "log_method",			\
+                        "log_level",			\
+			"grey_mask",			\
+			"check",			\
+                        "syslog_facility",		\
+                        "sync_listen",			\
+                        "sync_peer",			\
+                        "sync_port",			\
+                        "stat_interval",		\
+                        "stat_level",			\
 			"status"
 
 #define DEPRECATED_NAMES 	"syncport",		\

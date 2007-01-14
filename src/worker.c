@@ -249,7 +249,8 @@ free_request(grey_tuple_t *arg)
 
 int
 test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
-	char tuple[MSGSZ];
+	char maskedtuple[MSGSZ];
+	char realtuple[MSGSZ];
 	sha_256_t digest;
 	update_message_t update;
 	int ret;
@@ -264,23 +265,71 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	mseconds_t timeused;
 	tmout_action_t *tap;
 	int i;
+	struct in_addr inaddr;
+	unsigned int ip, net, mask;
+	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
+	const char *ptr;
 
+	/*
+	 * apply checkmask to the ip 
+	 */ 
+	if (strlen(request->client_address) > INET_ADDRSTRLEN) {
+		logstr(GLOG_NOTICE, "invalid ipaddress: %s", request->client_address);
+		return STATUS_FAIL;
+	}
+
+	ret = inet_pton(AF_INET, request->client_address, &inaddr);
+	switch(ret) {
+	case -1:
+		logstr(GLOG_ERROR, "test_tuple: inet_pton: %s", strerror(errno));
+		return STATUS_FAIL;
+		break;
+	case 0:
+		logstr(GLOG_ERROR, "not a valid ip address: %s", request->client_address);
+		return STATUS_FAIL;
+		break;
+	}
+
+	/* case default */
+	ip = inaddr.s_addr;
+
+	/* this is 0xffffffff ^ (2 ** (32 - mask - 1) - 1) */
+	mask = 0xffffffff ^ ((1 << (32 - ctx->config.grey_mask)) - 1); 
+
+	/* ip is in network order */
+	net = ip & htonl(mask);
+
+	ptr = inet_ntop(AF_INET, &net, chkipstr, INET_ADDRSTRLEN);
+	if (! ptr) {
+		logstr(GLOG_ERROR, "test_tuple: inet_ntop: %s", strerror(errno));
+		return STATUS_FAIL;
+	}
+	
 	/* greylist */
-	snprintf(tuple, MSGSZ, "%s %s %s",
+	snprintf(maskedtuple, MSGSZ, "%s %s %s",
+			chkipstr,
+			request->sender,
+			request->recipient);
+	digest = sha256_string(maskedtuple);
+
+	/* for logging */
+	snprintf(realtuple, MSGSZ, "%s %s %s",
 			request->client_address,
 			request->sender,
 			request->recipient);
-	digest = sha256_string(tuple);
+
+	logstr(GLOG_INSANE, "checking ip=%s mask=0x%x, net=%s",
+		request->client_address, mask, chkipstr);
 
 	/* check status */
 	if ( is_in_ring_queue(ctx->filter, digest) ) {
-		logstr(GLOG_INFO, "match: %s", tuple);
-		acctstr(ACCT_MATCH, "%s", tuple);
+		logstr(GLOG_INFO, "match: %s", realtuple);
+		acctstr(ACCT_MATCH, "%s", realtuple);
 		retvalue = STATUS_MATCH;
 	} else {
 #ifndef DNSBL
-		logstr(GLOG_INFO, "greylist: %s", tuple);
-		acctstr(ACCT_GREY, "%s", tuple);
+		logstr(GLOG_INFO, "greylist: %s", realtuple);
+		acctstr(ACCT_GREY, "%s", realtuple);
 		retvalue = STATUS_GREY;
 #else
 		/* build default entry, if timeout not given */
@@ -324,12 +373,12 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 					free(result);
 					logstr(GLOG_INSANE, "suspicious = %d", suspicious);
 					if (true == suspicious) {
-						logstr(GLOG_INFO, "greylist: %s", tuple);
-						acctstr(ACCT_GREY, "%s", tuple);
+						logstr(GLOG_INFO, "greylist: %s", realtuple);
+						acctstr(ACCT_GREY, "%s", realtuple);
 						retvalue = STATUS_GREY;
 					} else {
-						logstr(GLOG_INFO, "trust: %s", tuple);
-						acctstr(ACCT_TRUST, "%s", tuple);
+						logstr(GLOG_INFO, "trust: %s", realtuple);
+						acctstr(ACCT_TRUST, "%s", realtuple);
 						retvalue = STATUS_TRUST;
 					}
 					got_response = true;
