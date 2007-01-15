@@ -56,7 +56,7 @@ double
 greylist_delay_update(double d)
 {
   WITH_STATS_GUARD(
-		   if (ctx->stats.greylist == 0) {
+		   if (0 == ctx->stats.greylist) {
 		     logstr(GLOG_WARNING, "Greylist average updated before updating counters");
 		     ctx->stats.greylist_avg_delay = d;
 		   } else {
@@ -73,7 +73,7 @@ double
 match_delay_update(double d)
 {
   WITH_STATS_GUARD(
-		   if (ctx->stats.match == 0) {
+		   if (0 == ctx->stats.match) {
 		     logstr(GLOG_WARNING, "Match average updated before updating counters");
 		     ctx->stats.match_avg_delay = d;
 		   } else {
@@ -89,7 +89,7 @@ double
 trust_delay_update(double d)
 {
   WITH_STATS_GUARD(
-		   if (ctx->stats.trust == 0) {
+		   if (0 == ctx->stats.trust) {
 		     ctx->stats.trust_avg_delay = d;
 		     logstr(GLOG_WARNING, "Trust average updated before updating counters");
 		   } else {

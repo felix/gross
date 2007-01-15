@@ -269,6 +269,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	unsigned int ip, net, mask;
 	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
 	const char *ptr;
+	bool free_ta = false;
 
 	/*
 	 * apply checkmask to the ip 
@@ -334,6 +335,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 #else
 		/* build default entry, if timeout not given */
 		if (! ta) {
+			free_ta = true;
 			ta = Malloc(sizeof(tmout_action_t));
 			ta->timeout = 5000;             /* 5 seconds */
 			ta->action = NULL;
@@ -404,6 +406,8 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		edict_unlink(edict);
 #endif /* DNSBL */
 	}
+
+	if (free_ta) free(ta);
 
 	if (((retvalue == STATUS_GREY) || (retvalue == STATUS_MATCH)) 
 		|| (ctx->config.flags & FLG_UPDATE_ALWAYS)) {
