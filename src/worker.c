@@ -345,7 +345,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		edict->job = (void *)request->client_address;
 		tap = ta;
 		while (tap) {
-			edict->timelimit += ta->timeout;
+			edict->timelimit += tap->timeout;
 			tap = tap->next;
 		}
 
