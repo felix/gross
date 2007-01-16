@@ -24,6 +24,7 @@
 enum parse_status_t { PARSE_OK, PARSE_CLOSED, PARSE_ERROR, PARSE_SYS_ERROR };
 
 /* prototypes of internals */
+int postfix_connection(edict_t *edict);
 int parse_postfix(client_info_t *info, grey_tuple_t *grey_tuple);
 char *try_match(char *matcher, char *matchee);
 
@@ -183,3 +184,86 @@ try_match(char *matcher, char *matchee)
 	else
 		return NULL;
 }
+
+/*
+ * The main worker thread for tcp_protocol. Listens for connections
+ * and starts a new thread to handle each connection.
+ */
+static void *
+postfix_server(void *arg)
+{
+        int ret;
+        int grossfd;
+        int opt;
+        client_info_t *client_info;
+        socklen_t clen;
+        thread_pool_t *postfix_pool;
+        edict_t *edict;
+
+        /* create socket for incoming requests */
+        grossfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (grossfd < 0) {
+                /* ERROR */
+                perror("socket");
+                return NULL;
+        }
+        opt = 1;
+        ret = setsockopt(grossfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        if (ret < 0) {
+                perror("setsockopt (SO_REUSEADDR)");
+                return NULL;
+        }
+
+        ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host), sizeof(struct sockaddr_in));
+        if (ret < 0) {
+                daemon_perror("bind");
+        }
+
+        ret = listen(grossfd, MAXCONNQ);
+        if (ret < 0) {
+                perror("listen");
+                return NULL;
+        }
+
+        /* initialize the thread pool */
+        logstr(GLOG_INFO, "initializing postfix thread pool");
+        postfix_pool = create_thread_pool("postfix", &postfix_connection);
+        if (postfix_pool == NULL)
+                daemon_perror("create_thread_pool");
+
+        /* server loop */
+        for ( ; ; ) {
+                /* client_info struct is free()d by the worker thread */
+                client_info = Malloc(sizeof(client_info_t));
+                client_info->caddr = Malloc(sizeof(struct sockaddr_in));
+
+                clen = sizeof(struct sockaddr_in);
+
+                logstr(GLOG_INSANE, "waiting for connections");
+                client_info->connfd = accept(grossfd, (struct sockaddr *)client_info->caddr, &clen);
+                if (client_info->connfd < 0) {
+                        if (errno != EINTR) {
+                                daemon_perror("accept()");
+                        }
+                } else {
+                        logstr(GLOG_INSANE, "new connection");
+                        /* a client is connected, handle the
+                         * connection over to a worker thread
+                         */
+                        client_info->ipstr = ipstr(client_info->caddr);
+                        /* Write the edict */
+                        edict = edict_get(true);
+                        edict->job = (void *)client_info;
+                        submit_job(postfix_pool, edict);
+                        edict_unlink(edict);
+                }
+        }
+}
+
+void
+postfix_server_init()
+{
+	logstr(GLOG_INFO, "starting postfix policy server");
+	Pthread_create(&ctx->process_parts.postfix_server, &postfix_server, NULL);
+}
+

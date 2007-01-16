@@ -151,3 +151,78 @@ sjsms_connection(edict_t *edict)
 
 	return 1;
 }
+
+/*
+ * The main worker thread for udp protocol. It first initializes
+ * worker thread pool. Then, it listens for requests and
+ * and feeds them to the thread pool.
+ */
+static void *
+sjsms_server(void *arg)
+{
+        int grossfd, ret, msglen;
+        socklen_t clen;
+        client_info_t *client_info;
+        char mesg[MAXLINELEN];
+        edict_t *edict;
+        thread_pool_t *sjsms_pool;
+
+        grossfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        if (grossfd < 0) {
+                /* ERROR */
+                perror("socket");
+                return NULL;
+        }
+
+        ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host),
+                        sizeof(struct sockaddr_in));
+        if (ret < 0) {
+                daemon_perror("bind");
+        }
+
+        /* initialize the thread pool */
+        logstr(GLOG_INFO, "initializing sjsms worker thread pool");
+        sjsms_pool = create_thread_pool("sjsms", &sjsms_connection);
+        if (sjsms_pool == NULL)
+                daemon_perror("create_thread_pool");
+
+        /* server loop */
+        for ( ; ; ) {
+                /* client_info struct is free()d by the worker thread */
+                client_info = Malloc(sizeof(client_info_t));
+                client_info->caddr = Malloc(sizeof(struct sockaddr_in));
+
+                clen = sizeof(struct sockaddr_in);
+                msglen = recvfrom(grossfd, mesg, MAXLINELEN, 0,
+                                        (struct sockaddr *)client_info->caddr, &clen);
+
+                if (msglen < 0) {
+                        if (errno == EINTR)
+                                continue;
+                        daemon_perror("recvfrom");
+                        free_client_info(client_info);
+                        return NULL;
+                } else {
+                        client_info->message = Malloc(msglen);
+                        client_info->connfd = grossfd;
+                        client_info->msglen = msglen;
+                        client_info->ipstr = ipstr(client_info->caddr);
+
+                        memcpy(client_info->message, mesg, msglen);
+
+                        /* Write the edict */
+                        edict = edict_get(true);
+                        edict->job = (void *)client_info;
+                        submit_job(sjsms_pool, edict);
+                        edict_unlink(edict);
+                }
+        }
+        /* never reached */
+}
+
+void
+sjsms_server_init()
+{
+	logstr(GLOG_INFO, "starting sjsms policy server");
+	Pthread_create(&ctx->process_parts.sjsms_server, &sjsms_server, NULL);
+}

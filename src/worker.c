@@ -29,8 +29,8 @@
 #include "utils.h"
 
 /* these are implemented in worker_*.c */
-int sjsms_connection(edict_t *edict);
-int postfix_connection(edict_t *edict);
+void postfix_server_init();
+void sjsms_server_init();
 
 /*
  * destructor for client_info_t
@@ -42,161 +42,6 @@ free_client_info(client_info_t *arg)
 	free(arg->ipstr);
 	free(arg->message);
         free(arg);
-}
-
-char *
-ipstr(struct sockaddr_in *saddr)
-{	
-	char ipstr[INET_ADDRSTRLEN];
-
-	if (inet_ntop(AF_INET, &saddr->sin_addr,
-		ipstr, INET_ADDRSTRLEN) == NULL) {
-		strncpy(ipstr, "UNKNOWN\0", INET_ADDRSTRLEN);
-	}
-	return strdup(ipstr);
-}
-
-/*
- * The main worker thread for udp protocol. It first initializes
- * worker thread pool. Then, it listens for requests and
- * and feeds them to the thread pool.
- */
-static void *
-sjsms_server(void *arg)
-{
-	int grossfd, ret, msglen;
-	socklen_t clen;
-	client_info_t *client_info;
-	char mesg[MAXLINELEN];
-	edict_t *edict;
-	thread_pool_t *sjsms_pool;
-
-	grossfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (grossfd < 0) {
-		/* ERROR */
-		perror("socket");
-		return NULL;
-	}
-
-	ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host),
-			sizeof(struct sockaddr_in));
-	if (ret < 0) {
-		daemon_perror("bind");
-	}
-
-	/* initialize the thread pool */
-	logstr(GLOG_INFO, "initializing sjsms worker thread pool");
-	sjsms_pool = create_thread_pool("sjsms", &sjsms_connection);
-	if (sjsms_pool == NULL)
-		daemon_perror("create_thread_pool");
-
-	/* server loop */
-	for ( ; ; ) {
-		/* client_info struct is free()d by the worker thread */
-		client_info = Malloc(sizeof(client_info_t));
-		client_info->caddr = Malloc(sizeof(struct sockaddr_in));
-
-		clen = sizeof(struct sockaddr_in);
-		msglen = recvfrom(grossfd, mesg, MAXLINELEN, 0,
-					(struct sockaddr *)client_info->caddr, &clen);
-
-		if (msglen < 0) {
-			if (errno == EINTR)
-				continue;
-			daemon_perror("recvfrom");
-			free_client_info(client_info);
-			return NULL;
-		} else {
-			client_info->message = Malloc(msglen);
-			client_info->connfd = grossfd;
-			client_info->msglen = msglen;
-			client_info->ipstr = ipstr(client_info->caddr);
-
-			memcpy(client_info->message, mesg, msglen);
-
-			/* Write the edict */
-			edict = edict_get(true);
-			edict->job = (void *)client_info;
-			submit_job(sjsms_pool, edict);
-			edict_unlink(edict);
-		}
-	}
-	/* never reached */
-}
-
-/*
- * The main worker thread for tcp_protocol. Listens for connections
- * and starts a new thread to handle each connection.
- */
-static void *
-postfix_server(void *arg)
-{
-        int ret;
-        int grossfd;
-        int opt;
-        client_info_t *client_info;
-        socklen_t clen;
-	thread_pool_t *postfix_pool;
-	edict_t *edict;
-
-        /* create socket for incoming requests */
-        grossfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (grossfd < 0) {
-                /* ERROR */
-                perror("socket");
-                return NULL;
-        }
-        opt = 1;
-        ret = setsockopt(grossfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        if (ret < 0) {
-                perror("setsockopt (SO_REUSEADDR)");
-                return NULL;
-        }
-
-        ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host), sizeof(struct sockaddr_in));
-        if (ret < 0) {
-                daemon_perror("bind");
-        }
-
-        ret = listen(grossfd, MAXCONNQ);
-        if (ret < 0) {
-                perror("listen");
-                return NULL;
-        }
-
-	/* initialize the thread pool */
-	logstr(GLOG_INFO, "initializing postfix thread pool");
-	postfix_pool = create_thread_pool("postfix", &postfix_connection);
-	if (postfix_pool == NULL)
-		daemon_perror("create_thread_pool");
-
-        /* server loop */
-        for ( ; ; ) {
-                /* client_info struct is free()d by the worker thread */
-                client_info = Malloc(sizeof(client_info_t));
-                client_info->caddr = Malloc(sizeof(struct sockaddr_in));
-
-                clen = sizeof(struct sockaddr_in);
-
-		logstr(GLOG_INSANE, "waiting for connections");
-                client_info->connfd = accept(grossfd, (struct sockaddr *)client_info->caddr, &clen);
-                if (client_info->connfd < 0) {
-                        if (errno != EINTR) {
-                                daemon_perror("accept()");
-                        }
-                } else {
-			logstr(GLOG_INSANE, "new connection");
-			/* a client is connected, handle the
-			 * connection over to a worker thread
-			 */
-			client_info->ipstr = ipstr(client_info->caddr);
-			/* Write the edict */
-			edict = edict_get(true);
-			edict->job = (void *)client_info;
-			submit_job(postfix_pool, edict);
-			edict_unlink(edict);
-                }
-        }
 }
 
 /* 
@@ -420,12 +265,8 @@ worker_init()
 {
 	if (ctx->config.protocols == 0)
 		logstr(GLOG_NOTICE, "No protocols configured");
-	if (ctx->config.protocols & PROTO_POSTFIX) {
-		logstr(GLOG_INFO, "starting postfix policy server");
-		Pthread_create(&ctx->process_parts.postfix_server, &postfix_server, NULL);
-	} 
-	if (ctx->config.protocols & PROTO_SJSMS) {
-		logstr(GLOG_INFO, "starting sjsms policy server");
-		Pthread_create(&ctx->process_parts.sjsms_server, &sjsms_server, NULL);
-	}
+	if (ctx->config.protocols & PROTO_POSTFIX)
+		postfix_server_init();
+	if (ctx->config.protocols & PROTO_SJSMS)
+		sjsms_server_init();
 }
