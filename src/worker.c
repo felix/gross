@@ -28,8 +28,9 @@
 #include "worker.h"
 #include "utils.h"
 
-/* function must be implemented in worker_[proto].c */
-int handle_connection(client_info_t *arg);
+/* these are implemented in worker_*.c */
+int sjsms_connection(edict_t *edict);
+int postfix_connection(edict_t *edict);
 
 /*
  * destructor for client_info_t
@@ -39,9 +40,7 @@ free_client_info(client_info_t *arg)
 {
         free(arg->caddr);
 	free(arg->ipstr);
-#ifdef WORKER_PROTO_UDP
 	free(arg->message);
-#endif
         free(arg);
 }
 
@@ -58,50 +57,19 @@ ipstr(struct sockaddr_in *saddr)
 }
 
 /*
- * worker	- wrapper for process_connection()
- */
-int
-worker(edict_t *edict)
-{
-	client_info_t *client_info;
-
-	logstr(GLOG_DEBUG, "worker starting");
-
-	client_info = (client_info_t *)edict->job;
-
-#ifdef WORKER_PROTO_UDP
-	logstr(GLOG_INFO, "query from %s", client_info->ipstr);
-#else
-	logstr(GLOG_INFO, "client connected from %s", client_info->ipstr);
-#endif
-
-        /* serve while good */
-	handle_connection(client_info);
-
-        /* tidy up */
-#ifndef WORKER_PROTO_UDP
-        close(client_info->connfd);
-#endif
-        free_client_info(client_info);
-        logstr(GLOG_DEBUG, "worker returning");
-        return 0;
-}
-
-#ifdef WORKER_PROTO_UDP
-/*
  * The main worker thread for udp protocol. It first initializes
  * worker thread pool. Then, it listens for requests and
  * and feeds them to the thread pool.
  */
 static void *
-udp_server(void *arg)
+sjsms_server(void *arg)
 {
 	int grossfd, ret, msglen;
 	socklen_t clen;
 	client_info_t *client_info;
 	char mesg[MAXLINELEN];
-	thread_pool_t *worker_pool;
 	edict_t *edict;
+	thread_pool_t *sjsms_pool;
 
 	grossfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (grossfd < 0) {
@@ -117,9 +85,9 @@ udp_server(void *arg)
 	}
 
 	/* initialize the thread pool */
-	logstr(GLOG_INFO, "initializing worker thread pool");
-	worker_pool = create_thread_pool("worker", &worker);
-	if (worker_pool == NULL)
+	logstr(GLOG_INFO, "initializing sjsms worker thread pool");
+	sjsms_pool = create_thread_pool("sjsms", &sjsms_connection);
+	if (sjsms_pool == NULL)
 		daemon_perror("create_thread_pool");
 
 	/* server loop */
@@ -135,7 +103,7 @@ udp_server(void *arg)
 		if (msglen < 0) {
 			if (errno == EINTR)
 				continue;
-			perror("recvfrom");
+			daemon_perror("recvfrom");
 			free_client_info(client_info);
 			return NULL;
 		} else {
@@ -149,28 +117,26 @@ udp_server(void *arg)
 			/* Write the edict */
 			edict = edict_get(true);
 			edict->job = (void *)client_info;
-			submit_job(worker_pool, edict);
+			submit_job(sjsms_pool, edict);
 			edict_unlink(edict);
 		}
 	}
 	/* never reached */
 }
 
-#else
-
 /*
  * The main worker thread for tcp_protocol. Listens for connections
  * and starts a new thread to handle each connection.
  */
 static void *
-tcp_server(void *arg)
+postfix_server(void *arg)
 {
         int ret;
         int grossfd;
         int opt;
         client_info_t *client_info;
         socklen_t clen;
-	thread_pool_t *worker_pool;
+	thread_pool_t *postfix_pool;
 	edict_t *edict;
 
         /* create socket for incoming requests */
@@ -199,9 +165,9 @@ tcp_server(void *arg)
         }
 
 	/* initialize the thread pool */
-	logstr(GLOG_INFO, "initializing worker thread pool");
-	worker_pool = create_thread_pool("worker", &worker);
-	if (worker_pool == NULL)
+	logstr(GLOG_INFO, "initializing postfix thread pool");
+	postfix_pool = create_thread_pool("postfix", &postfix_connection);
+	if (postfix_pool == NULL)
 		daemon_perror("create_thread_pool");
 
         /* server loop */
@@ -227,13 +193,11 @@ tcp_server(void *arg)
 			/* Write the edict */
 			edict = edict_get(true);
 			edict->job = (void *)client_info;
-			submit_job(worker_pool, edict);
+			submit_job(postfix_pool, edict);
 			edict_unlink(edict);
                 }
         }
 }
-
-#endif /* WORKER_PROTO_UDP */
 
 /* 
  * destructor for grey_tuple_t
@@ -454,12 +418,14 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 void
 worker_init()
 {
-#ifdef WORKER_PROTO_TCP
-	logstr(GLOG_DEBUG, "starting tcp server");
-        Pthread_create(&ctx->process_parts.worker, &tcp_server, NULL);
-#else
-	logstr(GLOG_DEBUG, "starting udp server");
-        Pthread_create(&ctx->process_parts.worker, &udp_server, NULL);
-#endif /* WORKER_PROTO_TCP */
-
+	if (ctx->config.protocols == 0)
+		logstr(GLOG_NOTICE, "No protocols configured");
+	if (ctx->config.protocols & PROTO_POSTFIX) {
+		logstr(GLOG_INFO, "starting postfix policy server");
+		Pthread_create(&ctx->process_parts.postfix_server, &postfix_server, NULL);
+	} 
+	if (ctx->config.protocols & PROTO_SJSMS) {
+		logstr(GLOG_INFO, "starting sjsms policy server");
+		Pthread_create(&ctx->process_parts.sjsms_server, &sjsms_server, NULL);
+	}
 }

@@ -39,10 +39,10 @@ void calm_client(void *arg, mseconds_t timeused) {
 }
 
 /*
- * handle_connection    - the actual greylist server
+ * sjsms_connection    - the actual greylist server
  */
 int
-handle_connection(client_info_t *client_info)
+sjsms_connection(edict_t *edict)
 {
 	socklen_t len;
 	grey_req_t request;
@@ -54,10 +54,14 @@ handle_connection(client_info_t *client_info)
 	char *str;
 	struct timespec start, end;
 	int delay;
+	client_info_t *client_info;
 
+	client_info = edict->job;
 	assert(client_info);
 	assert(0 <= client_info->msglen);
 	assert(client_info->msglen <= MSGSZ);
+
+	logstr(GLOG_INFO, "query from %s", client_info->ipstr);
  	
 	/* default response is 'FAIL' */
 	strncpy(response, "F", MAXLINELEN);
@@ -141,6 +145,9 @@ handle_connection(client_info_t *client_info)
 		break;
 	}
 	free(msg);
+
+	free_client_info(client_info);
+	logstr(GLOG_DEBUG, "sjsms_connection returning");
 
 	return 1;
 }

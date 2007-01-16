@@ -28,10 +28,10 @@ int parse_postfix(client_info_t *info, grey_tuple_t *grey_tuple);
 char *try_match(char *matcher, char *matchee);
 
 /*
- * handle_connection	- the actual server for policy delegation
+ * postfix_connection	- the actual server for policy delegation
  */
 int
-handle_connection(client_info_t *client_info)
+postfix_connection(edict_t *edict)
 {
 	grey_tuple_t *request;
 	char *response;
@@ -39,6 +39,12 @@ handle_connection(client_info_t *client_info)
 	int status;
 	struct timespec start, end;
 	int delay;
+	client_info_t *client_info;
+
+	client_info = edict->job;
+	assert(client_info);
+
+	logstr(GLOG_INFO, "postfix client connected from %s", client_info->ipstr);
 
 	while(1) {
 		request = Malloc(sizeof(grey_tuple_t));
@@ -97,6 +103,10 @@ handle_connection(client_info_t *client_info)
 			break;
 		}
 	}
+
+        close(client_info->connfd);
+	free_client_info(client_info);
+	logstr(GLOG_DEBUG, "postfix_connection returning");
 
 	return ret;
 }

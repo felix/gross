@@ -27,10 +27,8 @@ typedef struct {
         int connfd;
         struct sockaddr_in *caddr;
 	char *ipstr;
-#ifdef WORKER_PROTO_UDP
         int msglen;
         void *message;
-#endif
 } client_info_t;
 
 typedef struct {
@@ -43,8 +41,5 @@ int worker(edict_t *edict);
 void free_request(grey_tuple_t *arg);
 int test_tuple(grey_tuple_t *tuple, tmout_action_t *ta);
 void free_client_info(client_info_t *arg);
-
-/* function must be implemented in worker_[proto].c */
-int handle_connection(client_info_t *arg);
 
 #endif /* #ifndef WORKER_H */

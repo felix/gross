@@ -59,9 +59,12 @@ void get_srvstatus(char* buf, int len)
   } else if ( ctx->process_parts.syncmgr.thread && test_thread(ctx->process_parts.syncmgr.thread) == -1) {
     state |= SRV_ERR;
     snprintf(buf, len - strlen(buf), "%d: syncmgr-thread is dead.", state);
-  } else if ( ctx->process_parts.worker.thread && test_thread(ctx->process_parts.worker.thread) == -1) {
+  } else if ( ctx->process_parts.sjsms_server.thread && test_thread(ctx->process_parts.sjsms_server.thread) == -1) {
     state |= SRV_ERR;
-    snprintf(buf, len - strlen(buf), "%d: worker-thread is dead.", state);
+    snprintf(buf, len - strlen(buf), "%d: sjsms_server-thread is dead.", state);
+  } else if ( ctx->process_parts.postfix_server.thread && test_thread(ctx->process_parts.postfix_server.thread) == -1) {
+    state |= SRV_ERR;
+    snprintf(buf, len - strlen(buf), "%d: postfix_server-thread is dead.", state);
   } else if ( time(NULL) - *ctx->last_rotate > ctx->config.rotate_interval + MINUTE) {
     state |= SRV_ERR;
     snprintf(buf, len - strlen(buf), "%d: Rotate stuck.", state);

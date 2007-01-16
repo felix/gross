@@ -24,12 +24,6 @@
 # include <config.h>
 #endif
 
-#ifndef bool
-  typedef int bool;
-# define true 1
-# define false 0
-#endif
-
 /*
  * common system includes
  */
@@ -105,6 +99,9 @@
 #define CHECK_DNSBL (int)0x01
 #define CHECK_BLOCKER (int)0x02
 
+#define PROTO_SJSMS (int)0x01
+#define PROTO_POSTFIX (int)0x02
+
 #ifndef MAX
 #define MAX(a,b) 	((a) > (b) ? (a) : (b))
 #endif
@@ -115,6 +112,13 @@
 /*
  * common types
  */
+
+#ifndef HAVE_BOOL
+   typedef int bool;
+#  define true 1
+#  define false 0
+#endif /* HAVE_BOOL */
+
 typedef struct {
 	struct sockaddr_in peer_addr;
 	pthread_mutex_t peer_in_mutex;
@@ -123,13 +127,11 @@ typedef struct {
 	int connected;
 } peer_t;
 
-#if PROTOCOL == SJSMS
 typedef struct {
 	char *responsegrey;
 	char *responsematch;
 	char *responsetrust;
 } sjsms_config_t;
-#endif /* PROTOCOL == SJSMS */
 
 typedef struct {
 	struct sockaddr_in gross_host;
@@ -150,10 +152,9 @@ typedef struct {
 	int flags;
 	int checks;
 	int grey_mask;
+	int protocols;
         int greylist_delay;
-#if PROTOCOL == SJSMS
 	sjsms_config_t sjsms;
-#endif /* PROTOCOL == SJSMS */
 } gross_config_t;
 
 #ifdef DNSBL
@@ -181,9 +182,10 @@ typedef struct {
 } thread_info_t;
 
 typedef struct {
-  thread_info_t bloommgr;
-  thread_info_t syncmgr;
-  thread_info_t worker;
+	thread_info_t bloommgr;
+	thread_info_t syncmgr;
+	thread_info_t postfix_server;
+	thread_info_t sjsms_server;
 } thread_collection_t;
 
 #define MAXCHECKS 128

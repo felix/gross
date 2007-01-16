@@ -83,17 +83,8 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Postfix */
-#undef POSTFIX
-
-/* Sun Java System Messaging Server */
-#undef PROTOCOL
-
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
-
-/* Sun Java System Messaging Server */
-#undef SJSMS
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

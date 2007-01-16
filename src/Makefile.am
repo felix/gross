@@ -6,18 +6,15 @@ bin_PROGRAMS = gclient
 lib_LTLIBRARIES = grosscheck.la
 noinst_PROGRAMS = bloom
 
-grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c stats.c
-EXTRA_grossd_SOURCES = dnsblc.c worker_postfix.c worker_sjsms.c proto_postfix.c
-grossd_LDFLAGS = @LDFLAGS@  
-grossd_LDADD = @DNSBLSOURCES@ worker_@PROTOCOL@.o proto_@PROTOCOL@.o
-grossd_DEPENDENCIES = @DNSBLSOURCES@ worker_@PROTOCOL@.o proto_@PROTOCOL@.o
+grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c stats.c worker_postfix.c worker_sjsms.c 
+EXTRA_grossd_SOURCES = dnsblc.c
+grossd_LDFLAGS = @LDFLAGS@ proto_sjsms.o
+grossd_LDADD = @DNSBLSOURCES@ 
+grossd_DEPENDENCIES = @DNSBLSOURCES@ proto_sjsms.c
 
-gclient_SOURCES = gclient.c utils.c 
-EXTRA_gclient_SOURCES = client_postfix.c client_sjsms.c proto_postfix.c
-gclient_LDFLAGS = @LDFLAGS@
-
-gclient_LDADD = client_@PROTOCOL@.o proto_@PROTOCOL@.o
-gclient_DEPENDENCIES = client_@PROTOCOL@.o proto_@PROTOCOL@.o
+gclient_SOURCES = gclient.c utils.c client_postfix.c client_sjsms.c
+gclient_LDFLAGS = @LDFLAGS@ proto_sjsms.o
+gclient_DEPENDENCIES = proto_sjsms.c
 
 grosscheck_la_SOURCES = grosscheck.c proto_sjsms.c
 grosscheck_la_LDFLAGS = -module -avoid-version

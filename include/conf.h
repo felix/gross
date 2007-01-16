@@ -31,14 +31,17 @@
 			"sjsms_response_trust",	"$Y",		\
 			"log_method",		"syslog",	\
 			"log_level",		"info",		\
+			"stat_type",		"delay",	\
+			"stat_type",		"status",	\
 			"grey_mask",		"0",		\
+			"grey_delay",		"10",           \
 			"check",		"dnsbl",	\
-			"greylist_delay",	"10",           \
 			"syslog_facility",	"mail"
 
 #define MULTIVALUES	"dnsbl",	\
 			"check",	\
-                        "stat_level",	\
+                        "stat_type",	\
+			"protocol", 	\
 			"log_method"
 
 #define VALID_NAMES     "dnsbl",			\
@@ -56,14 +59,15 @@
                         "log_method",			\
                         "log_level",			\
 			"grey_mask",			\
+                        "grey_delay",               	\
 			"check",			\
+			"protocol",			\
                         "syslog_facility",		\
                         "sync_listen",			\
                         "sync_peer",			\
                         "sync_port",			\
                         "stat_interval",		\
-                        "stat_level",			\
-                        "greylist_delay",               \
+                        "stat_type",			\
 			"status"
 
 #define DEPRECATED_NAMES 	"syncport",		\
@@ -74,6 +78,7 @@
 				"statusport"		
 
 typedef struct configlist_s {
+	bool is_default;
 	const char *name;
 	const char *value;
 	struct configlist_s *next;  /* linked list */

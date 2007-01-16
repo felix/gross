@@ -60,6 +60,9 @@ initialize_context()
 	/* Clear flags  */
 	ctx->config.flags = 0;
 
+	/* Clear protocols */
+	ctx->config.protocols = 0;
+
 	/* Clear checks */
 	ctx->config.checks = 0;
 
@@ -93,14 +96,13 @@ configure_grossd(configlist_t *config)
 	configlist_t *cp;
 	const char *updatestr;
 	struct hostent *host = NULL;
-	
-#ifdef DEBUG_CONFIG
-	while (config) {
-		printf("%s = %s\n", config->name, config->value);
-		config = config->next;
-	}
-	exit(1);
-#endif
+
+	cp = config;
+	if (ctx->config.flags & (FLG_NODAEMON))
+		while (cp) {
+			logstr(GLOG_INSANE, "config: %s = %s", cp->name, cp->value);
+			cp = cp->next;
+		}
 
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
@@ -140,7 +142,7 @@ configure_grossd(configlist_t *config)
 	ctx->config.max_threads = 10;
 	ctx->config.peer.connected = 0;
 
-	ctx->config.greylist_delay = atoi(CONF("greylist_delay"));
+	ctx->config.greylist_delay = atoi(CONF("grey_delay"));
 
 	if (10 != ctx->config.greylist_delay)
 	  logstr(GLOG_DEBUG, "Greylisting delay %d", ctx->config.greylist_delay);
@@ -195,7 +197,6 @@ configure_grossd(configlist_t *config)
 	  daemon_shutdown(1, "filter_bits should be in range [4,32]");
 	}
 
-#if PROTOCOL == SJSMS
 	if (!CONF("sjsms_response_grey"))
 		daemon_shutdown(1, "No sjsms_response_grey set!");
 	else
@@ -208,7 +209,6 @@ configure_grossd(configlist_t *config)
 		daemon_shutdown(1, "No sjsms_response_match set!");
 	else
 		ctx->config.sjsms.responsematch = strdup(CONF("sjsms_response_match"));
-#endif
 
 	if (CONF("stat_interval"))
 	  ctx->config.stat_interval = atoi(CONF("stat_interval"));
@@ -217,7 +217,7 @@ configure_grossd(configlist_t *config)
 	cp = config;
 
 	while (cp) {
-	  if (strcmp(cp->name, "stat_level") != 0) {
+	  if (strcmp(cp->name, "stat_type") != 0) {
 	    cp = cp->next;
 	    continue;
 	  }
@@ -254,6 +254,18 @@ configure_grossd(configlist_t *config)
 		cp = cp->next;
 	}
 #endif /* DNSBL */
+
+	/* protocols */
+	cp = config;
+	while(cp) {
+		if (strcmp(cp->name, "protocol") == 0) {
+			if (strcmp(cp->value, "sjsms") == 0) 
+				ctx->config.protocols |= PROTO_SJSMS;
+			else if (strcmp(cp->value, "postfix") == 0) 
+				ctx->config.protocols |= PROTO_POSTFIX;
+		}
+		cp = cp->next;
+	}
 
 	/* checks */
 	cp = config;
@@ -347,8 +359,6 @@ int
 main(int argc, char *argv[])
 {
 	int ret;
-/* 	char ipstr[INET_ADDRSTRLEN]; */
-/* 	int cont = 1; */
 	update_message_t rotatecmd;
 	time_t toleration;
 	configlist_t *config;
@@ -413,7 +423,7 @@ main(int argc, char *argv[])
 
 	config = read_config(configfile);
 	configure_grossd(config);
-
+	
 	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
 		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
 	}
@@ -443,7 +453,6 @@ main(int argc, char *argv[])
 	/*
 	 * now that we are in synchronized state we can start listening
 	 * for client requests
-	 *
 	 */
 
 	/* start the check pools */

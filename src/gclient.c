@@ -24,14 +24,18 @@ int client_postfix(int argc, char **argv);
 int
 main (int argc, char **argv) 
 {
+	if (argc < 2) {
+		fprintf(stderr, "usage gclient PROTOCOL\n");
+		return 1;
+	}
 
-#if PROTOCOL == POSTFIX
-	return client_postfix(argc, argv);
-#elif PROTOCOL == SJSMS
-	return client_sjsms(argc, argv);
-#else
-# error "No client found for defined PROTOCOL"
-#endif
-
+	if (strcmp(argv[1], "postfix") == 0)
+		return client_postfix(argc, argv);
+	else if (strcmp(argv[1], "sjsms") == 0)
+		return client_sjsms(argc, argv);
+	else {
+		fprintf(stderr, "supported protocols: 'sjsms' and 'postfix'\n");
+		return 1;
+	}
 }
 
