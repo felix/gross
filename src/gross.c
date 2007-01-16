@@ -140,6 +140,11 @@ configure_grossd(configlist_t *config)
 	ctx->config.max_threads = 10;
 	ctx->config.peer.connected = 0;
 
+	ctx->config.greylist_delay = atoi(CONF("greylist_delay"));
+
+	if (10 != ctx->config.greylist_delay)
+	  logstr(GLOG_DEBUG, "Greylisting delay %d", ctx->config.greylist_delay);
+
 	/* peer port is the same as the local sync_port */
 	ctx->config.peer.peer_addr.sin_port = htons(atoi(CONF("sync_port")));
 
@@ -420,7 +425,7 @@ main(int argc, char *argv[])
 
 	/* initialize the update queue */
 	delay = Malloc(sizeof(struct timespec));
-	delay->tv_sec = 10;
+	delay->tv_sec = ctx->config.greylist_delay;
 	delay->tv_nsec = 0;
 	ctx->update_q = get_delay_queue(delay);
 	if (ctx->update_q < 0)

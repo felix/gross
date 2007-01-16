@@ -150,6 +150,7 @@ typedef struct {
 	int flags;
 	int checks;
 	int grey_mask;
+        int greylist_delay;
 #if PROTOCOL == SJSMS
 	sjsms_config_t sjsms;
 #endif /* PROTOCOL == SJSMS */

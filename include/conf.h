@@ -33,6 +33,7 @@
 			"log_level",		"info",		\
 			"grey_mask",		"0",		\
 			"check",		"dnsbl",	\
+			"greylist_delay",	"10",           \
 			"syslog_facility",	"mail"
 
 #define MULTIVALUES	"dnsbl",	\
@@ -62,6 +63,7 @@
                         "sync_port",			\
                         "stat_interval",		\
                         "stat_level",			\
+                        "greylist_delay",               \
 			"status"
 
 #define DEPRECATED_NAMES 	"syncport",		\
