@@ -31,6 +31,7 @@
 #ifdef DNSBL
 #include "dnsblc.h"
 #endif /* DNSBL */
+#include "check_blocker.h"
 
 /* maximum simultaneus tcp worker threads */
 #define MAXWORKERS 1
@@ -275,6 +276,8 @@ configure_grossd(configlist_t *config)
 		if (strcmp(cp->name, "check") == 0) {
 			if (strcmp(cp->value, "dnsbl") == 0) 
 				ctx->config.checks |= CHECK_DNSBL;
+			else if (strcmp(cp->value, "blocker") == 0) 
+				ctx->config.checks |= CHECK_BLOCKER;
 		}
 		cp = cp->next;
 	}
@@ -462,6 +465,8 @@ main(int argc, char *argv[])
 	if (ctx->config.checks & CHECK_DNSBL)
 		dnsblc_init();
 #endif /* DNSBL */
+	if (ctx->config.checks & CHECK_BLOCKER)
+		blocker_init();
 
 	/* start the worker thread */
 	worker_init();

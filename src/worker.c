@@ -153,7 +153,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 
 		/* Write the edict */
 		edict = edict_get(false);
-		edict->job = (void *)request->client_address;
+		edict->job = (void *)request;
 		tap = ta;
 		while (tap) {
 			edict->timelimit += tap->timeout;
@@ -193,7 +193,6 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 						retvalue = STATUS_TRUST;
 					}
 					got_response = true;
-
 				} 
 
 			} while (! got_response);

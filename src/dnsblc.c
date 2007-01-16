@@ -20,6 +20,7 @@
 #include "dnsblc.h"
 #include "srvutils.h"
 #include "utils.h"
+#include "worker.h"
 
 int
 add_dnsbl(dnsbl_t **current, const char *name, int weight)
@@ -183,10 +184,12 @@ dnsblc(edict_t *edict)
 	int timeused;
 	const char *client_address;
 	chkresult_t *result;
+	grey_tuple_t *request;
 
 	logstr(GLOG_DEBUG, "dnsblc called");
 
-	client_address = (char *)edict->job;
+	request = (grey_tuple_t *)edict->job;
+	client_address = request->client_address;
 	assert(client_address);
 
 	ipstr = strdup(client_address);
