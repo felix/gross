@@ -36,7 +36,8 @@
 			"grey_mask",		"0",		\
 			"grey_delay",		"10",           \
 			"check",		"dnsbl",	\
-			"syslog_facility",	"mail"
+			"syslog_facility",	"mail",		\
+			"blocker_port",		"4466"
 
 #define MULTIVALUES	"dnsbl",	\
 			"check",	\
@@ -68,7 +69,9 @@
                         "sync_port",			\
                         "stat_interval",		\
                         "stat_type",			\
-			"status"
+			"status",			\
+			"blocker_host",			\
+			"blocker_port"
 
 #define DEPRECATED_NAMES 	"syncport",		\
 				"synchost",		\

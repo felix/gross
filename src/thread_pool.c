@@ -91,7 +91,7 @@ thread_pool(void *arg)
 
 			POOL_MUTEX_LOCK;
 
-			logstr(GLOG_DEBUG, "threadpool '%s' notices it's idling", pool_ctx->info->name);
+			logstr(GLOG_INSANE, "threadpool '%s' notices it's idling", pool_ctx->info->name);
 
 			pool_ctx->count_idle--;
 			/* there should be at least one idling thread left */

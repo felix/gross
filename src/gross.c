@@ -327,6 +327,25 @@ configure_grossd(configlist_t *config)
 	/* these should be set by now, at least via default config */
 	assert(ctx->config.loglevel);
 	assert(ctx->config.syslogfacility);
+
+	/* check configs */
+	memset(&ctx->config.blocker.server, 0, sizeof(ctx->config.blocker.server));
+	if (ctx->config.checks & CHECK_BLOCKER) {
+		ctx->config.blocker.server.sin_family = AF_INET;
+		if (NULL == CONF("blocker_host"))
+			daemon_perror("'blocker' configured, but 'blocker_host' not");
+		host = gethostbyname(CONF("blocker_host"));
+		if (!host)
+			daemon_perror("'blocker' configuration option invalid:");
+
+		inet_pton(AF_INET, inet_ntoa(*(struct in_addr*)host->h_addr_list[0]),
+			&(ctx->config.blocker.server.sin_addr));
+		logstr(GLOG_DEBUG, "Blocker host address %s",
+			inet_ntoa(*(struct in_addr*)host->h_addr_list[0]));
+
+		ctx->config.blocker.server.sin_port =
+			htons(atoi(CONF("blocker_port")));
+	}
 }
 
 /* 

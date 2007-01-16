@@ -176,45 +176,42 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 				if (timeused > ta->timeout)
 					break;
 
-				ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, ta->timeout);
+				ret = get_msg_timed(edict->resultmq, &message,
+					sizeof(message.result), 0, ta->timeout - timeused);
 				if (ret > 0) {
 					/* We've got a response */
 					result = (chkresult_t *)message.result;
 					suspicious = result->suspicious;
 					free(result);
-					logstr(GLOG_INSANE, "suspicious = %d", suspicious);
-					if (true == suspicious) {
-						logstr(GLOG_INFO, "greylist: %s", realtuple);
-						acctstr(ACCT_GREY, "%s", realtuple);
-						retvalue = STATUS_GREY;
-					} else {
-						logstr(GLOG_INFO, "trust: %s", realtuple);
-						acctstr(ACCT_TRUST, "%s", realtuple);
-						retvalue = STATUS_TRUST;
-					}
+					logstr(GLOG_INSANE, "Received a check result, suspicious = %d",
+						suspicious);
 					got_response = true;
 				} 
 
 			} while (! got_response);
 
-			if (got_response)
+			if (suspicious)
 				break;
 
-			if (timeused > ta->timeout) {
-				if (ta->action)
-					ta->action(ta->arg, timeused);
-				if (! ta->next) {
-					/* final timeout, we trust */
-					retvalue = STATUS_TRUST;
-				}
-			}
+			if (timeused > ta->timeout && ta->action)
+				ta->action(ta->arg, timeused);
 
 			ta = ta->next;
+		}
+		if (true == suspicious) {
+			logstr(GLOG_INFO, "greylist: %s", realtuple);
+			acctstr(ACCT_GREY, "%s", realtuple);
+			retvalue = STATUS_GREY;
+		} else {
+			logstr(GLOG_INFO, "trust: %s", realtuple);
+			acctstr(ACCT_TRUST, "%s", realtuple);
+			retvalue = STATUS_TRUST;
 		}
 		edict_unlink(edict);
 #endif /* DNSBL */
 	}
 
+	/* we cannot free(ta) if we got it as parameter */
 	if (free_ta) free(ta);
 
 	if (((retvalue == STATUS_GREY) || (retvalue == STATUS_MATCH)) 

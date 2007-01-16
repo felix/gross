@@ -134,6 +134,10 @@ typedef struct {
 } sjsms_config_t;
 
 typedef struct {
+	struct sockaddr_in server;
+} blocker_config_t;
+
+typedef struct {
 	struct sockaddr_in gross_host;
 	struct sockaddr_in sync_host;
 	struct sockaddr_in status_host;
@@ -155,6 +159,7 @@ typedef struct {
 	int protocols;
         int greylist_delay;
 	sjsms_config_t sjsms;
+	blocker_config_t blocker;
 } gross_config_t;
 
 #ifdef DNSBL

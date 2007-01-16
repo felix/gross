@@ -19,16 +19,117 @@
 #include "common.h"
 #include "srvutils.h"
 #include "utils.h"
+#include "worker.h"
 
 int 
 blocker(edict_t *edict)
 {
 	chkresult_t *result;
+	int blocker;
+	int ret;
+	int flags;
+	int count;
+	fd_set readers, writers;
+        grey_tuple_t *request;
+        const char *client_address;
+	char buffer[MAXLINELEN] = { '\0' };
+	struct timespec start, now, timeleft;
+
+        request = (grey_tuple_t *)edict->job;
+        client_address = request->client_address;
+        assert(client_address);
+
+	blocker = socket(AF_INET, SOCK_STREAM, 0);
+	if (-1 == blocker) {
+		logstr(GLOG_ERROR, "blocker: socket: %s", strerror(errno));
+		return -1;
+	}
+
+	flags = fcntl(blocker, F_GETFL, 0);
+	flags |= O_NONBLOCK;
+	ret = fcntl(blocker, F_SETFL, flags);
+	if (-1 == ret) {
+		logstr(GLOG_ERROR, "blocker: fcntl: %s", strerror(errno));
+		close(blocker);
+		return -1;
+	}
+
+	ret = connect(blocker, (struct sockaddr *)&ctx->config.blocker.server, sizeof(struct sockaddr_in));
+	if (-1 == ret && errno != EINPROGRESS) {
+		logstr(GLOG_ERROR, "blocker: connect: %s", strerror(errno));
+		close(blocker);
+		return -1;
+	}
+
+	FD_ZERO(&readers);
+	FD_ZERO(&writers);
+
+	clock_gettime(CLOCK_TYPE, &start);
+	mstotimespec(edict->timelimit, &timeleft);
+
+	/* wait for blocker to become writable */
+	while (FD_ISSET(blocker, &writers) == 0) {
+		count = pselect(blocker + 1, NULL, &writers, NULL, &timeleft, NULL);
+		if (count == 0) {
+			logstr(GLOG_NOTICE, "blocker: timeout connecting to blocker service");
+			close(blocker);
+			return -1;
+		} else if (count < 0) {
+			logstr(GLOG_ERROR, "blocker: select: %s", strerror(errno));
+			close(blocker);
+			return -1;
+		}
+	}
+
+
+	/*
+	 * Now we have a connection
+         */
+
+	/* build a query string */
+	snprintf(buffer, MAXLINELEN, "client_address=%s\n\n", request->client_address);
+	buffer[MAXLINELEN-1] = '\0';
+
+	/* send the query */
+	ret = send(blocker, buffer, strlen(buffer), 0);
+	if (-1 == ret) {
+		logstr(GLOG_ERROR, "blocker: send: %s", strerror(errno));
+		close(blocker);
+		return -1;
+	}
+
+	clock_gettime(CLOCK_TYPE, &now);
+	mstotimespec(ms_diff(&start, &now), &timeleft);
+	
+	/* wait for response */
+	while (FD_ISSET(blocker, &readers) == 0) {
+		count = pselect(blocker + 1, &readers, NULL, NULL, &timeleft, NULL);
+		if (count == 0) {
+			logstr(GLOG_NOTICE, "blocker: timeout waiting for response");
+			close(blocker);
+			return -1;
+		} else if (count < 0) {
+			logstr(GLOG_ERROR, "blocker: select: %s", strerror(errno));
+			close(blocker);
+			return -1;
+		}
+	}
+
+	ret = recv(blocker, &buffer, MAXLINELEN, 0);
+	if (ret < 0) {
+		logstr(GLOG_ERROR, "blocker: recv: %s", strerror(errno));
+		close(blocker);
+		return -1;
+	}
+	close(blocker);
 
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
-	result->suspicious = 0;
+	if (strncmp(buffer, "action=565 ", 11) == 0) {
+		logstr(GLOG_DEBUG, "found match from blocker: %s", request->client_address);
+		result->suspicious = 1;
+	}
 	send_result(edict, result);
-	
+
 	logstr(GLOG_DEBUG, "blocker returning");
 	return 1;
 }
