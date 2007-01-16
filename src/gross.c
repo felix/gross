@@ -172,6 +172,8 @@ configure_grossd(configlist_t *config)
 		daemon_shutdown(1, "Invalid updatestyle: %s", updatestr);
 	}
 
+	/* we must reset errno because strtol returns 0 if it fails */
+	errno = 0;
 	ctx->config.grey_mask = strtol(CONF("grey_mask"), (char **)NULL, 10);
 	if (errno || ctx->config.grey_mask > 32 || ctx->config.grey_mask < 0)
 		daemon_shutdown(1, "Invalid grey_mask: %s", CONF("grey_mask"));
