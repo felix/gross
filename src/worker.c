@@ -152,7 +152,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		if (! ta) {
 			free_ta = true;
 			ta = Malloc(sizeof(tmout_action_t));
-			ta->timeout = 5000;             /* 5 seconds */
+			ta->timeout = ctx->config.query_timelimit;
 			ta->action = NULL;
 			ta->next = NULL;
 		}
