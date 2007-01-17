@@ -56,5 +56,6 @@ size_t in_queue_len(int msgid);
 size_t out_queue_len(int msgid);
 int queue_freeze(int msgid);
 int queue_thaw(int msgid);
+int walk_queue(int msgid, int (* callback)(void *));
 
 #endif /* MSGQUEUE_H */

@@ -24,6 +24,8 @@
 /* prototypes of internals */
 int recv_config_sync(peer_t* peer);
 static void *syncmgr(void *arg);
+int send_update_msg_as_oper_sync(void *arg);
+
 
 int 
 min(int x, int y) 
@@ -172,6 +174,34 @@ send_oper_sync(peer_t* peer, oper_sync_t* sync)
   memcpy(buf, &prologue, sizeof(sync_msg_t));
   memcpy(buf+sizeof(sync_msg_t), sync, sizeof(oper_sync_t));
   return send_update_to_peer(peer, buf, sizeof(sync_msg_t) + sizeof(oper_sync_t));
+}
+
+int
+send_update_msg_as_oper_sync(void *arg)
+{
+	update_message_t *update;
+	sync_msg_t prologue;
+	char buf[sizeof(sync_msg_t) + sizeof(oper_sync_t)] = { 0x00 };
+	sha_256_t digest;
+	oper_sync_t os;
+
+	update = (update_message_t *)arg;
+	assert(update);
+
+	if (update->mtype == UPDATE) {
+		memcpy(&digest, update->mtext, sizeof(sha_256_t)); 
+
+		prologue.type = htonl(OPER_SYNC);
+		prologue.length = htonl(sizeof(oper_sync_t));
+
+		os.digest = dton(digest);
+		memcpy(buf, &prologue, sizeof(sync_msg_t));
+		memcpy(buf+sizeof(sync_msg_t), &os, sizeof(oper_sync_t));
+		return send_update_to_peer(&ctx->config.peer, buf,
+			sizeof(sync_msg_t) + sizeof(oper_sync_t));
+	}
+
+	return 0;
 }
 
 int
@@ -443,6 +473,7 @@ synchronize(peer_t* peer, int syncfd) {
     WITH_SYNC_GUARD(
 	queue_freeze(ctx->update_q);
 	send_filters(peer);
+	walk_queue(ctx->update_q, &send_update_msg_as_oper_sync);
 	queue_thaw(ctx->update_q);
     );
 

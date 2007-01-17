@@ -305,6 +305,8 @@ queue_thaw(int msqid)
 		return -1;
 	}
 
+	logstr(GLOG_ERROR, "thaw queue %d", msqid);
+
 	ret = pthread_mutex_unlock(&mq->mx);
 	assert(ret == 0);
 	if (mq->delaypair) {
@@ -329,6 +331,8 @@ queue_freeze(int msqid)
 		errno = EINVAL;
 		return -1;
 	}
+
+        logstr(GLOG_ERROR, "freeze queue %d", msqid);
 
 	ret = pthread_mutex_lock(&mq->mx);
 	assert(ret == 0);
@@ -671,4 +675,44 @@ out_queue_len(int msgid)
 	return mq->delaypair->msgcount;
 
 	return in_queue_len(msgid);
+}
+
+int
+walk_queue(int msgid, int (* callback)(void *))
+{
+	msgqueue_t *mq;
+        msg_t *msg;
+	int ret;
+
+	if (mq->active == false) {
+                logstr(GLOG_ERROR, "get_msg_raw: message queue is marked inactive");
+                return -1;
+        }
+
+	if (mq->head) {
+		msg = mq->head;
+		while (msg) {
+			ret = callback(msg->msgp);
+			if (ret < 0) {
+				logstr(GLOG_ERROR, "walk_queue: callback returned FAILURE");
+				return -1;
+			}
+			msg = msg->next;
+		}
+	}
+
+	if (mq->delaypair) {
+		if (mq->delaypair->head) {
+			msg = mq->head;
+			while (msg) {
+				ret = callback(msg->msgp);
+				if (ret < 0) {
+					logstr(GLOG_ERROR, "walk_queue: callback returned FAILURE");
+					return -1;
+				}
+				msg = msg->next;
+			}
+		}
+	}
+	return 0;
 }

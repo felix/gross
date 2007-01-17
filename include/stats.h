@@ -56,6 +56,8 @@ double match_delay_update(double d);
 double trust_delay_update(double d);
 uint64_t stat_dnsbl_match(const char *name);
 int stat_add_dnsbl(const char *name);
+char *dnsbl_stats(char *buf, int32_t size);
+
 
 #define WITH_STATS_GUARD(X) { pthread_mutex_lock( &(ctx->stats.mx) ); X; pthread_mutex_unlock( &(ctx->stats.mx) ); }
 #define INCF_STATS(member) { WITH_STATS_GUARD( ++(ctx->stats.member) ;) }
