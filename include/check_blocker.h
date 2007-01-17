@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2006 Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2007 Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,27 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "common.h"
-#include "msgqueue.h"
+#ifndef CHECK_BLOCKER_H
+#define CHECK_BLOCKER_H
 
-int client_sjsms(int argc, char **argv);
-int client_postfix(int argc, char **argv);
+void blocker_init();
 
-int
-main (int argc, char **argv) 
-{
-	if (argc < 2) {
-		fprintf(stderr, "usage gclient PROTOCOL\n");
-		return 1;
-	}
-
-	if (strcmp(argv[1], "postfix") == 0)
-		return client_postfix(argc, argv);
-	else if (strcmp(argv[1], "sjsms") == 0)
-		return client_sjsms(argc, argv);
-	else {
-		fprintf(stderr, "supported protocols: 'sjsms' and 'postfix'\n");
-		return 1;
-	}
-}
-
+#endif /* DNSBLC_H */

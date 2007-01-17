@@ -66,6 +66,8 @@ AC_CHECK_HEADERS(netinet/in.h)
 
 AC_CHECK_FUNCS([clock_gettime])
 
+AC_CHECK_TYPE([bool])
+
 AC_CHECK_DECLS([CLOCK_MONOTONIC, CLOCK_HIGHRES],,, [#include <time.h>])
 
 AC_MSG_CHECKING([whether to disable dnsbl checking])
@@ -86,36 +88,6 @@ then
     )
 fi
 
-dnl Determine which protocol should the server (and client) use
-
-AC_DEFINE([POSTFIX], [0], [Postfix])
-AC_DEFINE([SJSMS], [1], [Sun Java System Messaging Server])
-AM_CONDITIONAL(SJSMS, false)
-
-AC_MSG_CHECKING([which protocol should the server use])
-AC_ARG_WITH(worker,
-    AC_HELP_STRING([--with-worker=<protocol>], [Select protocol for worker (default=postfix)]),
-    [AC_MSG_RESULT([$withval]) ; workerproto="$withval"],
-    [AC_MSG_RESULT([postfix]) ; workerproto="postfix"]
-)
-
-case "$workerproto" in
-"postfix")
-    PROTOCOL='postfix'
-    AC_SUBST([PROTOCOL])
-    AC_DEFINE([PROTOCOL], [POSTFIX], [Postfix])
-    ;;
-"sjsms")
-    PROTOCOL='sjsms'
-    AC_SUBST([PROTOCOL])
-    AC_DEFINE([PROTOCOL], [SJSMS], [Sun Java System Messaging Server])
-    AM_CONDITIONAL(SJSMS, true)
-    ;;
-*)
-    AC_MSG_ERROR([unknown worker protocol: "$workerproto"])
-    ;;
-esac
-
 AC_CHECK_TYPES(useconds_t)
 
 dnl AC_HEADER_STDC
@@ -123,6 +95,14 @@ AC_C_CONST
 AC_TYPE_SIGNAL
 
 AC_SUBST(REENTRANT_FLAG)
+
+if test "x$GCC" == "xyes"
+then
+	STATIC_GLIBC_FLAG="-XCClinker -static-libgcc"
+else
+	STATIC_GLIBC_FLAG=""
+fi
+AC_SUBST(STATIC_GLIBC_FLAG)
 
 dnl various defines used by gross
 dnl

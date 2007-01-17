@@ -29,30 +29,30 @@ client_sjsms(int argc, char **argv)
 	grey_req_t request;
 	char *sender, *recipient, *caddr;
 	
-	if (argc != 7 && argc != 5 && argc != 4) {
-		fprintf(stderr, "usage: gclient sender recipient ip_address [runs] [host port]\n");
+	if (argc != 8 && argc != 6 && argc != 5) {
+		fprintf(stderr, "usage: gclient sjsms sender recipient ip_address [runs] [host port]\n");
 		return 1;
 	}
 
-	sender = argv[1];
-	recipient = argv[2];
-	caddr = argv[3];
+	sender = argv[2];
+	recipient = argv[3];
+	caddr = argv[4];
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	memset(&gserv, 0, sizeof(gserv));
 	gserv.sin_family = AF_INET;
 
-	if (argc == 7) {
-		inet_pton(AF_INET, argv[5], &gserv.sin_addr);
-		gserv.sin_port = htons(atoi(argv[6]));
+	if (argc == 8) {
+		inet_pton(AF_INET, argv[6], &gserv.sin_addr);
+		gserv.sin_port = htons(atoi(argv[7]));
 	} else {
 		inet_pton(AF_INET, "127.0.0.1", &gserv.sin_addr);
 		gserv.sin_port = htons(GROSSPORT);
 	}
 
-	if (argc > 4)
-		runs = atoi(argv[4]);
+	if (argc > 5)
+		runs = atoi(argv[5]);
 
 	while (counter < runs) {
 		counter++;

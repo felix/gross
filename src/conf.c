@@ -45,7 +45,7 @@ multivalue(const char *name) {
  * add_config_item	- add an item to a linked list
  */
 int
-add_config_item(configlist_t **current, const char *name, const char *value)
+add_config_item(configlist_t **current, const char *name, const char *value, bool is_default)
 {
 	configlist_t *new;
 
@@ -54,6 +54,7 @@ add_config_item(configlist_t **current, const char *name, const char *value)
 
 	new->name = name;
 	new->value = value;
+	new->is_default = is_default;
 	new->next = *current;
 	*current = new;
 	return 1;
@@ -66,12 +67,26 @@ add_config_item(configlist_t **current, const char *name, const char *value)
 int
 record_config_item(configlist_t **config, const char *name, const char *value)
 {
-	configlist_t *cp;
+	configlist_t *cp, *prev, *delete;
 
 	cp = *config;
+	prev = NULL;
 
 	if (multivalue(name)) {
-		add_config_item(config, name, value);
+		/* remove default values */
+		while (cp) {
+			if ((cp->is_default == true) && strcmp(cp->name, name) == 0) {
+				delete = cp;
+				if (prev) 
+					prev->next = cp->next;
+				cp = cp->next;
+				free(delete);
+			} else {
+				prev = cp;
+				cp = cp->next;
+			}
+		}
+		add_config_item(config, name, value, false);
 	} else {
 		while (cp) {
 			if (strcmp(cp->name, name) == 0) {
@@ -82,7 +97,7 @@ record_config_item(configlist_t **config, const char *name, const char *value)
 		}
 		if (cp == NULL) {
 			/* name not found in configlist */
-			add_config_item(config, name, value);
+			add_config_item(config, name, value, false);
 		}
 	}
 	return 1;
@@ -166,7 +181,7 @@ default_config(void)
 	while (defaults[i]) {
 		assert(defaults[i]);
 		assert(defaults[i+1]);
-		add_config_item(&config, defaults[i], defaults[i+1]);
+		add_config_item(&config, defaults[i], defaults[i+1], true);
 		i += 2;
 	}
 	return config;

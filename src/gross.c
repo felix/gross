@@ -31,6 +31,7 @@
 #ifdef DNSBL
 #include "dnsblc.h"
 #endif /* DNSBL */
+#include "check_blocker.h"
 
 /* maximum simultaneus tcp worker threads */
 #define MAXWORKERS 1
@@ -59,6 +60,9 @@ initialize_context()
 
 	/* Clear flags  */
 	ctx->config.flags = 0;
+
+	/* Clear protocols */
+	ctx->config.protocols = 0;
 
 	/* Clear checks */
 	ctx->config.checks = 0;
@@ -93,14 +97,13 @@ configure_grossd(configlist_t *config)
 	configlist_t *cp;
 	const char *updatestr;
 	struct hostent *host = NULL;
-	
-#ifdef DEBUG_CONFIG
-	while (config) {
-		printf("%s = %s\n", config->name, config->value);
-		config = config->next;
-	}
-	exit(1);
-#endif
+
+	cp = config;
+	if (ctx->config.flags & (FLG_NODAEMON))
+		while (cp) {
+			logstr(GLOG_INSANE, "config: %s = %s", cp->name, cp->value);
+			cp = cp->next;
+		}
 
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
@@ -140,6 +143,11 @@ configure_grossd(configlist_t *config)
 	ctx->config.max_threads = 10;
 	ctx->config.peer.connected = 0;
 
+	ctx->config.greylist_delay = atoi(CONF("grey_delay"));
+
+	if (10 != ctx->config.greylist_delay)
+	  logstr(GLOG_DEBUG, "Greylisting delay %d", ctx->config.greylist_delay);
+
 	/* peer port is the same as the local sync_port */
 	ctx->config.peer.peer_addr.sin_port = htons(atoi(CONF("sync_port")));
 
@@ -165,6 +173,8 @@ configure_grossd(configlist_t *config)
 		daemon_shutdown(1, "Invalid updatestyle: %s", updatestr);
 	}
 
+	/* we must reset errno because strtol returns 0 if it fails */
+	errno = 0;
 	ctx->config.grey_mask = strtol(CONF("grey_mask"), (char **)NULL, 10);
 	if (errno || ctx->config.grey_mask > 32 || ctx->config.grey_mask < 0)
 		daemon_shutdown(1, "Invalid grey_mask: %s", CONF("grey_mask"));
@@ -190,7 +200,6 @@ configure_grossd(configlist_t *config)
 	  daemon_shutdown(1, "filter_bits should be in range [4,32]");
 	}
 
-#if PROTOCOL == SJSMS
 	if (!CONF("sjsms_response_grey"))
 		daemon_shutdown(1, "No sjsms_response_grey set!");
 	else
@@ -203,7 +212,6 @@ configure_grossd(configlist_t *config)
 		daemon_shutdown(1, "No sjsms_response_match set!");
 	else
 		ctx->config.sjsms.responsematch = strdup(CONF("sjsms_response_match"));
-#endif
 
 	if (CONF("stat_interval"))
 	  ctx->config.stat_interval = atoi(CONF("stat_interval"));
@@ -212,7 +220,7 @@ configure_grossd(configlist_t *config)
 	cp = config;
 
 	while (cp) {
-	  if (strcmp(cp->name, "stat_level") != 0) {
+	  if (strcmp(cp->name, "stat_type") != 0) {
 	    cp = cp->next;
 	    continue;
 	  }
@@ -240,15 +248,33 @@ configure_grossd(configlist_t *config)
 	init_stats();
 
 #ifdef DNSBL
+	/* Make sure init_stats() have been called */
 	ctx->dnsbl = NULL;
 
 	cp = config;
 	while (cp) {
-		if (strcmp(cp->name, "dnsbl") == 0)
-			add_dnsbl(&ctx->dnsbl, cp->value, 1);
-		cp = cp->next;
+	  if (strcmp(cp->name, "dnsbl") == 0) {
+	    add_dnsbl(&ctx->dnsbl, cp->value, 1);
+	    stat_add_dnsbl(cp->value);
+	  }
+	  
+	  cp = cp->next;
 	}
 #endif /* DNSBL */
+
+	ctx->config.query_timelimit = atoi(CONF("query_timelimit"));
+
+	/* protocols */
+	cp = config;
+	while(cp) {
+		if (strcmp(cp->name, "protocol") == 0) {
+			if (strcmp(cp->value, "sjsms") == 0) 
+				ctx->config.protocols |= PROTO_SJSMS;
+			else if (strcmp(cp->value, "postfix") == 0) 
+				ctx->config.protocols |= PROTO_POSTFIX;
+		}
+		cp = cp->next;
+	}
 
 	/* checks */
 	cp = config;
@@ -256,6 +282,8 @@ configure_grossd(configlist_t *config)
 		if (strcmp(cp->name, "check") == 0) {
 			if (strcmp(cp->value, "dnsbl") == 0) 
 				ctx->config.checks |= CHECK_DNSBL;
+			else if (strcmp(cp->value, "blocker") == 0) 
+				ctx->config.checks |= CHECK_BLOCKER;
 		}
 		cp = cp->next;
 	}
@@ -305,6 +333,25 @@ configure_grossd(configlist_t *config)
 	/* these should be set by now, at least via default config */
 	assert(ctx->config.loglevel);
 	assert(ctx->config.syslogfacility);
+
+	/* check configs */
+	memset(&ctx->config.blocker.server, 0, sizeof(ctx->config.blocker.server));
+	if (ctx->config.checks & CHECK_BLOCKER) {
+		ctx->config.blocker.server.sin_family = AF_INET;
+		if (NULL == CONF("blocker_host"))
+			daemon_perror("'blocker' configured, but 'blocker_host' not");
+		host = gethostbyname(CONF("blocker_host"));
+		if (!host)
+			daemon_perror("'blocker' configuration option invalid:");
+
+		inet_pton(AF_INET, inet_ntoa(*(struct in_addr*)host->h_addr_list[0]),
+			&(ctx->config.blocker.server.sin_addr));
+		logstr(GLOG_DEBUG, "Blocker host address %s",
+			inet_ntoa(*(struct in_addr*)host->h_addr_list[0]));
+
+		ctx->config.blocker.server.sin_port =
+			htons(atoi(CONF("blocker_port")));
+	}
 }
 
 /* 
@@ -342,8 +389,6 @@ int
 main(int argc, char *argv[])
 {
 	int ret;
-/* 	char ipstr[INET_ADDRSTRLEN]; */
-/* 	int cont = 1; */
 	update_message_t rotatecmd;
 	time_t toleration;
 	configlist_t *config;
@@ -408,7 +453,7 @@ main(int argc, char *argv[])
 
 	config = read_config(configfile);
 	configure_grossd(config);
-
+	
 	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
 		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
 	}
@@ -420,7 +465,7 @@ main(int argc, char *argv[])
 
 	/* initialize the update queue */
 	delay = Malloc(sizeof(struct timespec));
-	delay->tv_sec = 10;
+	delay->tv_sec = ctx->config.greylist_delay;
 	delay->tv_nsec = 0;
 	ctx->update_q = get_delay_queue(delay);
 	if (ctx->update_q < 0)
@@ -438,7 +483,6 @@ main(int argc, char *argv[])
 	/*
 	 * now that we are in synchronized state we can start listening
 	 * for client requests
-	 *
 	 */
 
 	/* start the check pools */
@@ -446,6 +490,8 @@ main(int argc, char *argv[])
 	if (ctx->config.checks & CHECK_DNSBL)
 		dnsblc_init();
 #endif /* DNSBL */
+	if (ctx->config.checks & CHECK_BLOCKER)
+		blocker_init();
 
 	/* start the worker thread */
 	worker_init();

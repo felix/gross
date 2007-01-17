@@ -47,6 +47,7 @@ enum logmsgtype_t {
 	STATS_STATUS       = 0x40001,
 	STATS_STATUS_BEGIN = 0x40002,
 	STATS_DELAY        = 0x40004,
+	STATS_DNSBL        = 0x40008,
 	STATS_FULL         = 0x4ffff
 };
 
@@ -98,5 +99,6 @@ void daemonize(void);
 void *Malloc(size_t size);
 void *Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg);
 void register_check(thread_pool_t *pool);
+char *ipstr(struct sockaddr_in *saddr);
 
 #endif

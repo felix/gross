@@ -54,6 +54,8 @@ size_t get_msg(int msqid, void *msgp, size_t maxsize, int msgflag);
 size_t get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, mseconds_t timeout);
 size_t in_queue_len(int msgid);
 size_t out_queue_len(int msgid);
-
+int queue_freeze(int msgid);
+int queue_thaw(int msgid);
+int walk_queue(int msgid, int (* callback)(void *));
 
 #endif /* MSGQUEUE_H */

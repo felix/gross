@@ -533,3 +533,15 @@ register_check(thread_pool_t *pool)
 	if (i == MAXCHECKS) 
 		logstr(GLOG_ERROR, "unable to register pool %s", pool->name);
 }
+
+char *
+ipstr(struct sockaddr_in *saddr)
+{       
+        char ipstr[INET_ADDRSTRLEN];
+
+        if (inet_ntop(AF_INET, &saddr->sin_addr,
+                ipstr, INET_ADDRSTRLEN) == NULL) {
+                strncpy(ipstr, "UNKNOWN\0", INET_ADDRSTRLEN);
+        }
+        return strdup(ipstr);
+}

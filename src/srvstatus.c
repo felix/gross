@@ -50,7 +50,9 @@ int test_thread(pthread_t* thread)
 void get_srvstatus(char* buf, int len) 
 {
   int state = SRV_OK;
-  unsigned int update_len = out_queue_len(ctx->update_q);
+  unsigned int update_len_in = in_queue_len(ctx->update_q) + 1;
+  unsigned int update_len_out = out_queue_len(ctx->update_q);
+  unsigned int update_len = update_len_in + update_len_out;
   unsigned int log_len = out_queue_len(ctx->log_q);
 
   if ( test_thread(ctx->process_parts.bloommgr.thread) == -1) {
@@ -59,21 +61,24 @@ void get_srvstatus(char* buf, int len)
   } else if ( ctx->process_parts.syncmgr.thread && test_thread(ctx->process_parts.syncmgr.thread) == -1) {
     state |= SRV_ERR;
     snprintf(buf, len - strlen(buf), "%d: syncmgr-thread is dead.", state);
-  } else if ( ctx->process_parts.worker.thread && test_thread(ctx->process_parts.worker.thread) == -1) {
+  } else if ( ctx->process_parts.sjsms_server.thread && test_thread(ctx->process_parts.sjsms_server.thread) == -1) {
     state |= SRV_ERR;
-    snprintf(buf, len - strlen(buf), "%d: worker-thread is dead.", state);
+    snprintf(buf, len - strlen(buf), "%d: sjsms_server-thread is dead.", state);
+  } else if ( ctx->process_parts.postfix_server.thread && test_thread(ctx->process_parts.postfix_server.thread) == -1) {
+    state |= SRV_ERR;
+    snprintf(buf, len - strlen(buf), "%d: postfix_server-thread is dead.", state);
   } else if ( time(NULL) - *ctx->last_rotate > ctx->config.rotate_interval + MINUTE) {
     state |= SRV_ERR;
     snprintf(buf, len - strlen(buf), "%d: Rotate stuck.", state);
-  } else if (update_len > QUEUE_ERR) {
+  } else if (update_len_out > QUEUE_ERR) {
     state |= SRV_ERR;
-    snprintf(buf, len - strlen(buf), "%d: Update queue length %d.", state, update_len);
+    snprintf(buf, len - strlen(buf), "%d: Update queue length %d (In: %d + Out: %d).", state, update_len, update_len_in, update_len_out);
   } else if (log_len > QUEUE_ERR) {
     state |= SRV_ERR;
     snprintf(buf, len - strlen(buf), "%d: Log queue length %d.", state, log_len);
-  } else if (update_len > QUEUE_WARN) {
+  } else if (update_len_out > QUEUE_WARN) {
     state |= SRV_WARN;
-    snprintf(buf, len - strlen(buf), "%d: Update queue length %d.", state, update_len);
+    snprintf(buf, len - strlen(buf), "%d: Update queue length %d (In: %d + Out: %d).", state, update_len, update_len_in, update_len_out);
   } else if (log_len > QUEUE_WARN) {
     state |= SRV_WARN;
     snprintf(buf, len - strlen(buf), "%d: Log queue length %d.", state, log_len);
@@ -82,10 +87,12 @@ void get_srvstatus(char* buf, int len)
     snprintf(buf, len - strlen(buf), "%d: Peer unreachable.", state);
   } else {
     state |= SRV_OK;
-    snprintf(buf, len - strlen(buf), "%d: Grossd OK. Update queue: %d Log queue: %d", 
-	     state, update_len, log_len);
+    snprintf(buf, len - strlen(buf), "%d: Grossd OK. Update queue: %d (In: %d + Out: %d)", 
+	     state, update_len, update_len_in, update_len_out);
     WITH_STATS_GUARD(snprintf(buf+strlen(buf), len - strlen(buf), " Trust: %llu Match: %llu Greylist: %llu Queries/sec: %lf", 
 			     ctx->stats.all_trust, ctx->stats.all_match, ctx->stats.all_greylist, (double)(ctx->stats.all_trust + ctx->stats.all_match + ctx->stats.all_greylist)/(double)(time(NULL) - ctx->stats.startup)); );
+    WITH_STATS_GUARD(snprintf(buf+strlen(buf), len - strlen(buf), " Dnsbl matches: ");
+		     dnsbl_stats(buf+strlen(buf), len - strlen(buf)); );
   }
 
 }
