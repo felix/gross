@@ -36,9 +36,14 @@ typedef struct edict_s {
         mseconds_t timelimit;
 } edict_t;
 
+typedef struct {
+	void *state;
+	int (*cleanup)();
+} thread_ctx_t;
+
 typedef struct pool_ctx_s {
 	pthread_mutex_t *mx;
-	int (*routine)(edict_t *);
+	int (*routine)(thread_ctx_t *, edict_t *);
 	thread_pool_t *info; 	/* public info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
@@ -52,7 +57,7 @@ typedef struct edict_message_s {
 
 int submit_job(thread_pool_t *pool, edict_t *edict);
 int submit_job_wait(thread_pool_t *pool, edict_t *edict);
-thread_pool_t *create_thread_pool(const char *name, int (*routine)(edict_t *));
+thread_pool_t *create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *));
 edict_t *edict_get();
 edict_t *edict_get();
 void send_result(edict_t *edict, void *result);

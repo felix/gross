@@ -37,7 +37,8 @@
 			"grey_delay",		"10",           \
 			"check",		"dnsbl",	\
 			"syslog_facility",	"mail",		\
-			"blocker_port",		"4466"
+			"blocker_port",		"4466",		\
+			"query_timelimit",	"5000"
 
 #define MULTIVALUES	"dnsbl",	\
 			"check",	\
@@ -71,7 +72,8 @@
                         "stat_type",			\
 			"status",			\
 			"blocker_host",			\
-			"blocker_port"
+			"blocker_port",			\
+			"query_timelimit"
 
 #define DEPRECATED_NAMES 	"syncport",		\
 				"synchost",		\

@@ -167,7 +167,7 @@ reverse_inet_addr(char *ipstr)
 }
 
 int 
-dnsblc(edict_t *edict)
+dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	ares_channel channel;
 	int nfds, count, ret;

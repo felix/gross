@@ -71,7 +71,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	edict_t *edict;
 	poolresult_message_t message;
 	chkresult_t *result;
-	bool suspicious;
+	bool suspicious = false;
 	bool got_response = false;
 	struct timespec start, now;
 	mseconds_t timeused;
@@ -82,6 +82,9 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
 	const char *ptr;
 	bool free_ta = false;
+
+	/* record the processing start time */
+	clock_gettime(CLOCK_TYPE, &start);
 
 	/*
 	 * apply checkmask to the ip 
@@ -170,15 +173,11 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 			i++;
 		}
 
-		clock_gettime(CLOCK_TYPE, &start);
-
-		while (ta) {
-			do {
-				clock_gettime(CLOCK_TYPE, &now);
-				timeused = ms_diff(&now, &start);
-				if (timeused > ta->timeout)
-					break;
-
+		while (ta && suspicious == false) {
+			clock_gettime(CLOCK_TYPE, &now);
+			timeused = ms_diff(&now, &start);
+			/* make sure timeleft != 0 as it would cause get_msg_timed to block */
+			if (timeused < ta->timeout) {
 				ret = get_msg_timed(edict->resultmq, &message,
 					sizeof(message.result), 0, ta->timeout - timeused);
 				if (ret > 0) {
@@ -188,18 +187,13 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 					free(result);
 					logstr(GLOG_INSANE, "Received a check result, suspicious = %d",
 						suspicious);
-					got_response = true;
 				} 
-
-			} while (! got_response);
-
-			if (suspicious)
-				break;
-
-			if (timeused > ta->timeout && ta->action)
+			} else if (ta->action) {
 				ta->action(ta->arg, timeused);
-
-			ta = ta->next;
+				ta = ta->next;
+			} else {
+				ta = ta->next;
+			}
 		}
 		if (true == suspicious) {
 			logstr(GLOG_INFO, "greylist: %s", realtuple);

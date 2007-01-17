@@ -42,6 +42,7 @@ thread_pool(void *arg)
 	edict_message_t message;
 	edict_t *edict;
 	mseconds_t timelimit;
+	thread_ctx_t thread_ctx;
 	
 	pool_ctx = (pool_ctx_t *)arg;
 	assert(pool_ctx->mx);
@@ -82,7 +83,7 @@ thread_pool(void *arg)
 			POOL_MUTEX_UNLOCK;
 
 			/* run the routine with args */
-			pool_ctx->routine(edict);
+			pool_ctx->routine(&thread_ctx, edict);
 
 			/* we are done */
 			edict_unlink(edict);
@@ -98,7 +99,11 @@ thread_pool(void *arg)
 			if (pool_ctx->count_idle > 1) {
 				pool_ctx->count_thread--;
 				POOL_MUTEX_UNLOCK;
-				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down", pool_ctx->info->name);
+				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down",
+					pool_ctx->info->name);
+				/* run a cleanup routine if defined */
+				if (thread_ctx.cleanup)
+					thread_ctx.cleanup();
 				pthread_exit(NULL);
 			}
 			POOL_MUTEX_UNLOCK;
@@ -107,7 +112,7 @@ thread_pool(void *arg)
 }
 
 thread_pool_t *
-create_thread_pool(const char *name, int (*routine)(edict_t *))
+create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *))
 {
 	thread_pool_t *pool;
 	pthread_mutex_t *pool_mx;

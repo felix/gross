@@ -160,6 +160,7 @@ typedef struct {
         int greylist_delay;
 	sjsms_config_t sjsms;
 	blocker_config_t blocker;
+	mseconds_t query_timelimit;
 } gross_config_t;
 
 #ifdef DNSBL

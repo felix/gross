@@ -8,14 +8,21 @@ Lots of changes under the hood.
   'stat_type' and 'stat_interval' configuration parameters.
 - grossd can now serve different query protocols simultaneously.
   This is controlled by the 'protocol' config parameter.
+- Preliminary support for Sophos blocker. Not yet production
+  quality, needs testing. Check issue #19.
+- check also doc/examples/grossd.conf, which make install will
+  install as the default config file if there is no existing
+  grossd.conf
 
 Issues fixed:
+#18: documented and configurable timeouts
 #23: Customizable SMTP error messages
 #26: connections could come from different IP addresses
 #27: configurable greylisting time
 #28: Bug in the mapping file example
 #29: dnsbl tolerance counters not working on OS X
 #31: Get rid of --with-worker configure option
+
 
 Version 0.7.2
 

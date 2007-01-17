@@ -24,7 +24,7 @@
 enum parse_status_t { PARSE_OK, PARSE_CLOSED, PARSE_ERROR, PARSE_SYS_ERROR };
 
 /* prototypes of internals */
-int postfix_connection(edict_t *edict);
+int postfix_connection(thread_ctx_t *, edict_t *edict);
 int parse_postfix(client_info_t *info, grey_tuple_t *grey_tuple);
 char *try_match(char *matcher, char *matchee);
 
@@ -32,7 +32,7 @@ char *try_match(char *matcher, char *matchee);
  * postfix_connection	- the actual server for policy delegation
  */
 int
-postfix_connection(edict_t *edict)
+postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	grey_tuple_t *request;
 	char *response;

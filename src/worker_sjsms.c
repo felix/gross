@@ -42,7 +42,7 @@ void calm_client(void *arg, mseconds_t timeused) {
  * sjsms_connection    - the actual greylist server
  */
 int
-sjsms_connection(edict_t *edict)
+sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	socklen_t len;
 	grey_req_t request;
@@ -72,7 +72,7 @@ sjsms_connection(edict_t *edict)
 	ta1.arg = client_info;
 	ta1.next = &ta2;
 
-	ta2.timeout = 4000;		/* 4 seconds more */
+	ta2.timeout = ctx->config.query_timelimit;
 	ta2.action = NULL;
 	ta2.next = NULL;
 

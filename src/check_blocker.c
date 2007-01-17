@@ -16,13 +16,20 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ * query Sophos blocker list. Idea for this came from Jesse Thompson,
+ * <jesse.thompson@doit.wisc.edu> and code was written after viewing the
+ * message Bernd Cappel <cappel@uni-duesseldorf.de> wrote on the
+ * perlmx@ca.sophos.com mail list. 
+ */
+
 #include "common.h"
 #include "srvutils.h"
 #include "utils.h"
 #include "worker.h"
 
 int 
-blocker(edict_t *edict)
+blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
 	int blocker;
@@ -34,6 +41,7 @@ blocker(edict_t *edict)
         const char *client_address;
 	char buffer[MAXLINELEN] = { '\0' };
 	struct timespec start, now, timeleft;
+	mseconds_t elapsed;
 
         request = (grey_tuple_t *)edict->job;
         client_address = request->client_address;
@@ -54,34 +62,40 @@ blocker(edict_t *edict)
 		return -1;
 	}
 
-	ret = connect(blocker, (struct sockaddr *)&ctx->config.blocker.server, sizeof(struct sockaddr_in));
-	if (-1 == ret && errno != EINPROGRESS) {
-		logstr(GLOG_ERROR, "blocker: connect: %s", strerror(errno));
-		close(blocker);
-		return -1;
-	}
-
 	FD_ZERO(&readers);
 	FD_ZERO(&writers);
 
 	clock_gettime(CLOCK_TYPE, &start);
 	mstotimespec(edict->timelimit, &timeleft);
 
-	/* wait for blocker to become writable */
-	while (FD_ISSET(blocker, &writers) == 0) {
-		count = pselect(blocker + 1, NULL, &writers, NULL, &timeleft, NULL);
-		if (count == 0) {
-			logstr(GLOG_NOTICE, "blocker: timeout connecting to blocker service");
-			close(blocker);
-			return -1;
-		} else if (count < 0) {
-			logstr(GLOG_ERROR, "blocker: select: %s", strerror(errno));
-			close(blocker);
-			return -1;
+	ret = connect(blocker, (struct sockaddr *)&ctx->config.blocker.server,
+		sizeof(struct sockaddr_in));
+	if (ret == 0)
+		goto CONNECTION;
+
+	/* no connection (yet), find out why */
+	if (errno != EINPROGRESS) {
+		logstr(GLOG_ERROR, "blocker: connect: %s", strerror(errno));
+		close(blocker);
+		return -1;
+	} else {
+		/* wait for blocker to become writable */
+		while (FD_ISSET(blocker, &writers) == 0) {
+			count = pselect(blocker + 1, NULL, &writers, NULL,
+				&timeleft, NULL);
+			if (count == 0) {
+				logstr(GLOG_NOTICE, "blocker: timeout connecting to blocker service");
+				close(blocker);
+				return -1;
+			} else if (count < 0) {
+				logstr(GLOG_ERROR, "blocker: select: %s", strerror(errno));
+				close(blocker);
+				return -1;
+			}
 		}
 	}
 
-
+CONNECTION:
 	/*
 	 * Now we have a connection
          */
@@ -99,7 +113,14 @@ blocker(edict_t *edict)
 	}
 
 	clock_gettime(CLOCK_TYPE, &now);
-	mstotimespec(ms_diff(&start, &now), &timeleft);
+	elapsed = ms_diff(&start, &now);
+	/* make sure elapsed != edict->timelimit as it would make pselect() block */
+	if (elapsed >= edict->timelimit) {
+		logstr(GLOG_NOTICE, "blocker: timeout waiting for response");
+		close(blocker);
+		return -1;
+	}
+	mstotimespec(edict->timelimit - elapsed, &timeleft);
 	
 	/* wait for response */
 	while (FD_ISSET(blocker, &readers) == 0) {

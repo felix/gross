@@ -258,6 +258,8 @@ configure_grossd(configlist_t *config)
 	}
 #endif /* DNSBL */
 
+	ctx->config.query_timelimit = atoi(CONF("query_timelimit"));
+
 	/* protocols */
 	cp = config;
 	while(cp) {
