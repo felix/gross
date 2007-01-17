@@ -38,9 +38,12 @@ void sjsms_server_init();
 void
 free_client_info(client_info_t *arg)
 {
-        free(arg->caddr);
-	free(arg->ipstr);
-	free(arg->message);
+	if (arg->caddr)
+		free(arg->caddr);
+	if (arg->ipstr)
+		free(arg->ipstr);
+	if (arg->message)
+		free(arg->message);
         free(arg);
 }
 

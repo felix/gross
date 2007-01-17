@@ -190,6 +190,7 @@ sjsms_server(void *arg)
         for ( ; ; ) {
                 /* client_info struct is free()d by the worker thread */
                 client_info = Malloc(sizeof(client_info_t));
+		memset(client_info, 0, sizeof(client_info_t));
                 client_info->caddr = Malloc(sizeof(struct sockaddr_in));
 
                 clen = sizeof(struct sockaddr_in);
