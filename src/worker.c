@@ -77,6 +77,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	mseconds_t timeused;
 	tmout_action_t *tap;
 	int i;
+	int checks_running;
 	struct in_addr inaddr;
 	unsigned int ip, net, mask;
 	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
@@ -172,8 +173,9 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 			submit_job(ctx->checklist[i], edict);
 			i++;
 		}
+		checks_running = i;
 
-		while (ta && suspicious == false) {
+		while (ta && suspicious == false && checks_running > 0) {
 			clock_gettime(CLOCK_TYPE, &now);
 			timeused = ms_diff(&now, &start);
 			/* make sure timeleft != 0 as it would cause get_msg_timed to block */
@@ -182,6 +184,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 					sizeof(message.result), 0, ta->timeout - timeused);
 				if (ret > 0) {
 					/* We've got a response */
+					checks_running--;
 					result = (chkresult_t *)message.result;
 					suspicious = result->suspicious;
 					free(result);
