@@ -88,6 +88,7 @@ addrinfo_callback(void *arg, int status, struct hostent *host)
 
 	if (status == ARES_SUCCESS) {
 		*cba->matches = 1;
+		stat_dnsbl_match(cba->dnsbl->name);
 		logstr(GLOG_INFO, "dns-match: %s for %s",
 			cba->dnsbl->name, cba->client_address);
 		acctstr(ACCT_DNS_MATCH, "%s for %s", cba->dnsbl->name, cba->client_address);

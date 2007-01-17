@@ -248,13 +248,17 @@ configure_grossd(configlist_t *config)
 	init_stats();
 
 #ifdef DNSBL
+	/* Make sure init_stats() have been called */
 	ctx->dnsbl = NULL;
 
 	cp = config;
 	while (cp) {
-		if (strcmp(cp->name, "dnsbl") == 0)
-			add_dnsbl(&ctx->dnsbl, cp->value, 1);
-		cp = cp->next;
+	  if (strcmp(cp->name, "dnsbl") == 0) {
+	    add_dnsbl(&ctx->dnsbl, cp->value, 1);
+	    stat_add_dnsbl(cp->value);
+	  }
+	  
+	  cp = cp->next;
 	}
 #endif /* DNSBL */
 

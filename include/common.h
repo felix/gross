@@ -102,6 +102,8 @@
 #define PROTO_SJSMS (int)0x01
 #define PROTO_POSTFIX (int)0x02
 
+#define TMP_BUF_SIZE ((uint32_t)640) /* 640 should be enough for everyone */
+
 #ifndef MAX
 #define MAX(a,b) 	((a) > (b) ? (a) : (b))
 #endif

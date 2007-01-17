@@ -24,17 +24,20 @@ init_stats()
 {
   pthread_mutex_init( &(ctx->stats.mx), NULL);
 
-  zero_stats(TRUE);
+  ctx->stats.dnsbl_match = NULL;
   time( &(ctx->stats.startup) );
   ctx->stats.all_greylist = 0;
   ctx->stats.all_match = 0;
   ctx->stats.all_trust = 0;
+
+  zero_stats();
 }
 
 stats_t
 zero_stats()
 {
   stats_t old;
+  dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
 
   WITH_STATS_GUARD(/* Take a copy of the old values */
 		   old = ctx->stats;
@@ -52,6 +55,43 @@ zero_stats()
   return old;
 }
 
+int
+stat_add_dnsbl(const char *name)
+{
+  dnsbl_stat_t *prev = ctx->stats.dnsbl_match;
+
+  ctx->stats.dnsbl_match = (dnsbl_stat_t*)Malloc(sizeof(dnsbl_stat_t));
+  ctx->stats.dnsbl_match->dnsbl_name = strdup(name);
+  ctx->stats.dnsbl_match->matches_startup = 0;
+  ctx->stats.dnsbl_match->next = prev;
+  
+  return 1;
+}
+
+uint64_t
+stat_dnsbl_match(const char *name)
+{
+  dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
+  int max_dnsbl_name_len = 256;
+  int result = 0;
+  
+  WITH_STATS_GUARD(
+		   while(cur) {
+		     if (0 == strncmp(cur->dnsbl_name, name, max_dnsbl_name_len)) {
+		       (cur->matches_startup)++;
+		       logstr(GLOG_DEBUG, "%llu matches from %s", (cur->matches_startup), name);
+		       result = cur->matches_startup;
+		       break;
+		     }
+		     
+		     cur = cur->next;
+		   });
+
+  if (!result)
+    logstr(GLOG_WARNING, "Match from unknown dnsbl: %s", name);
+  return result;
+}
+		     
 double
 greylist_delay_update(double d)
 {
@@ -102,11 +142,59 @@ trust_delay_update(double d)
   return ctx->stats.trust_avg_delay;
 }
 
+char* 
+dnsbl_stats(char *buf, int32_t size)
+{
+  int32_t count = 0;
+  dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
+  char *tick = buf;
+
+  count = snprintf(tick, size, "grossd dnsbl matches (");
+  tick += count;
+  size = size - count;
+
+  while (cur) {
+    count = snprintf(tick, size, "%s", cur->dnsbl_name);
+    tick += count;
+    size = size - count;
+    if (cur->next) {
+      count = snprintf(tick, size, ", ");
+      tick += count;
+      size = size - count;
+    }
+    
+    cur = cur->next;
+  }
+  
+  count = snprintf(tick, size, "): ");
+  tick += count;
+  size = size - count;
+
+  cur = ctx->stats.dnsbl_match;
+
+  while (cur) {
+    count = snprintf(tick, size, "%d", cur->matches_startup);
+    tick += count;
+    size = size - count;
+    if (cur->next) {
+      count = snprintf(tick, size, ", ");
+      tick += count;
+      size = size - count;
+    }
+
+    cur = cur->next;
+  }
+
+  return buf;
+}
+
 stats_t
 log_stats()
 {
+  char buf[TMP_BUF_SIZE] = { 0x00 };
   stats_t stats;
   stats = zero_stats();
+  
 
   statstr(STATS_STATUS, "grossd status summary (begin, end, trust, match, greylist): %lu, %lu, %llu, %llu, %llu", 
 	  stats.begin, stats.end, stats.trust, stats.match, stats.greylist);
@@ -119,6 +207,9 @@ log_stats()
 
   statstr(STATS_STATUS_BEGIN, "grossd summary since startup (startup, now, trust, match, greylist): %lu, %lu, %llu, %llu, %llu", 
 	  stats.startup, stats.end, stats.all_trust, stats.all_match, stats.all_greylist);
+
+  statstr(STATS_DNSBL, "grossd dnsble matches: %s", dnsbl_stats(buf, TMP_BUF_SIZE));
+
 
   return stats;
 }

@@ -19,6 +19,14 @@
 #ifndef STATS_H
 #define STATS_H
 
+struct dnsbl_stat {
+  char *dnsbl_name;
+  uint64_t matches_startup;
+  struct dnsbl_stat *next;
+};
+
+typedef struct dnsbl_stat dnsbl_stat_t;
+
 typedef struct {
   time_t startup;
   time_t begin;
@@ -36,6 +44,7 @@ typedef struct {
   double greylist_max_delay;
   double match_max_delay;
   double trust_max_delay;
+  dnsbl_stat_t *dnsbl_match;
 } stats_t;
 
 void init_stats();
@@ -45,6 +54,8 @@ stats_t log_stats();
 double greylist_delay_update(double d);
 double match_delay_update(double d);
 double trust_delay_update(double d);
+uint64_t stat_dnsbl_match(const char *name);
+int stat_add_dnsbl(const char *name);
 
 #define WITH_STATS_GUARD(X) { pthread_mutex_lock( &(ctx->stats.mx) ); X; pthread_mutex_unlock( &(ctx->stats.mx) ); }
 #define INCF_STATS(member) { WITH_STATS_GUARD( ++(ctx->stats.member) ;) }
