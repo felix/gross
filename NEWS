@@ -1,7 +1,15 @@
 Version svn
 
-Lots of changes under the hood.
+In short: Important changes from the previous version
 
+* You must configure protocols in config file. This is done via
+  'protocol' config file parameter. Either 'protocol = sjsms' or
+  'protocol = postfix' or both.
+* 'sync_host' and 'peer_host' has been deprecated. Use new
+  'sync_listen' and 'sync_peer' options.
+
+
+The longer list:
 - Checks are now done in thread pools, which makes it easier to
   develop new checks, like Sophos blocker or SPF. 
 - grossd can log aggregate statistics about query results. Check
@@ -15,6 +23,7 @@ Lots of changes under the hood.
   grossd.conf
 
 Issues fixed:
+#16: synchronization is confusing to configure
 #18: documented and configurable timeouts
 #23: Customizable SMTP error messages
 #26: connections could come from different IP addresses
@@ -22,6 +31,8 @@ Issues fixed:
 #28: Bug in the mapping file example
 #29: dnsbl tolerance counters not working on OS X
 #31: Get rid of --with-worker configure option
+#32: gcc makes grosscheck so dependent on libgcc_s.so.1
+#33: Update queue synchronizing
 
 
 Version 0.7.2
