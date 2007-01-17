@@ -290,6 +290,58 @@ set_delay_status(int msqid, int state)
 	return 0;
 }
 
+/*
+ * queue_thaw	- release locks from the queue
+ */
+int
+queue_thaw(int msqid)
+{
+	msgqueue_t *mq;
+	int ret;
+
+	mq = queuebyid(msqid);
+	if (! mq) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	ret = pthread_mutex_unlock(&mq->mx);
+	assert(ret == 0);
+	if (mq->delaypair) {
+		ret = pthread_mutex_unlock(&mq->delaypair->mx);
+		assert(ret == 0);
+	}
+
+	return 0;
+}
+
+/*
+ * queue_freeze	- hold processing of the queue
+ */
+int
+queue_freeze(int msqid)
+{
+	msgqueue_t *mq;
+	int ret;
+
+	mq = queuebyid(msqid);
+	if (! mq) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	ret = pthread_mutex_lock(&mq->mx);
+	assert(ret == 0);
+	if (mq->delaypair) {
+		ret = pthread_mutex_lock(&mq->delaypair->mx);
+		assert(ret == 0);
+	}
+
+	return 0;
+}
+
+	
+
 int
 set_delay(int msqid, const struct timespec *ts)
 {

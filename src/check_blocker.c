@@ -48,97 +48,37 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
         assert(client_address);
 
 	blocker = socket(AF_INET, SOCK_STREAM, 0);
-	if (-1 == blocker) {
+	if (blocker < 0) {
 		logstr(GLOG_ERROR, "blocker: socket: %s", strerror(errno));
 		return -1;
 	}
-
-	flags = fcntl(blocker, F_GETFL, 0);
-	flags |= O_NONBLOCK;
-	ret = fcntl(blocker, F_SETFL, flags);
-	if (-1 == ret) {
-		logstr(GLOG_ERROR, "blocker: fcntl: %s", strerror(errno));
-		close(blocker);
-		return -1;
-	}
-
-	FD_ZERO(&readers);
-	FD_ZERO(&writers);
 
 	clock_gettime(CLOCK_TYPE, &start);
 	mstotimespec(edict->timelimit, &timeleft);
 
 	ret = connect(blocker, (struct sockaddr *)&ctx->config.blocker.server,
 		sizeof(struct sockaddr_in));
-	if (ret == 0)
-		goto CONNECTION;
-
-	/* no connection (yet), find out why */
-	if (errno != EINPROGRESS) {
+	if (ret < 0) {
 		logstr(GLOG_ERROR, "blocker: connect: %s", strerror(errno));
 		close(blocker);
 		return -1;
-	} else {
-		/* wait for blocker to become writable */
-		while (FD_ISSET(blocker, &writers) == 0) {
-			count = pselect(blocker + 1, NULL, &writers, NULL,
-				&timeleft, NULL);
-			if (count == 0) {
-				logstr(GLOG_NOTICE, "blocker: timeout connecting to blocker service");
-				close(blocker);
-				return -1;
-			} else if (count < 0) {
-				logstr(GLOG_ERROR, "blocker: select: %s", strerror(errno));
-				close(blocker);
-				return -1;
-			}
-		}
 	}
-
-CONNECTION:
-	/*
-	 * Now we have a connection
-         */
 
 	/* build a query string */
 	snprintf(buffer, MAXLINELEN, "client_address=%s\n\n", request->client_address);
 	buffer[MAXLINELEN-1] = '\0';
 
 	/* send the query */
-	ret = send(blocker, buffer, strlen(buffer), 0);
-	if (-1 == ret) {
-		logstr(GLOG_ERROR, "blocker: send: %s", strerror(errno));
-		close(blocker);
-		return -1;
-	}
-
-	clock_gettime(CLOCK_TYPE, &now);
-	elapsed = ms_diff(&start, &now);
-	/* make sure elapsed != edict->timelimit as it would make pselect() block */
-	if (elapsed >= edict->timelimit) {
-		logstr(GLOG_NOTICE, "blocker: timeout waiting for response");
-		close(blocker);
-		return -1;
-	}
-	mstotimespec(edict->timelimit - elapsed, &timeleft);
-	
-	/* wait for response */
-	while (FD_ISSET(blocker, &readers) == 0) {
-		count = pselect(blocker + 1, &readers, NULL, NULL, &timeleft, NULL);
-		if (count == 0) {
-			logstr(GLOG_NOTICE, "blocker: timeout waiting for response");
-			close(blocker);
-			return -1;
-		} else if (count < 0) {
-			logstr(GLOG_ERROR, "blocker: select: %s", strerror(errno));
-			close(blocker);
-			return -1;
-		}
-	}
-
-	ret = recv(blocker, &buffer, MAXLINELEN, 0);
+	ret = writen(blocker, buffer, strlen(buffer));
 	if (ret < 0) {
-		logstr(GLOG_ERROR, "blocker: recv: %s", strerror(errno));
+		logstr(GLOG_ERROR, "blocker: writen: %s", strerror(errno));
+		close(blocker);
+		return -1;
+	}
+
+	ret = readline(blocker, &buffer, MAXLINELEN);
+	if (ret < 0) {
+		logstr(GLOG_ERROR, "blocker: readline: %s", strerror(errno));
 		close(blocker);
 		return -1;
 	}
@@ -148,7 +88,8 @@ CONNECTION:
 	if (strncmp(buffer, "action=565 ", 11) == 0) {
 		logstr(GLOG_DEBUG, "found match from blocker: %s", request->client_address);
 		result->suspicious = 1;
-	}
+	} else 
+		result->suspicious = 0;
 	send_result(edict, result);
 
 	logstr(GLOG_DEBUG, "blocker returning");

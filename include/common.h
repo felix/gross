@@ -204,6 +204,7 @@ typedef struct {
         int update_q;
         sem_t* sync_guard;
         pthread_mutex_t bloom_guard;
+	pthread_mutex_t update_guard;
         time_t* last_rotate;
 #ifdef DNSBL
         dnsbl_t *dnsbl;

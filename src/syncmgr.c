@@ -440,7 +440,11 @@ synchronize(peer_t* peer, int syncfd) {
     logstr(GLOG_INFO, "Examining peer config");
     send_sync_config(peer, &conf);
 
-    WITH_SYNC_GUARD(send_filters(peer););
+    WITH_SYNC_GUARD(
+	queue_freeze(ctx->update_q);
+	send_filters(peer);
+	queue_thaw(ctx->update_q);
+    );
 
     logstr(GLOG_INFO, "Sent filters. Waiting for oper syncs");
     do {

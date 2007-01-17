@@ -42,8 +42,8 @@ thread_pool(void *arg)
 	edict_message_t message;
 	edict_t *edict;
 	mseconds_t timelimit;
-	thread_ctx_t thread_ctx;
-	
+	thread_ctx_t thread_ctx = { NULL };
+
 	pool_ctx = (pool_ctx_t *)arg;
 	assert(pool_ctx->mx);
 	assert(pool_ctx->routine);
