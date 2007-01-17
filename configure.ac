@@ -96,6 +96,14 @@ AC_TYPE_SIGNAL
 
 AC_SUBST(REENTRANT_FLAG)
 
+if test "x$GCC" == "xyes"
+then
+	STATIC_GLIBC_FLAG="-XCClinker -static-libgcc"
+else
+	STATIC_GLIBC_FLAG=""
+fi
+AC_SUBST(STATIC_GLIBC_FLAG)
+
 dnl various defines used by gross
 dnl
 dnl default config file location

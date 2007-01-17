@@ -17,7 +17,7 @@ gclient_LDFLAGS = @LDFLAGS@ proto_sjsms.o
 gclient_DEPENDENCIES = proto_sjsms.c
 
 grosscheck_la_SOURCES = grosscheck.c proto_sjsms.c
-grosscheck_la_LDFLAGS = -module -avoid-version
+grosscheck_la_LDFLAGS = -module -avoid-version @STATIC_GLIBC_FLAG@
 
 check_PROGRAMS = sha256
 bloom_SOURCES = sha256.c bloom-test.c bloom.c srvutils.c utils.c
