@@ -11,43 +11,15 @@ COMPILING
 
 You should be able to compile it for testing by just commanding:
 
-$ ./configure --with-worker=sjsms --prefix=/tmp/gross
+$ ./configure --prefix=/tmp/gross
 $ make install
-
-Default worker protocol is Postfix's, if you use sjsms you must
-specify it excplicitly.
 
 BASIC CONFIGURATION
 
 An example configuration is included in doc/example/grossd.conf:
-I suggest you write your own in $PREFIX/etc/grossd.conf, it's
-not installed there automatically. grossd will load configuration 
-in the current working directory, you may tell grossd to use 
-another config file via -f command line option.
-
-#update=grey
-dnsbl=bl.spamcop.net
-dnsbl=relays.ordb.org
-dnsbl=sbl.spamhaus.org
-dnsbl=dnsbl.njabl.org
-dnsbl=cbl.abuseat.org
-dnsbl=xbl.smaphaus.org
-host=127.0.0.1
-port=1111
-filter_bits=21
-number_buffers=8
-rotate_interval=120 # 2 minutes
-#sync_listen=
-#sync_peer=
-#sync_port=
-#statefile=/tmp/grossd.state
-
-This is a single server configuration. dnsbl entries are just what you'd
-think they are. update=grey will update the datebase only in case of a
-GREY response. It is the default. update=always will enable enable
-updating in any case. host and port are the ip and port for the server
-to bind(). filter_bits is the length of the Bloom filter (actually the
-bit vector length will be 2^filter_bits).
+It is installed also as the default configuration in
+$PREFIX/etc/grossd.conf. You may tell grossd to use another config
+file via -f command line option. 
 
 The server keeps the state information in the Bloom filter bit arrays.
 By the nature of the filters you can insert elements in the filters, but
@@ -63,19 +35,21 @@ configuration we use on our production servers:
 
 dnsbl=rbl-plus.mail-abuse.org
 dnsbl=bl.spamcop.net
-dnsbl=relays.ordb.org
 dnsbl=sbl.spamhaus.org
 dnsbl=dnsbl.njabl.org
 dnsbl=cbl.abuseat.org
 dnsbl=xbl.smaphaus.org
 dnsbl=dnsbl.sorbs.net
-sync_listen=10.10.13.1
-sync_peer=10.10.13.2
+host=smtp02
+sync_listen=smtp02
+sync_peer=smtp01
 number_buffers=12
 filter_bits=24
-statefile=grossd.state
+statefile=/usr/local/gross/etc/grossd.state
+stat_type=full
+protocol=sjsms
 
-synchost is the server ip, and peerhost stands for the replication
+sync_listen is the server ip, and sync_peer stands for the replication
 partners ip address.
 
 If you get this far, you can start the server. I suggest you
@@ -92,8 +66,8 @@ Good luck, and don't hesitate to ask me if in doubt!
 
 MTA CONFIGURATION
 
-Although never tested, Gross should work with Postfix's native
-filtering protocol.
+Although never tested in production, Gross should work with
+Postfix's native filtering protocol.
 
 On the other hand, SJSMS needs some mapping entry for queries.
 This is an entry from our production server config:
@@ -116,8 +90,8 @@ and known issues.
 LOGGING AND TROUBLESHOOTING
 
 grossd logs everything through syslog. Facility is LOG_MAIL, loglevel
-defaults to INFO. For now, this is only configurable when compiling,
-change the #define LOGLEVEL in include/srvutils.h.
+defaults to INFO. You can control logging with 'log_level' and
+'syslog_facility' configuration options.
 
 You can enable full debugging by starting grossd with -D command line
 option. You may also want -d, as grossd then writes output on standard

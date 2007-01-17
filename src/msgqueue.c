@@ -568,7 +568,6 @@ get_msg_raw(msgqueue_t *mq, mseconds_t timeout)
 	mstotimespec(timeout, &to);
 
 	to.tv_sec += time(NULL);
-	to.tv_nsec = 0;
 
 	if (timeout >= 0) {
 		/* the queue is now empty, wait for messages */

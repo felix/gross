@@ -176,6 +176,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		checks_running = i;
 
 		while (ta && suspicious == false && checks_running > 0) {
+			printf("foo\n");
 			clock_gettime(CLOCK_TYPE, &now);
 			timeused = ms_diff(&now, &start);
 			/* make sure timeleft != 0 as it would cause get_msg_timed to block */

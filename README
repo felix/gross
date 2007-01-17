@@ -41,8 +41,7 @@ DESIGN AND OPERATION
 
 Gross consists of grossd, the greylisting daemon, and
 a client library for SJSMS. The server also implements 
-Postfix's content filtering protocol. The protocol is
-chosen when compiling the server.
+Postfix's content filtering protocol.
 
 Upon receiving a request from a client, grossd first 
 validates it. The request includes a triplet (smtp-client-ip, 
