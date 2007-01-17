@@ -684,6 +684,9 @@ walk_queue(int msgid, int (* callback)(void *))
         msg_t *msg;
 	int ret;
 
+	mq = queuebyid(msgid);
+	assert(mq);
+
 	if (mq->active == false) {
                 logstr(GLOG_ERROR, "get_msg_raw: message queue is marked inactive");
                 return -1;
@@ -692,6 +695,7 @@ walk_queue(int msgid, int (* callback)(void *))
 	if (mq->head) {
 		msg = mq->head;
 		while (msg) {
+			logstr(GLOG_ERROR, "walk_queue: calling callback function");
 			ret = callback(msg->msgp);
 			if (ret < 0) {
 				logstr(GLOG_ERROR, "walk_queue: callback returned FAILURE");
@@ -705,6 +709,7 @@ walk_queue(int msgid, int (* callback)(void *))
 		if (mq->delaypair->head) {
 			msg = mq->head;
 			while (msg) {
+				logstr(GLOG_ERROR, "walk_queue: calling callback function");
 				ret = callback(msg->msgp);
 				if (ret < 0) {
 					logstr(GLOG_ERROR, "walk_queue: callback returned FAILURE");
