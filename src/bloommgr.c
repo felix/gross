@@ -64,6 +64,8 @@ bloommgr(void *arg)
 
 	logstr(GLOG_INFO, "bloommgr starting...");
 
+	sem_post(ctx->sync_guard);
+
 	/* pseudo-loop */
 	for (;;) {
 	  size = get_msg(ctx->update_q, &message, MSGSZ, 0);
@@ -114,5 +116,6 @@ bloommgr(void *arg)
 void
 bloommgr_init()
 {
+        sem_wait(ctx->sync_guard);
 	Pthread_create(&ctx->process_parts.bloommgr, &bloommgr, NULL);
 }
