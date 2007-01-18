@@ -189,6 +189,7 @@ send_update_msg_as_oper_sync(void *arg)
 	assert(update);
 
 	if (update->mtype == UPDATE) {
+		logstr(GLOG_INSANE, "sending message from update queue as oper sync");
 		memcpy(&digest, update->mtext, sizeof(sha_256_t)); 
 
 		prologue.type = htonl(OPER_SYNC);
@@ -439,7 +440,7 @@ synchronize(peer_t* peer, int syncfd) {
 
   } else {
     /* Glorious success */
-    logstr(GLOG_DEBUG, "Peer fd %d\n", peer->peerfd_out);
+    logstr(GLOG_DEBUG, "Peer fd %d", peer->peerfd_out);
     peer->connected = peer->peerfd_out;
     rotatecmd.mtype = ROTATE;
     instant_msg(ctx->update_q, &rotatecmd, 0, 0);
