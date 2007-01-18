@@ -1,4 +1,4 @@
-AC_INIT([gross],[0.8.0])
+AC_INIT([gross],[0.8.1])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([config.h])

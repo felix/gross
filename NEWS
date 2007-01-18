@@ -1,3 +1,11 @@
+Version 0.8.1
+
+A couple of bugs fixed.
+
+Issues fixed:
+#35: grossd crashes when starting
+#36: synchronization still loses one update message
+
 Version 0.8.0
 
 In short: Important changes from the previous version

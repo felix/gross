@@ -39,6 +39,7 @@ msg_t *get_msg_raw(msgqueue_t *mq, mseconds_t timeout);
 int set_delay_status(int msqid, int state);
 void queue_realloc(void);
 msgqueue_t *try_available(void);
+struct timespec *peek_msg_timestamp(msgqueue_t *mq);
 
 /* array of queues */
 msgqueue_t **queues;
@@ -144,7 +145,7 @@ void *
 delay(void *arg) {
 	queue_info_t *queue_info;
 	msg_t *msg;
-	struct timespec sleeptime, reftime, sleepleft, now;
+	struct timespec sleeptime, reftime, sleepleft, now, *msgtimestamp;
 	int ret;
 	
 	logstr(GLOG_DEBUG, "delay queue manager thread starting");
@@ -153,15 +154,15 @@ delay(void *arg) {
 
 	for ( ; ; ) {
 		logstr(GLOG_INSANE, "waiting for messages");
-		msg = get_msg_raw(queue_info->inq, 0);
-		logstr(GLOG_INSANE, "got a message from inq");
 
-		if (*queue_info->inq->impose_delay &&
+		msgtimestamp = peek_msg_timestamp(queue_info->inq);
+
+		if (msgtimestamp && *queue_info->inq->impose_delay &&
 				queue_info->inq->delay_ts &&
 				( queue_info->inq->delay_ts->tv_sec || 
 				queue_info->inq->delay_ts->tv_nsec)) {
 			clock_gettime(CLOCK_TYPE, &now);
-			ts_sum(&reftime, &msg->timestamp, queue_info->inq->delay_ts);
+			ts_sum(&reftime, msgtimestamp, queue_info->inq->delay_ts);
 			ret = ts_diff(&sleeptime, &reftime, &now);
 
 			if (ret == 0) {
@@ -178,6 +179,9 @@ delay(void *arg) {
 				} while (ret);
 			}
 		}
+		msg = get_msg_raw(queue_info->inq, 0);
+		logstr(GLOG_INSANE, "got a message from inq");
+
 		assert(msg->next == NULL);
 		logstr(GLOG_INSANE, "passing message to outq", sleeptime.tv_sec);
 		put_msg_raw(queue_info->outq, msg);
@@ -545,6 +549,38 @@ try_available(void)
 
 	return mq;
 }
+
+/*
+ * peek_msg_timestamp - returns pointer to timestamp of the first message in the queue
+ */
+struct timespec *
+peek_msg_timestamp(msgqueue_t *mq)
+{
+	struct timespec *timestamp;
+	int ret;
+
+        if (mq->active == false) {
+                logstr(GLOG_ERROR, "get_msg_raw: message queue is marked inactive");
+                return NULL;
+        }
+
+        ret = pthread_mutex_lock(&mq->mx);
+        assert(ret == 0);
+
+        /* the queue is now empty, wait for messages */
+        while (mq->head == NULL)
+                pthread_cond_wait(&mq->cv, &mq->mx);
+
+	assert(mq->head);
+	assert(mq->tail);
+
+        timestamp = &mq->head->timestamp;
+
+        pthread_mutex_unlock(&mq->mx);
+
+        return timestamp;
+}
+
 
 /* 
  * get_msg_raw	- retuns the first message from the message queue
