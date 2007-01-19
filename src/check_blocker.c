@@ -42,7 +42,6 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 	char buffer[MAXLINELEN] = { '\0' };
 	struct timespec start, now, timeleft;
 	mseconds_t elapsed;
-	struct timespec foo;
 
         request = (grey_tuple_t *)edict->job;
         client_address = request->client_address;
