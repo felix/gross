@@ -42,15 +42,19 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 	char buffer[MAXLINELEN] = { '\0' };
 	struct timespec start, now, timeleft;
 	mseconds_t elapsed;
+	struct timespec foo;
 
         request = (grey_tuple_t *)edict->job;
         client_address = request->client_address;
         assert(client_address);
 
+	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
+	result->suspicious = false;
+
 	blocker = socket(AF_INET, SOCK_STREAM, 0);
 	if (blocker < 0) {
 		logstr(GLOG_ERROR, "blocker: socket: %s", strerror(errno));
-		return -1;
+		goto FINISH;
 	}
 
 	clock_gettime(CLOCK_TYPE, &start);
@@ -61,7 +65,7 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 	if (ret < 0) {
 		logstr(GLOG_ERROR, "blocker: connect: %s", strerror(errno));
 		close(blocker);
-		return -1;
+		goto FINISH;
 	}
 
 	/* build a query string */
@@ -73,27 +77,28 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 	if (ret < 0) {
 		logstr(GLOG_ERROR, "blocker: writen: %s", strerror(errno));
 		close(blocker);
-		return -1;
+		goto FINISH;
 	}
 
 	ret = readline(blocker, &buffer, MAXLINELEN);
 	if (ret < 0) {
 		logstr(GLOG_ERROR, "blocker: readline: %s", strerror(errno));
 		close(blocker);
-		return -1;
+		goto FINISH;
 	}
 	close(blocker);
 
-	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	if (strncmp(buffer, "action=565 ", 11) == 0) {
 		logstr(GLOG_DEBUG, "found match from blocker: %s", request->client_address);
-		result->suspicious = 1;
-	} else 
-		result->suspicious = 0;
-	send_result(edict, result);
+		result->suspicious = true;
+	}
 
+FINISH:
+	send_result(edict, result);
 	logstr(GLOG_DEBUG, "blocker returning");
-	return 1;
+	free_request(request);
+	
+	return 0;
 }
 
 void

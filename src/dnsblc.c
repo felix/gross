@@ -167,7 +167,7 @@ reverse_inet_addr(char *ipstr)
 	return 0;
 }
 
-int 
+int
 dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	ares_channel channel;
@@ -193,24 +193,26 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 	client_address = request->client_address;
 	assert(client_address);
 
+	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
+
 	ipstr = strdup(client_address);
 
 	if (strlen(ipstr) > INET_ADDRSTRLEN - 1) {
 		logstr(GLOG_ERROR, "invalid ipaddress: %s", ipstr);
 		free(ipstr);
-		return -1;
+		goto FINISH;
 	}
 
 	ret = reverse_inet_addr(ipstr);
 	if (ret < 0) {
 		free(ipstr);
-		return -1;
+		goto FINISH;
 	}
 	
 	if (ares_init(&channel) != ARES_SUCCESS) {
 		perror("ares_init");
 		free(ipstr);
-		return -1;
+		goto FINISH;
 	}
 	
 	dnsbl = ctx->dnsbl;
@@ -281,12 +283,14 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 	ares_destroy(channel);
 	free(ipstr);
 
-	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
+FINISH:
 	result->suspicious = (match_found > 0);
 	send_result(edict, result);
 	
 	logstr(GLOG_DEBUG, "dnsblc returning");
-	return match_found;
+	free_request(request);
+
+	return 0;
 }
 
 void

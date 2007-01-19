@@ -1,3 +1,8 @@
+Version 0.8-svn
+
+Issues fixed:
+#39: blocker queries cause segmentation fault
+
 Version 0.8.1
 
 A couple of bugs fixed.

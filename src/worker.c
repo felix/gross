@@ -83,6 +83,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
 	const char *ptr;
 	bool free_ta = false;
+	grey_tuple_t *requestcopy;
 
 	/* record the processing start time */
 	clock_gettime(CLOCK_TYPE, &start);
@@ -160,7 +161,6 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 
 		/* Write the edict */
 		edict = edict_get(false);
-		edict->job = (void *)request;
 		tap = ta;
 		while (tap) {
 			edict->timelimit += tap->timeout;
@@ -170,6 +170,13 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		/* here should be loop over all checks */
 		i = 0;
 		while (ctx->checklist[i]) {
+			/* requestcopy is freed() by the check */
+			requestcopy = Malloc(sizeof(grey_tuple_t));
+			requestcopy->sender = strdup(request->sender);
+			requestcopy->recipient = strdup(request->recipient);
+			requestcopy->client_address = strdup(request->client_address);
+			edict->job = (void *)requestcopy;
+
 			submit_job(ctx->checklist[i], edict);
 			i++;
 		}
