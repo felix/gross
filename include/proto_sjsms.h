@@ -36,7 +36,6 @@ typedef struct {
 	char message[MAXLINELEN];
 } sjsms_msg_t;
 
-grey_tuple_t *unfold(grey_req_t *request);
 int fold(grey_req_t *request, const char *sender, const char *recipient, const char *caddr);
 int sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request);
 int senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...);

@@ -90,17 +90,17 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 			}
 
 		
-			free_request(request);
+			request_unlink(request);
 		} else if (ret == PARSE_ERROR) {
 			logstr(GLOG_ERROR, "couldn't parse request, closing connection");
-			free_request(request);
+			request_unlink(request);
 			break;
 		} else if (ret == PARSE_SYS_ERROR) {
 			perror("parse_postfix");
-			free_request(request);
+			request_unlink(request);
 			break;
 		} else if (ret == PARSE_CLOSED) {
-			free_request(request);
+			request_unlink(request);
 			break;
 		}
 	}
@@ -124,7 +124,7 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 	int input = 0;
 	int ret;
 
-	/* zero out the struct - see free_request() */
+	/* zero out the struct - see request_unlink() */
 	memset(grey_tuple, 0, sizeof(grey_tuple_t));
 
 	do {
