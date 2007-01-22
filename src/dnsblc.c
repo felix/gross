@@ -288,7 +288,7 @@ FINISH:
 	send_result(edict, result);
 	
 	logstr(GLOG_DEBUG, "dnsblc returning");
-	free_request(request);
+	request_unlink(request);
 
 	return 0;
 }

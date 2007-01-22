@@ -35,11 +35,14 @@ typedef struct {
         char *sender;
         char *recipient;
         char *client_address;
+	reference_count_t reference;
 } grey_tuple_t;
 
 int worker(edict_t *edict);
 void free_request(grey_tuple_t *arg);
 int test_tuple(grey_tuple_t *tuple, tmout_action_t *ta);
 void free_client_info(client_info_t *arg);
+void request_unlink(grey_tuple_t *request);
+grey_tuple_t *request_new();
 
 #endif /* #ifndef WORKER_H */

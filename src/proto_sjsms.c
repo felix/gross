@@ -114,31 +114,3 @@ sjsms_to_host_order(sjsms_msg_t *message)
 
 	return 1;
 }
-
-grey_tuple_t *
-unfold(grey_req_t *request)
-{
-        grey_tuple_t *tuple;
-	uint16_t sender, recipient, client_address;
-
-        tuple = malloc(sizeof(grey_tuple_t));
-	if (! tuple)
-		return NULL;
-
-	sender = ntohs(request->sender);
-	recipient = ntohs(request->recipient);
-	client_address = ntohs(request->client_address);
-
-        if (sender >= MAXLINELEN ||
-                        recipient >= MAXLINELEN ||
-                        client_address >= MAXLINELEN) {
-		errno = ENOMSG;
-                return NULL;
-	}
-        tuple->sender = strdup(request->message + sender);
-        tuple->recipient = strdup(request->message + recipient);
-        tuple->client_address = strdup(request->message + client_address);
-
-        return tuple;
-}
-

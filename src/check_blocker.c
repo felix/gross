@@ -51,14 +51,14 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	result->suspicious = false;
 
+	clock_gettime(CLOCK_TYPE, &start);
+	mstotimespec(edict->timelimit, &timeleft);
+
 	blocker = socket(AF_INET, SOCK_STREAM, 0);
 	if (blocker < 0) {
 		logstr(GLOG_ERROR, "blocker: socket: %s", strerror(errno));
 		goto FINISH;
 	}
-
-	clock_gettime(CLOCK_TYPE, &start);
-	mstotimespec(edict->timelimit, &timeleft);
 
 	ret = connect(blocker, (struct sockaddr *)&ctx->config.blocker.server,
 		sizeof(struct sockaddr_in));
@@ -96,7 +96,7 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 FINISH:
 	send_result(edict, result);
 	logstr(GLOG_DEBUG, "blocker returning");
-	free_request(request);
+	request_unlink(request);
 	
 	return 0;
 }

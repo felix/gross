@@ -47,16 +47,45 @@ free_client_info(client_info_t *arg)
         free(arg);
 }
 
-/* 
+/*
  * destructor for grey_tuple_t
  */
 void
-free_request(grey_tuple_t *arg)
+request_unlink(grey_tuple_t *request)
 {
-	free(arg->sender);
-	free(arg->recipient);
-	free(arg->client_address);
-	free(arg);
+        int ret;
+
+        ret = pthread_mutex_lock(&request->reference.mx);
+        assert(0 == ret);
+        assert(request->reference.count > 0);
+
+        if (--request->reference.count == 0) {
+                /* last reference */
+                if (request->sender)
+                        free(request->sender);
+                if (request->recipient)
+                        free(request->recipient);
+                if (request->client_address)
+                        free(request->client_address);
+                pthread_mutex_unlock(&request->reference.mx);
+                free(request);
+        } else {
+                pthread_mutex_unlock(&request->reference.mx);
+        }
+}
+
+grey_tuple_t *
+request_new()
+{
+        grey_tuple_t *request;
+
+        request = Malloc(sizeof(grey_tuple_t));
+        bzero(request, sizeof(grey_tuple_t));
+
+        pthread_mutex_init(&request->reference.mx, NULL);
+        request->reference.count = 1;
+
+        return request;
 }
 
 int
@@ -161,6 +190,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 
 		/* Write the edict */
 		edict = edict_get(false);
+		edict->job = (void *)request;
 		tap = ta;
 		while (tap) {
 			edict->timelimit += tap->timeout;
@@ -170,13 +200,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		/* here should be loop over all checks */
 		i = 0;
 		while (ctx->checklist[i]) {
-			/* requestcopy is freed() by the check */
-			requestcopy = Malloc(sizeof(grey_tuple_t));
-			requestcopy->sender = strdup(request->sender);
-			requestcopy->recipient = strdup(request->recipient);
-			requestcopy->client_address = strdup(request->client_address);
-			edict->job = (void *)requestcopy;
-
+			request->reference.count++;	
 			submit_job(ctx->checklist[i], edict);
 			i++;
 		}

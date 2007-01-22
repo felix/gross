@@ -22,6 +22,31 @@
 #include "worker.h"
 #include "utils.h"
 
+grey_tuple_t *
+unfold(grey_req_t *request)
+{
+        grey_tuple_t *tuple;
+        uint16_t sender, recipient, client_address;
+
+	tuple = request_new();
+
+        sender = ntohs(request->sender);
+        recipient = ntohs(request->recipient);
+        client_address = ntohs(request->client_address);
+
+        if (sender >= MAXLINELEN ||
+                        recipient >= MAXLINELEN ||
+                        client_address >= MAXLINELEN) {
+                errno = ENOMSG;
+                return NULL;
+        }
+        tuple->sender = strdup(request->message + sender);
+        tuple->recipient = strdup(request->message + recipient);
+        tuple->client_address = strdup(request->message + client_address);
+
+	return tuple;
+}
+
 /*
  *timeout action for sending the 1 second "PROGRESS" packet
  */
@@ -130,7 +155,7 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 		  break;
 		}
 
-		free_request(tuple);
+		request_unlink(tuple);
 		break;
 	case LOGMSG:
 		str = (char *)Malloc(msg->msglen);
