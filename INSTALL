@@ -74,12 +74,12 @@ This is an example production server config:
 
 ORIG_MAIL_ACCESS
 
-  ! allow all DSNs and MDNs
+! allow all DSNs and MDNs
   TCP|*|*|*|*|*|*|tcp_local||*|*  $Y$E
-  ! allow all incoming mail to postmaster and abuse
+! allow all incoming mail to postmaster and abuse
   TCP|*|*|*|*|*|*|tcp_local|*|*|postmaster@*  $Y$E
   TCP|*|*|*|*|*|*|tcp_local|*|*|abuse@*  $Y$E
-  ! use gross to check all triplets (client_ip,sender,recipient)
+! use gross to check all triplets (client_ip,sender,recipient)
   TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/usr/local/gross/lib/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,1111,$2,$=$8$_,$=$6$_]
 
 The server will always query the first server if it's available.
