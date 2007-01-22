@@ -208,7 +208,7 @@ log_stats()
   statstr(STATS_STATUS_BEGIN, "grossd summary since startup (startup, now, trust, match, greylist): %lu, %lu, %llu, %llu, %llu", 
 	  stats.startup, stats.end, stats.all_trust, stats.all_match, stats.all_greylist);
 
-  statstr(STATS_DNSBL, "grossd dnsble matches: %s", dnsbl_stats(buf, TMP_BUF_SIZE));
+  statstr(STATS_DNSBL, "%s", dnsbl_stats(buf, TMP_BUF_SIZE));
 
 
   return stats;
