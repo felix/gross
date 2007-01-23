@@ -89,13 +89,13 @@ addrinfo_callback(void *arg, int status, struct hostent *host)
 	if (status == ARES_SUCCESS) {
 		*cba->matches = 1;
 		stat_dnsbl_match(cba->dnsbl->name);
-		logstr(GLOG_INFO, "dns-match: %s for %s",
+		logstr(GLOG_DEBUG, "dns-match: %s for %s",
 			cba->dnsbl->name, cba->client_address);
 		acctstr(ACCT_DNS_MATCH, "%s for %s", cba->dnsbl->name, cba->client_address);
 	}
 
 	if (*cba->timeout) {
-		logstr(GLOG_INFO, "dns-timeout: %s for %s",
+		logstr(GLOG_DEBUG, "dns-timeout: %s for %s",
 			cba->dnsbl->name, cba->client_address);
 		acctstr(ACCT_DNS_TMOUT, "%s for %s", cba->dnsbl->name, cba->client_address);
 		/* decrement tolerancecounter */
@@ -234,7 +234,7 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 			callback_arg->client_address = client_address;
 			ares_gethostbyname(channel, query, PF_INET, &addrinfo_callback, callback_arg);
 		} else {
-			logstr(GLOG_INFO, "Skipping dnsbl %s due to timeouts.", dnsbl->name);
+			logstr(GLOG_DEBUG, "Skipping dnsbl %s due to timeouts.", dnsbl->name);
 			acctstr(ACCT_DNS_SKIP, "%s for %s (%s)", dnsbl->name, client_address, query);
 		}
 		free(query);

@@ -2,6 +2,8 @@ Version svn
 
 Issues fixed:
 #39: blocker queries cause segmentation fault
+- updating mappings example in INSTALL
+- logging less verbose (one line per query)
 
 Version 0.8.1
 
