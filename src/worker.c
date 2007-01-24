@@ -296,4 +296,8 @@ worker_init()
 		postfix_server_init();
 	if (ctx->config.protocols & PROTO_SJSMS)
 		sjsms_server_init();
+#ifdef MILTER
+	if (ctx->config.protocols & PROTO_MILTER)
+		milter_init();
+#endif
 }

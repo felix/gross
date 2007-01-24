@@ -1,7 +1,7 @@
 AC_INIT([gross],[svn])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
-AM_CONFIG_HEADER([config.h])
+AM_CONFIG_HEADER(config.h)
 
 CONFIGURE_LINE="$0 $*"
 
@@ -85,6 +85,24 @@ then
     AC_SUBST([DNSBLSOURCES])
     AC_CHECK_LIB(cares, ares_init, ,
 	AC_MSG_ERROR([c-ares library needed for dnsbl checking.])
+    )
+fi
+
+AC_MSG_CHECKING([whether to enable milter])
+AC_ARG_ENABLE(milter,
+    AC_HELP_STRING([--enable-milter], [Enable milter]),
+    [AC_MSG_RESULT([yes]) ; milter="yes"],
+    [AC_MSG_RESULT([no]) ; milter="no"]
+)
+
+if test "$milter" == "yes"
+then
+    AC_CHECK_HEADERS(libmilter/mfapi.h,
+	MILTERSOURCES='worker_milter.o'
+    )
+    AC_SUBST([MILTERSOURCES])
+    AC_CHECK_LIB(milter, smfi_main, ,
+	AC_MSG_ERROR([libmilter library needed for milter support])
     )
 fi
 

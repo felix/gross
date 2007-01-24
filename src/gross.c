@@ -272,6 +272,12 @@ configure_grossd(configlist_t *config)
 				ctx->config.protocols |= PROTO_SJSMS;
 			else if (strcmp(cp->value, "postfix") == 0) 
 				ctx->config.protocols |= PROTO_POSTFIX;
+#ifdef MILTER
+			else if (strcmp(cp->value, "milter") == 0) 
+				ctx->config.protocols |= PROTO_MILTER;
+#endif /* MILTER */
+			else
+				daemon_shutdown(1, "unknown protocol: %s", cp->value);
 		}
 		cp = cp->next;
 	}
@@ -352,6 +358,12 @@ configure_grossd(configlist_t *config)
 		ctx->config.blocker.server.sin_port =
 			htons(atoi(CONF("blocker_port")));
 	}
+	
+#ifdef MILTER
+	/* milter */
+	if (CONF("milter_listen"))
+		ctx->config.milter.listen = strdup(CONF("milter_listen"));
+#endif /* MILTER */
 }
 
 /* 

@@ -73,7 +73,8 @@
 			"status",			\
 			"blocker_host",			\
 			"blocker_port",			\
-			"query_timelimit"
+			"query_timelimit",		\
+			"milter_listen"
 
 #define DEPRECATED_NAMES 	"syncport",		\
 				"synchost",		\

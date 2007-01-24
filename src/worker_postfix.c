@@ -48,7 +48,7 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 	logstr(GLOG_DEBUG, "postfix client connected from %s", client_info->ipstr);
 
 	while(1) {
-		request = Malloc(sizeof(grey_tuple_t));
+		request = request_new();
 		ret = parse_postfix(client_info, request);
 		if (ret == PARSE_OK) {
 			/* We are go */
@@ -123,9 +123,6 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 	char *match;
 	int input = 0;
 	int ret;
-
-	/* zero out the struct - see request_unlink() */
-	memset(grey_tuple, 0, sizeof(grey_tuple_t));
 
 	do {
 		ret = readline(client_info->connfd, &line, MAXLINELEN);

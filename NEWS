@@ -1,9 +1,12 @@
 Version svn
 
-Issues fixed:
-#39: blocker queries cause segmentation fault
+* preliminary support for MILTER protocol, check config file
+
 - updating mappings example in INSTALL
 - logging less verbose (one line per query)
+
+Issues fixed:
+#39: blocker queries cause segmentation fault
 
 Version 0.8.1
 

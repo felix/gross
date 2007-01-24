@@ -50,6 +50,10 @@
 # define DNSBL
 #endif
 
+#ifdef HAVE_LIBMILTER
+# define MILTER
+#endif
+
 #if PROTOCOL == POSTFIX
 # define WORKER_PROTO_TCP
 #elif PROTOCOL == SJSMS
@@ -101,6 +105,7 @@
 
 #define PROTO_SJSMS (int)0x01
 #define PROTO_POSTFIX (int)0x02
+#define PROTO_MILTER (int)0x04
 
 #define TMP_BUF_SIZE ((uint32_t)640) /* 640 should be enough for everyone */
 
@@ -139,6 +144,12 @@ typedef struct {
 	struct sockaddr_in server;
 } blocker_config_t;
 
+#ifdef MILTER
+typedef struct {
+	char *listen;
+} milter_config_t;
+#endif /* MILTER */
+
 typedef struct {
 	struct sockaddr_in gross_host;
 	struct sockaddr_in sync_host;
@@ -163,6 +174,9 @@ typedef struct {
 	sjsms_config_t sjsms;
 	blocker_config_t blocker;
 	mseconds_t query_timelimit;
+#ifdef MILTER
+	milter_config_t milter;
+#endif /* MILTER */
 } gross_config_t;
 
 #ifdef DNSBL

@@ -381,7 +381,13 @@ daemonize(void)
 		exit(0);		/* 1st child terminates */
 
 	/* 2nd child continues */
-	for (i = 0; i < MAXFD; i++)
+	close(0);
+	open("/dev/null", O_RDONLY, 0);
+	close(1);
+	open("/dev/null", O_WRONLY, 0);
+	close(2);
+	open("/dev/null", O_WRONLY, 0);
+	for (i = 3; i < MAXFD; i++)
 		close(i);
 }
 
