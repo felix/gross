@@ -98,7 +98,7 @@ bloom_ring_queue_t *build_bloom_ring(unsigned int num, bitindex_t num_bits);
 void daemonize(void);
 void *Malloc(size_t size);
 void *Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg);
-void register_check(thread_pool_t *pool);
+void register_check(thread_pool_t *pool, bool wait);
 char *ipstr(struct sockaddr_in *saddr);
 
 #endif

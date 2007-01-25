@@ -29,7 +29,7 @@
 #include "msgqueue.h"
 
 #ifdef DNSBL
-#include "dnsblc.h"
+#include "check_dnsbl.h"
 #endif /* DNSBL */
 #include "check_blocker.h"
 
@@ -500,7 +500,7 @@ main(int argc, char *argv[])
 	/* start the check pools */
 #ifdef DNSBL
 	if (ctx->config.checks & CHECK_DNSBL)
-		dnsblc_init();
+		dnsbl_init();
 #endif /* DNSBL */
 	if (ctx->config.checks & CHECK_BLOCKER)
 		blocker_init();

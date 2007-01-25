@@ -17,7 +17,7 @@
  */
 
 #include "common.h"
-#include "dnsblc.h"
+#include "check_dnsbl.h"
 #include "srvutils.h"
 #include "utils.h"
 #include "worker.h"
@@ -294,7 +294,7 @@ FINISH:
 }
 
 void
-dnsblc_init()
+dnsbl_init()
 {
 	thread_pool_t *pool;
 
@@ -304,5 +304,5 @@ dnsblc_init()
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 
-	register_check(pool);
+	register_check(pool, false);
 }

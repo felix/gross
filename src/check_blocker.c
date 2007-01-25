@@ -112,5 +112,5 @@ blocker_init()
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 
-	register_check(pool);
+	register_check(pool, false);
 }

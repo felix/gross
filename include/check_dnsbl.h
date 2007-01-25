@@ -30,6 +30,6 @@ typedef struct {
 int add_dnsbl(dnsbl_t **current, const char *name, int weight);
 int tolerate_dnsbl(dnsbl_t *dnsbl);
 int increment_dnsbl_tolerance_counters(dnsbl_t *dnsbl);
-void dnsblc_init();
+void dnsbl_init();
 
 #endif /* DNSBLC_H */

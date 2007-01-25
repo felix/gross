@@ -80,7 +80,7 @@ AC_ARG_ENABLE(dnsbl,
 if test "$dnsbl" == "yes"
 then
     AC_CHECK_HEADERS(ares.h,
-	DNSBLSOURCES='dnsblc.o'
+	DNSBLSOURCES='check_dnsbl.o'
     )
     AC_SUBST([DNSBLSOURCES])
     AC_CHECK_LIB(cares, ares_init, ,

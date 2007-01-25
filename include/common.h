@@ -213,6 +213,11 @@ typedef struct {
 #define MAXCHECKS 128
 
 typedef struct {
+	thread_pool_t *pool;
+	bool wait;
+} check_t;
+
+typedef struct {
         bloom_ring_queue_t *filter;
         int log_q;
         int update_q;
@@ -227,7 +232,7 @@ typedef struct {
         mmapped_brq_t *mmap_info;
         thread_collection_t process_parts;
         stats_t stats;
-	thread_pool_t *checklist[MAXCHECKS];
+	check_t *checklist[MAXCHECKS];
 } gross_ctx_t;
 
 #ifndef HAVE_USECONDS_T

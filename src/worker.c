@@ -21,7 +21,7 @@
 #include "syncmgr.h"
 
 #ifdef DNSBL
-#include "dnsblc.h"
+#include "check_dnsbl.h"
 #endif
 
 #include "msgqueue.h"
@@ -201,7 +201,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		i = 0;
 		while (ctx->checklist[i]) {
 			request->reference.count++;	
-			submit_job(ctx->checklist[i], edict);
+			submit_job(ctx->checklist[i]->pool, edict);
 			i++;
 		}
 		checks_running = i;
