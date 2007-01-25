@@ -59,7 +59,7 @@ mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr)
 {
 	struct private_ctx_s *priv;
 	struct sockaddr_in *client_saddr;
-	char *caddr;
+	char caddr[INET_ADDRSTRLEN + 1];
 
 	logstr(GLOG_INSANE, "milter: connect");
 
@@ -72,7 +72,11 @@ mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr)
 		return SMFIS_CONTINUE;
 	}
 	
-	caddr = inet_ntoa(client_saddr->sin_addr);
+	if (NULL == inet_ntop(AF_INET, &client_saddr->sin_addr,
+		caddr, INET_ADDRSTRLEN)) {
+		logstr(GLOG_ERROR, "inet_top failed: %s", strerror(errno));
+		return SMFIS_CONTINUE;
+	}
 	priv->client_address = strdup(caddr);
 	smfi_setpriv(milter_ctx, priv);
 
