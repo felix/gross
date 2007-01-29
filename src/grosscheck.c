@@ -38,6 +38,7 @@
 #define GROSSCHECK_ERROR { 						\
 	senderrormsg(fd, gserv, "ERROR: request was: %s", requestcopy); \
 	free(requestcopy); 						\
+	close(fd);
 	return MAP_FAIL; 						\
 }
 
@@ -216,13 +217,13 @@ QUERY:
 		}
 	#endif
 
-		close(fd);
 	}
 	free(requestcopy);
-
+	close(fd);
 	return success ? MAP_SUCCESS : MAP_FAIL;
 }
 
+P1
 #ifdef GROSSC_MAIN
 int
 main(int argc, char **argv)
