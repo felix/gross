@@ -86,7 +86,7 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 	assert(0 <= client_info->msglen);
 	assert(client_info->msglen <= MSGSZ);
 
-	logstr(GLOG_INFO, "query from %s", client_info->ipstr);
+	logstr(GLOG_DEBUG, "query from %s", client_info->ipstr);
  	
 	/* default response is 'FAIL' */
 	strncpy(response, "F", MAXLINELEN);
@@ -141,7 +141,7 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 		clock_gettime(CLOCK_TYPE, &end);
 
 		delay = ms_diff(&end, &start);
-		logstr(GLOG_INFO, "processing delay: %d ms", delay);
+		logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
 
 		switch (status) {
 		case STATUS_MATCH:

@@ -45,7 +45,7 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 	client_info = edict->job;
 	assert(client_info);
 
-	logstr(GLOG_INFO, "postfix client connected from %s", client_info->ipstr);
+	logstr(GLOG_DEBUG, "postfix client connected from %s", client_info->ipstr);
 
 	while(1) {
 		request = request_new();
@@ -75,7 +75,7 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 
 			clock_gettime(CLOCK_TYPE, &end);
 			delay = ms_diff(&end, &start);
-			logstr(GLOG_INFO, "processing delay: %d ms", delay);
+			logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
 			
 			switch (status) {
 			case STATUS_MATCH:
@@ -132,10 +132,10 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 			return PARSE_SYS_ERROR;
 		} else if (ret == EMPTY) {
 			/* connection closed */
-			logstr(GLOG_INFO, "connection closed by client");
+			logstr(GLOG_DEBUG, "connection closed by client");
 			return PARSE_CLOSED;
 		} else if (ret == DATA && strlen(line) == 0 && input == 0) {
-			logstr(GLOG_INFO, "connection close requested by client");
+			logstr(GLOG_DEBUG, "connection close requested by client");
 			return PARSE_CLOSED;
 		}
 
