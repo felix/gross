@@ -70,6 +70,10 @@ int statstr(int level, const char *fmt, ...)
 		return 0;
 	}
 
+	if (GLOG_NOTICE > ctx->config.loglevel) {
+		return 0;
+	}
+
 	va_start(vap, fmt);
 	vsnprintf(mbuf, MSGSZ, fmt, vap);
 	va_end(vap);
