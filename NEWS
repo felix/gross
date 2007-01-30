@@ -2,11 +2,14 @@ Version svn
 
 * preliminary support for MILTER protocol, check config file
 
+Version 0.8.2
+
 - updating mappings example in INSTALL
 - logging less verbose (one line per query)
 
 Issues fixed:
 #39: blocker queries cause segmentation fault
+#43: Lot's of open udp connections when using grosscheck
 
 Version 0.8.1
 
