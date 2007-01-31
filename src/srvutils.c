@@ -531,14 +531,14 @@ date_fmt(char *msg, size_t len) {
 }
 
 void
-register_check(thread_pool_t *pool, bool wait)
+register_check(thread_pool_t *pool, bool definitive)
 {
 	int i;
 	check_t *check;
 
 	check = Malloc(sizeof(*check));
 	check->pool = pool;
-	check->wait = wait;
+	check->definitive = definitive;
 
 	for (i = 0; i < MAXCHECKS; i++)
 		if (NULL == ctx->checklist[i]) {

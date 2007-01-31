@@ -214,7 +214,7 @@ typedef struct {
 
 typedef struct {
 	thread_pool_t *pool;
-	bool wait;
+	bool definitive;
 } check_t;
 
 typedef struct {

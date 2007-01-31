@@ -49,7 +49,8 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
         assert(client_address);
 
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
-	result->suspicious = false;
+	memset(result, 0, sizeof(*result));
+	result->judgment = J_UNDEFINED;
 
 	clock_gettime(CLOCK_TYPE, &start);
 	mstotimespec(edict->timelimit, &timeleft);
@@ -90,7 +91,7 @@ blocker(thread_ctx_t *thread_ctx, edict_t *edict)
 
 	if (strncmp(buffer, "action=565 ", 11) == 0) {
 		logstr(GLOG_DEBUG, "found match from blocker: %s", request->client_address);
-		result->suspicious = true;
+		result->judgment = J_SUSPICIOUS;
 	}
 
 FINISH:

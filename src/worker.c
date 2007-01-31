@@ -107,12 +107,16 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	tmout_action_t *tap;
 	int i;
 	int checks_running;
+	int definitives_running;
 	struct in_addr inaddr;
 	unsigned int ip, net, mask;
 	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
 	const char *ptr;
 	bool free_ta = false;
 	grey_tuple_t *requestcopy;
+	check_t *mycheck[MAXCHECKS];
+	judgment_t judgment;
+	bool definitive;
 
 	/* record the processing start time */
 	clock_gettime(CLOCK_TYPE, &start);
@@ -199,14 +203,34 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 
 		/* here should be loop over all checks */
 		i = 0;
+		definitives_running = 0;
 		while (ctx->checklist[i]) {
 			request->reference.count++;	
 			submit_job(ctx->checklist[i]->pool, edict);
+			if (ctx->checklist[i]->definitive)
+				definitives_running++;
 			i++;
 		}
 		checks_running = i;
+		/* make sure the array is terminated */
+		mycheck[i] = NULL;
 
-		while (ta && suspicious == false && checks_running > 0) {
+		/* judgment is the final combined result of all checks */
+		judgment = J_UNDEFINED;
+
+		/*
+		 * definitive boolean is used to test if we can short cut 
+		 * from waiting all the cheks complete. We must wait all
+		 * the definitive checks to complete, that is all tests which
+                 * can return a STATUS_TRUST or STATUS_BLOCK response.
+		 */
+		definitive = false;
+
+		/* 
+		 * wait until definitive result arrives, every check has
+		 * returned or timeout is reached.
+		 */
+		while (definitive == false && checks_running > 0 && ta) {
 			clock_gettime(CLOCK_TYPE, &now);
 			timeused = ms_diff(&now, &start);
 			/* make sure timeleft != 0 as it would cause get_msg_timed to block */
@@ -217,10 +241,22 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 					/* We've got a response */
 					checks_running--;
 					result = (chkresult_t *)message.result;
-					suspicious = result->suspicious;
+					logstr(GLOG_INSANE, "Received a check result, judgment = %d",
+						result->judgment);
+					/* update the judgment */
+					judgment = MAX(judgment, result->judgment);
+					/* was this a definitive result? */
+					if (result->definitive)
+						definitives_running--;
 					free(result);
-					logstr(GLOG_INSANE, "Received a check result, suspicious = %d",
-						suspicious);
+					/*
+					 * Do we have a definitive result so far?
+					 * That is, all the definitive checs must have
+					 * returned, and result is something else than
+					 * J_UNDEFINED
+					 */
+					if (0 == definitives_running && judgment > J_UNDEFINED)
+						definitive = true;
 				} 
 			} else if (ta->action) {
 				ta->action(ta->arg, timeused);
@@ -229,15 +265,32 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 				ta = ta->next;
 			}
 		}
-		if (true == suspicious) {
-			logstr(GLOG_INFO, "greylist: %s", realtuple);
-			acctstr(ACCT_GREY, "%s", realtuple);
-			retvalue = STATUS_GREY;
-		} else {
-			logstr(GLOG_INFO, "trust: %s", realtuple);
-			acctstr(ACCT_TRUST, "%s", realtuple);
+
+		/* Let's sum up the results */
+		switch(judgment) {
+		case J_PASS:
+			logstr(GLOG_INFO, "pass: %s", realtuple);
 			retvalue = STATUS_TRUST;
+			break;
+		case J_BLOCK:
+			logstr(GLOG_INFO, "block: %s", realtuple);
+			retvalue = STATUS_BLOCK;
+			break;
+		case J_SUSPICIOUS:
+			logstr(GLOG_INFO, "greylist: %s", realtuple);
+			retvalue = STATUS_GREY;
+			break;
+		case J_UNDEFINED:
+			logstr(GLOG_INFO, "trust: %s", realtuple);
+			retvalue = STATUS_TRUST;
+			break;
+		default:
+			/* this should never happen */
+			logstr(GLOG_ERROR, "error: %s", realtuple);
+			retvalue = STATUS_TRUST;
+			break;
 		}
+
 		edict_unlink(edict);
 #endif /* DNSBL */
 	}
@@ -268,6 +321,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 		retvalue = STATUS_TRUST;
 
 	/* Update counters */
+	/* FIX: include block and vip counts, too */
 	switch (retvalue) {
 	case STATUS_MATCH:
 	  INCF_STATS(match);

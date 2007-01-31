@@ -194,6 +194,7 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 	assert(client_address);
 
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
+	memset(result, 0, sizeof(*result));
 
 	ipstr = strdup(client_address);
 
@@ -284,7 +285,10 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 	free(ipstr);
 
 FINISH:
-	result->suspicious = (match_found > 0);
+	if (match_found > 0)
+		result->judgment = J_SUSPICIOUS;
+	else
+		result->judgment = J_UNDEFINED;
 	send_result(edict, result);
 	
 	logstr(GLOG_DEBUG, "dnsblc returning");

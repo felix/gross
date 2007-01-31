@@ -21,7 +21,7 @@
 
 #define MAXCONNQ 5
 
-enum grey_status_t { STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_FAIL };
+enum grey_status_t { STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_FAIL, STATUS_BLOCK };
 
 typedef struct {
         int connfd;

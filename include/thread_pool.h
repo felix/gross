@@ -56,7 +56,6 @@ typedef struct edict_message_s {
 } edict_message_t;
 
 int submit_job(thread_pool_t *pool, edict_t *edict);
-int submit_job_wait(thread_pool_t *pool, edict_t *edict);
 thread_pool_t *create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *));
 edict_t *edict_get();
 edict_t *edict_get();

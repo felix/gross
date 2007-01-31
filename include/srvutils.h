@@ -52,6 +52,7 @@ enum logmsgtype_t {
 };
 
 enum { UPDATE = 1, ROTATE, ABSOLUTE_UPDATE, SYNC_AGGREGATE, UPDATE_OPER };
+typedef enum { J_UNDEFINED, J_SUSPICIOUS, J_BLOCK, J_PASS } judgment_t;
 
 #define MAXFD 			64
 #define FILTER_SIZE 		((uint32_t)32)
@@ -77,7 +78,8 @@ typedef struct {
 } poolresult_message_t;
 
 typedef struct {
-	bool suspicious;
+	bool definitive;
+	judgment_t judgment;
 } chkresult_t;
 
 /* global context */
@@ -98,7 +100,7 @@ bloom_ring_queue_t *build_bloom_ring(unsigned int num, bitindex_t num_bits);
 void daemonize(void);
 void *Malloc(size_t size);
 void *Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg);
-void register_check(thread_pool_t *pool, bool wait);
+void register_check(thread_pool_t *pool, bool definitive);
 char *ipstr(struct sockaddr_in *saddr);
 
 #endif
