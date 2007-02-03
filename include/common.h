@@ -138,6 +138,7 @@ typedef struct {
 	char *responsegrey;
 	char *responsematch;
 	char *responsetrust;
+	char *responseblock;
 } sjsms_config_t;
 
 typedef struct {

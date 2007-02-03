@@ -22,6 +22,31 @@
 #include "worker.h"
 #include "utils.h"
 
+#define REASONTEMPLATE "%reason%"
+
+int
+mappingstr(const char *from, char *to, size_t len)
+{
+	const char *from_ptr;
+	char *to_ptr;
+
+	from_ptr = from;
+	to_ptr = to;
+	
+	while (from_ptr && from_ptr - from < len - 3) {
+		switch(*from_ptr) {
+		case ' ':
+			*to_ptr++ = '$';
+			break;
+		}
+		*to_ptr++ = *from_ptr++;
+	}
+	if (from_ptr - from > len - 2)
+		return -1;
+	else 
+		return 0;
+}
+
 grey_tuple_t *
 unfold(grey_req_t *request)
 {
@@ -74,7 +99,12 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 	sjsms_msg_t *msg;
 	grey_tuple_t *tuple;
 	char response[MAXLINELEN];
-	int status;
+	char reason[MAXLINELEN];
+	char *blocktemplate;
+	char *reasonsubstitute;
+	char *rest;
+	final_status_t status = { '\0' };
+	int ret;
 	tmout_action_t ta1, ta2;
 	char *str;
 	struct timespec start, end;
@@ -119,18 +149,38 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 			daemon_perror("unfold");
 
 		/* We are go */
-		status = test_tuple(tuple, &ta1);
+		ret = test_tuple(&status, tuple, &ta1);
 
-		switch (status) {
+		if (ret < 0) {
+			snprintf(response, MAXLINELEN, "F");
+		} else {
+			switch (status.status) {
 			case STATUS_MATCH:
 				snprintf(response, MAXLINELEN, "M %s", ctx->config.sjsms.responsematch);
 				break;
 			case STATUS_GREY:
 				snprintf(response, MAXLINELEN, "G %s", ctx->config.sjsms.responsegrey);
 				break;
+			case STATUS_BLOCK:
+				mappingstr(status.reason, reason, MAXLINELEN);
+				/* ignore the reason if template does not use it */
+				blocktemplate = strdup(ctx->config.sjsms.responseblock);
+				reasonsubstitute = strstr(blocktemplate, REASONTEMPLATE);
+				if (NULL == reasonsubstitute) {
+					snprintf(response, MAXLINELEN, "B %s", blocktemplate);
+				} else {
+					/* null terminate the first part */
+					*reasonsubstitute = '\0';
+					rest = reasonsubstitute + strlen(REASONTEMPLATE);
+					snprintf(response, MAXLINELEN, "B %s%s%s",
+						blocktemplate, reason, rest);
+				}
+				free(blocktemplate);
+				break;
 			case STATUS_TRUST:
 				snprintf(response, MAXLINELEN, "T %s", ctx->config.sjsms.responsetrust);
 				break;
+			}
 		}
 
 		response[MAXLINELEN-1] = '\0';
@@ -143,7 +193,7 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 		delay = ms_diff(&end, &start);
 		logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
 
-		switch (status) {
+		switch (status.status) {
 		case STATUS_MATCH:
 		  match_delay_update((double)delay);
 		  break;
@@ -173,6 +223,9 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 
 	free_client_info(client_info);
 	logstr(GLOG_DEBUG, "sjsms_connection returning");
+
+        if (status.reason)
+                free(status.reason);
 
 	return 1;
 }

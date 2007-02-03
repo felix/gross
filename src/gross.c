@@ -208,6 +208,10 @@ configure_grossd(configlist_t *config)
 		daemon_shutdown(1, "No sjsms_response_trust set!");
 	else
 		ctx->config.sjsms.responsetrust = strdup(CONF("sjsms_response_trust"));
+	if (!CONF("sjsms_response_block"))
+		daemon_shutdown(1, "No sjsms_response_block set!");
+	else
+		ctx->config.sjsms.responseblock = strdup(CONF("sjsms_response_block"));
 	if (!CONF("sjsms_response_match"))
 		daemon_shutdown(1, "No sjsms_response_match set!");
 	else

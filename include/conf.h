@@ -29,6 +29,7 @@
 			"sjsms_response_grey",	"$X4.4.3|$NPlease$ try$ again$ later", \
 			"sjsms_response_match",	"$Y", 		\
 			"sjsms_response_trust",	"$Y",		\
+			"sjsms_response_block", "$N%reason%",	\
 			"log_method",		"syslog",	\
 			"log_level",		"info",		\
 			"stat_type",		"delay",	\
@@ -58,6 +59,7 @@
 			"sjsms_response_grey",		\
 			"sjsms_response_match",		\
 			"sjsms_response_trust",		\
+			"sjsms_response_block",		\
                         "log_method",			\
                         "log_level",			\
 			"grey_mask",			\

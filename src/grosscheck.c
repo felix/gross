@@ -29,6 +29,7 @@
 #define STATUS_TRUST       "$Y"
 #define STATUS_MATCH       "$Y"
 #define STATUS_GREYLIST    "$X4.4.3|$NPlease$ try$ again$ later"
+#define STATUS_BLOCK	   "$N"
 
 #define MAP_SUCCESS     -1
 #define MAP_FAIL        0
@@ -137,13 +138,16 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	if ( NULL != end) GROSSCHECK_ERROR; 
 	if ( *begin == '\0') {
 		strncpy(sender, "<>", SBUFLEN-1);
-		sender[SBUFLEN-1] = '\0';
 	} else {
 		strncpy(sender, begin, SBUFLEN-1);
 	}
 	
 	gserv = &gserv1;
 
+	/* Make sure they are null terminated */
+	sender[SBUFLEN-1] = '\0';
+	recipient[SBUFLEN-1] = '\0';
+	caddr[SBUFLEN-1] = '\0';
 	fold(&request, sender, recipient, caddr);
 
 QUERY:
@@ -195,6 +199,13 @@ QUERY:
 		case 'M':
 			if ('\0' == recbuf[1])	
 				rstr = STATUS_MATCH;
+			else
+				rstr = &recbuf[2];
+			success = true;
+			break;
+		case 'B':
+			if ('\0' == recbuf[1])
+				rstr = STATUS_BLOCK;
 			else
 				rstr = &recbuf[2];
 			success = true;

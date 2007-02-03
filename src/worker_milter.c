@@ -100,7 +100,8 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 {
 	struct private_ctx_s *priv = MILTER_PRIVATE;
 	grey_tuple_t *tuple;
-	int status;
+	final_status_t status = { '\0' };
+	int retvalue = SMFIS_CONTINUE;
 
 	logstr(GLOG_INSANE, "milter: envrcpt");
 
@@ -113,10 +114,20 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 	status = test_tuple(tuple, NULL);
 	request_unlink(tuple);
 
-	if (STATUS_GREY == status)
-		return SMFIS_TEMPFAIL;
+	switch(status.status) {
+	case STATUS_GREY:
+		retvalue = SMFIS_TEMPFAIL;
+		break;
+	case STATUS_BLOCK:
+		smfi_setreply(milter_ctx, "452", "4.4.3", status.reason);
+		retvalue = SMFIS_REJECT;
+		break;
+	}
 
-	return SMFIS_CONTINUE;
+	if (status.reason)
+		free(status.reason);
+
+	return retvalue;
 }
 
 sfsistat

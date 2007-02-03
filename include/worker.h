@@ -21,7 +21,14 @@
 
 #define MAXCONNQ 5
 
-enum grey_status_t { STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_FAIL, STATUS_BLOCK };
+typedef enum { STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_FAIL, STATUS_BLOCK } grey_status_t;
+
+#define LEGALREASONCHARACTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890 .-_@";
+
+typedef struct {
+        grey_status_t status;
+        char *reason;
+} final_status_t;
 
 typedef struct {
         int connfd;
@@ -40,7 +47,7 @@ typedef struct {
 
 int worker(edict_t *edict);
 void free_request(grey_tuple_t *arg);
-int test_tuple(grey_tuple_t *tuple, tmout_action_t *ta);
+int test_tuple(final_status_t *final, grey_tuple_t *tuple, tmout_action_t *ta);
 void free_client_info(client_info_t *arg);
 void request_unlink(grey_tuple_t *request);
 grey_tuple_t *request_new();

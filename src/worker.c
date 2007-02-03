@@ -89,7 +89,7 @@ request_new()
 }
 
 int
-test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
+test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	char maskedtuple[MSGSZ];
 	char realtuple[MSGSZ];
 	sha_256_t digest;
@@ -117,27 +117,31 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	check_t *mycheck[MAXCHECKS];
 	judgment_t judgment;
 	bool definitive;
+	char *reasonstr;
 
 	/* record the processing start time */
 	clock_gettime(CLOCK_TYPE, &start);
+
+	/* default value */
+	final->status = STATUS_FAIL;
 
 	/*
 	 * apply checkmask to the ip 
 	 */ 
 	if (strlen(request->client_address) > INET_ADDRSTRLEN) {
 		logstr(GLOG_NOTICE, "invalid ipaddress: %s", request->client_address);
-		return STATUS_FAIL;
+		return -1;
 	}
 
 	ret = inet_pton(AF_INET, request->client_address, &inaddr);
 	switch(ret) {
 	case -1:
 		logstr(GLOG_ERROR, "test_tuple: inet_pton: %s", strerror(errno));
-		return STATUS_FAIL;
+		return -1;
 		break;
 	case 0:
 		logstr(GLOG_ERROR, "not a valid ip address: %s", request->client_address);
-		return STATUS_FAIL;
+		return -1;
 		break;
 	}
 
@@ -153,7 +157,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	ptr = inet_ntop(AF_INET, &net, chkipstr, INET_ADDRSTRLEN);
 	if (! ptr) {
 		logstr(GLOG_ERROR, "test_tuple: inet_ntop: %s", strerror(errno));
-		return STATUS_FAIL;
+		return -1;
 	}
 	
 	/* greylist */
@@ -251,11 +255,13 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 					free(result);
 					/*
 					 * Do we have a definitive result so far?
-					 * That is, all the definitive checs must have
-					 * returned, and result is something else than
-					 * J_UNDEFINED
+					 * That is,
+					 * 1. we have a whitelist match
+					 * 2. all the definitive checs must have returned,
+					 *    and result is something else than J_UNDEFINED
 					 */
-					if (0 == definitives_running && judgment > J_UNDEFINED)
+					if (judgment == J_PASS
+						|| (0 == definitives_running && judgment > J_UNDEFINED))
 						definitive = true;
 				} 
 			} else if (ta->action) {
@@ -278,7 +284,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 			break;
 		case J_SUSPICIOUS:
 			logstr(GLOG_INFO, "greylist: %s", realtuple);
-			retvalue = STATUS_GREY;
+			retvalue = STATUS_BLOCK;
 			break;
 		case J_UNDEFINED:
 			logstr(GLOG_INFO, "trust: %s", realtuple);
@@ -337,7 +343,10 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	  break;
 	}
 
-	return retvalue;
+	final->status = retvalue;
+	if (reasonstr)
+		final->reason = reasonstr;
+	return 0;
 }
 
 

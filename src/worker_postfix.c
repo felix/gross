@@ -35,12 +35,12 @@ int
 postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	grey_tuple_t *request;
-	char *response;
+	char response[MAXLINELEN] = { '\0' };
 	int ret;
-	int status;
 	struct timespec start, end;
 	int delay;
 	client_info_t *client_info;
+	final_status_t status = { '\0' };
 
 	client_info = edict->job;
 	assert(client_info);
@@ -53,20 +53,29 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 		if (ret == PARSE_OK) {
 			/* We are go */
 			clock_gettime(CLOCK_TYPE, &start);
-			status = test_tuple(request, NULL);
+			ret = test_tuple(&status, request, NULL);
 
-			switch (status) {
+			if (ret < 0) {
+				/* error */
+				snprintf(response, MAXLINELEN, "action=dunno");
+			} else {
+				switch (status.status) {
+				case STATUS_TRUST:
 				case STATUS_MATCH:
-					response = "action=dunno";
+					snprintf(response, MAXLINELEN, "action=dunno");
+					break;
+				case STATUS_BLOCK:
+					snprintf(response, MAXLINELEN, "action=reject %s",
+						status.reason ? status.reason : "Rejected");
 					break;
 				case STATUS_GREY:
-					response = "action=defer_if_permit Greylisted";
+					snprintf(response, MAXLINELEN, "action=defer_if_permit Please try again later");
 					break;
-				case STATUS_TRUST:
-					response = "action=dunno";
-					break;
+				}
 			}
 
+			/* Make sure it's terminated */
+			response[MAXLINELEN-1] = '\0';
 			ret = respond(client_info->connfd, response);
 			if ( -1 == ret ) {
 				logstr(GLOG_ERROR, "respond() failed in handle_connection");
@@ -77,7 +86,7 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 			delay = ms_diff(&end, &start);
 			logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
 			
-			switch (status) {
+			switch (status.status) {
 			case STATUS_MATCH:
 			  match_delay_update((double)delay);
 			  break;
@@ -108,6 +117,9 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
         close(client_info->connfd);
 	free_client_info(client_info);
 	logstr(GLOG_DEBUG, "postfix_connection returning");
+
+	if (status.reason)
+		free(status.reason);
 
 	return ret;
 }
