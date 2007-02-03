@@ -126,7 +126,7 @@ writet(int fd, const char *line, const char *terminator)
 	}
 	snprintf(str, linelen, "%s%s", line, terminator);
 	len = writen(fd, str, linelen - 1);
-	free(str);
+	Free(str);
 	return len;
 }
 

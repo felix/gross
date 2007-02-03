@@ -114,7 +114,7 @@ acctstr(int level, const char *fmt, ...) {
 	
 	final = acct_fmt(level, mbuf);
 	syslog(LOG_INFO, "%s", final);
-	free(final);
+	Free(final);
 
 	return 0;
 }
@@ -437,7 +437,7 @@ Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg)
 	if (tinfo)
 		tinfo->thread = tid;
 	else
-		free(tid);
+		Free(tid);
 
 	pthread_attr_destroy(&tattr);
 
@@ -453,7 +453,7 @@ log_put(const char *msg)
         snprintf(final, MSGSZ-1, "%s", msg);
         date_fmt(final, MSGSZ);
         printf("%s", final);
-        free(final);
+        Free(final);
 	fflush(stdout);
         return 0;
 }
@@ -505,7 +505,7 @@ acct_put(int type, const char *msg)
 
         date_fmt(final, MSGSZ);
         printf("%s", final);
-        free(final);
+        Free(final);
         return 0;
 }
 
@@ -526,7 +526,7 @@ date_fmt(char *msg, size_t len) {
         strncpy(msg, buf, len - 1);
         msg[len-1] = '\0';
 
-        free(buf);
+        Free(buf);
         return ret;
 }
 

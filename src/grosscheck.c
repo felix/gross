@@ -38,7 +38,7 @@
 
 #define GROSSCHECK_ERROR { 						\
 	senderrormsg(fd, gserv, "ERROR: request was: %s", requestcopy); \
-	free(requestcopy); 						\
+	Free(requestcopy); 						\
 	close(fd);							\
 	return MAP_FAIL; 						\
 }
@@ -229,7 +229,7 @@ QUERY:
 	#endif
 
 	}
-	free(requestcopy);
+	Free(requestcopy);
 	close(fd);
 	return success ? MAP_SUCCESS : MAP_FAIL;
 }

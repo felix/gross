@@ -109,6 +109,8 @@
 
 #define TMP_BUF_SIZE ((uint32_t)640) /* 640 should be enough for everyone */
 
+/* A few utility macros */
+#define Free(a) { assert(a); free(a); a = NULL; }
 #ifndef MAX
 #define MAX(a,b) 	((a) > (b) ? (a) : (b))
 #endif

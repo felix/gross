@@ -123,7 +123,7 @@ create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *))
 	pool = (thread_pool_t *)Malloc(sizeof(thread_pool_t));
 	pool->work_queue_id = get_queue();
 	if (pool->work_queue_id < 0) {
-		free(pool);
+		Free(pool);
 		return NULL;
 	}
 
@@ -204,11 +204,14 @@ edict_unlink(edict_t *edict)
 				logstr(GLOG_INSANE, "queue not empty, flushing");
 				ret = get_msg_timed(edict->resultmq, &message,
 					sizeof(message.result), 0, -1);
-				if (ret > 0)
+				if (ret > 0) {
+					assert(message.result);
 					free((chkresult_t *)message.result);
+					message.result = NULL;
+				}
 			}
 		pthread_mutex_unlock(&edict->reference.mx);
-		free(edict);
+		Free(edict);
 	} else {
 		pthread_mutex_unlock(&edict->reference.mx);
 	}

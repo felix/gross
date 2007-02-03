@@ -80,7 +80,7 @@ record_config_item(configlist_t **config, const char *name, const char *value)
 				if (prev) 
 					prev->next = cp->next;
 				cp = cp->next;
-				free(delete);
+				Free(delete);
 			} else {
 				prev = cp;
 				cp = cp->next;

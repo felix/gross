@@ -176,7 +176,7 @@ sha_256_t sha256(sha_byte_t* message, sha_ulong_t size) {
   }
 
   /* Free Willy! */
-  free(digestable_message);
+  Free(digestable_message);
 
   return digest;
 }

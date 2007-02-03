@@ -39,12 +39,12 @@ void
 free_client_info(client_info_t *arg)
 {
 	if (arg->caddr)
-		free(arg->caddr);
+		Free(arg->caddr);
 	if (arg->ipstr)
-		free(arg->ipstr);
+		Free(arg->ipstr);
 	if (arg->message)
-		free(arg->message);
-        free(arg);
+		Free(arg->message);
+        Free(arg);
 }
 
 /*
@@ -62,13 +62,13 @@ request_unlink(grey_tuple_t *request)
         if (--request->reference.count == 0) {
                 /* last reference */
                 if (request->sender)
-                        free(request->sender);
+                        Free(request->sender);
                 if (request->recipient)
-                        free(request->recipient);
+                        Free(request->recipient);
                 if (request->client_address)
-                        free(request->client_address);
+                        Free(request->client_address);
                 pthread_mutex_unlock(&request->reference.mx);
-                free(request);
+                Free(request);
         } else {
                 pthread_mutex_unlock(&request->reference.mx);
         }
@@ -252,7 +252,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 					/* was this a definitive result? */
 					if (result->definitive)
 						definitives_running--;
-					free(result);
+					Free(result);
 					/*
 					 * Do we have a definitive result so far?
 					 * That is,
@@ -284,7 +284,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			break;
 		case J_SUSPICIOUS:
 			logstr(GLOG_INFO, "greylist: %s", realtuple);
-			retvalue = STATUS_BLOCK;
+			retvalue = STATUS_GREY;
 			break;
 		case J_UNDEFINED:
 			logstr(GLOG_INFO, "trust: %s", realtuple);
@@ -302,7 +302,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	}
 
 	/* we cannot free(ta) if we got it as parameter */
-	if (free_ta) free(ta);
+	if (free_ta) Free(ta);
 
 	if (((retvalue == STATUS_GREY) || (retvalue == STATUS_MATCH)) 
 		|| (ctx->config.flags & FLG_UPDATE_ALWAYS)) {

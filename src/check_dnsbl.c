@@ -102,7 +102,7 @@ addrinfo_callback(void *arg, int status, struct hostent *host)
 		cba->dnsbl->tolerancecounter--;
 	}
 
-	free(cba);
+	Free(cba);
 }
 
 
@@ -200,19 +200,19 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 
 	if (strlen(ipstr) > INET_ADDRSTRLEN - 1) {
 		logstr(GLOG_ERROR, "invalid ipaddress: %s", ipstr);
-		free(ipstr);
+		Free(ipstr);
 		goto FINISH;
 	}
 
 	ret = reverse_inet_addr(ipstr);
 	if (ret < 0) {
-		free(ipstr);
+		Free(ipstr);
 		goto FINISH;
 	}
 	
 	if (ares_init(&channel) != ARES_SUCCESS) {
 		perror("ares_init");
-		free(ipstr);
+		Free(ipstr);
 		goto FINISH;
 	}
 	
@@ -238,7 +238,7 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 			logstr(GLOG_DEBUG, "Skipping dnsbl %s due to timeouts.", dnsbl->name);
 			acctstr(ACCT_DNS_SKIP, "%s for %s (%s)", dnsbl->name, client_address, query);
 		}
-		free(query);
+		Free(query);
 		dnsbl = dnsbl->next;
 	}
 
@@ -282,7 +282,7 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 	}
 
 	ares_destroy(channel);
-	free(ipstr);
+	Free(ipstr);
 
 FINISH:
 	if (match_found > 0)

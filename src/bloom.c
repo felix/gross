@@ -197,8 +197,10 @@ create_bloom_filter(bitindex_t num_bits)
 void 
 release_bloom_filter(bloom_filter_t * filter)
 {
+	assert(filter->filter);
 	free((bitarray_base_t *) (filter->filter));
-	free(filter);
+	filter->filter = NULL;
+	Free(filter);
 }
 
 void 
@@ -265,7 +267,7 @@ release_bloom_filter_group(bloom_filter_group_t * filter_group)
 		filter_group->filter_group[i] = 0x00;
 	}
 
-	free(filter_group);
+	Free(filter_group);
 }
 
 double 
@@ -333,7 +335,7 @@ release_bloom_ring_queue(bloom_ring_queue_t * brq)
 {
   release_bloom_filter_group(brq->group);
   release_bloom_filter(brq->aggregate);
-  free(brq);
+  Free(brq);
 }
 
 void 

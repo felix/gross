@@ -175,7 +175,7 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 					snprintf(response, MAXLINELEN, "B %s%s%s",
 						blocktemplate, reason, rest);
 				}
-				free(blocktemplate);
+				Free(blocktemplate);
 				break;
 			case STATUS_TRUST:
 				snprintf(response, MAXLINELEN, "T %s", ctx->config.sjsms.responsetrust);
@@ -212,20 +212,20 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 		memcpy(str, msg->message, MIN(msg->msglen, MAXLINELEN));
 		str[msg->msglen-1] = '\0';
 		logstr(GLOG_ERROR, "Client %s said: %s", client_info->ipstr, str);
-		free(str);
+		Free(str);
 		break;
 	default:
 		logstr(GLOG_ERROR, "Unknown message from client %s",
 			client_info->ipstr);
 		break;
 	}
-	free(msg);
+	Free(msg);
 
 	free_client_info(client_info);
 	logstr(GLOG_DEBUG, "sjsms_connection returning");
 
         if (status.reason)
-                free(status.reason);
+                Free(status.reason);
 
 	return 1;
 }

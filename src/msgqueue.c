@@ -544,7 +544,7 @@ try_available(void)
 	if (msg) {
 		mq = (msgqueue_t *)msg->msgp;
 		mq->active = true;
-		free(msg);
+		Free(msg);
 	}
 
 	return mq;
@@ -679,8 +679,8 @@ get_msg_timed(int msqid, void *msgp, size_t maxsize, int msgflag, mseconds_t tim
 
 		msglen = (maxsize < msgsize) ? maxsize : msgsize;
 		memcpy(msgp, msg->msgp, msglen + sizeof(long));
-		free(msg->msgp);
-		free(msg);
+		Free(msg->msgp);
+		Free(msg);
 	}
 	
 	return msglen;

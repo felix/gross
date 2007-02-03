@@ -125,7 +125,7 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 	}
 
 	if (status.reason)
-		free(status.reason);
+		Free(status.reason);
 
 	return retvalue;
 }
@@ -139,10 +139,10 @@ mlfi_close(SMFICTX *milter_ctx)
 
 	if (priv) {
 		if (priv->sender)
-			free(priv->sender);
+			Free(priv->sender);
 		if (priv->client_address)
-			free(priv->client_address);
-		free(priv);
+			Free(priv->client_address);
+		Free(priv);
 		smfi_setpriv(milter_ctx, NULL);
 	}
 

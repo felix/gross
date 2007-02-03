@@ -119,7 +119,7 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 	logstr(GLOG_DEBUG, "postfix_connection returning");
 
 	if (status.reason)
-		free(status.reason);
+		Free(status.reason);
 
 	return ret;
 }
