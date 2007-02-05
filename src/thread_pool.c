@@ -103,7 +103,7 @@ thread_pool(void *arg)
 					pool_ctx->info->name);
 				/* run a cleanup routine if defined */
 				if (thread_ctx.cleanup)
-					thread_ctx.cleanup();
+					thread_ctx.cleanup(thread_ctx.state);
 				pthread_exit(NULL);
 			}
 			POOL_MUTEX_UNLOCK;

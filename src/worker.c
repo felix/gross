@@ -117,7 +117,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	check_t *mycheck[MAXCHECKS];
 	judgment_t judgment;
 	bool definitive;
-	char *reasonstr;
+	char *reasonstr = NULL;
 
 	/* record the processing start time */
 	clock_gettime(CLOCK_TYPE, &start);
