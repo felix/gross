@@ -22,6 +22,17 @@
 #include "utils.h"
 #include "worker.h"
 
+/* the cleanup routine */
+int
+cleanup_dnsblc(void *state)
+{
+	ares_channel channel;
+	
+	channel = (ares_channel)state;
+	ares_destroy(channel);
+	return 0;
+}
+
 int
 add_dnsbl(dnsbl_t **current, const char *name, int weight)
 {
@@ -210,12 +221,20 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 		goto FINISH;
 	}
 	
-	if (ares_init(&channel) != ARES_SUCCESS) {
-		perror("ares_init");
-		Free(ipstr);
-		goto FINISH;
+	/* initialize if we are not yet initialized */
+	if (NULL == thread_ctx->state) {
+		channel = Malloc(sizeof(channel));
+		if (ares_init(&channel) != ARES_SUCCESS) {
+			perror("ares_init");
+			Free(ipstr);
+			goto FINISH;
+		}
+		thread_ctx->state = channel;
+		thread_ctx->cleanup = &cleanup_dnsblc;
+	} else {
+		channel = (ares_channel)thread_ctx->state;
 	}
-	
+
 	dnsbl = ctx->dnsbl;
 
 	/* initiate dnsbl queries */
@@ -281,7 +300,6 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 		}
 	}
 
-	ares_destroy(channel);
 	Free(ipstr);
 
 FINISH:
