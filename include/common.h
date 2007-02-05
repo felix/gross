@@ -102,6 +102,7 @@
 
 #define CHECK_DNSBL (int)0x01
 #define CHECK_BLOCKER (int)0x02
+#define CHECK_RANDOM (int)0x04
 
 #define PROTO_SJSMS (int)0x01
 #define PROTO_POSTFIX (int)0x02

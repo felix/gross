@@ -19,4 +19,4 @@
 
 void blocker_init();
 
-#endif /* DNSBLC_H */
+#endif /* CHECK_BLOCKER_H */
