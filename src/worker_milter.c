@@ -102,6 +102,7 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 	grey_tuple_t *tuple;
 	final_status_t status = { '\0' };
 	int retvalue = SMFIS_CONTINUE;
+	int ret;
 
 	logstr(GLOG_INSANE, "milter: envrcpt");
 
@@ -111,7 +112,7 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 	tuple->recipient = strdup(argv[0]);
 	tuple->client_address = strdup(priv->client_address);
 
-	status = test_tuple(tuple, NULL);
+	ret = test_tuple(&status, tuple, NULL);
 	request_unlink(tuple);
 
 	switch(status.status) {

@@ -30,7 +30,10 @@
 int
 cleanup_random(void *state)
 {
-	Free((int *)state);
+	int *foo;
+
+	foo = state;	
+	Free(foo);
 	return 0;
 }
 
@@ -84,8 +87,6 @@ FINISH:
 	send_result(edict, result);
 	logstr(GLOG_DEBUG, "blocker returning");
 	request_unlink(request);
-	
-	sleep(10);
 	
 	return 0;
 }
