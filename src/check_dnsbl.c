@@ -302,6 +302,7 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 
 	Free(ipstr);
 
+	ares_cancel(channel);
 FINISH:
 	if (match_found > 0)
 		result->judgment = J_SUSPICIOUS;

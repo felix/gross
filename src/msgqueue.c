@@ -44,7 +44,7 @@ struct timespec *peek_msg_timestamp(msgqueue_t *mq);
 /* array of queues */
 msgqueue_t **queues;
 msgqueue_t *metaqueue;
-int queuespace = 0;
+int queuespace = 1;
 int numqueues = 0;
 bool initialized = false;
 

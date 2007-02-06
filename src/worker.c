@@ -55,11 +55,13 @@ request_unlink(grey_tuple_t *request)
 {
         int ret;
 
-        ret = pthread_mutex_lock(&request->reference.mx);
+        ret = pthread_mutex_lock(&request->reference.mx);	
+	assert(request);
         assert(0 == ret);
         assert(request->reference.count > 0);
 
-        if (--request->reference.count == 0) {
+	request->reference.count = request->reference.count - 1;
+        if (request->reference.count == 0) {
                 /* last reference */
                 if (request->sender)
                         Free(request->sender);
@@ -97,24 +99,24 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	int ret;
 	int retvalue = STATUS_UNKNOWN;
 	oper_sync_t os;
-	edict_t *edict;
+	edict_t *edict = NULL;
 	poolresult_message_t message;
-	chkresult_t *result;
+	chkresult_t *result = NULL;
 	bool suspicious = false;
 	bool got_response = false;
 	struct timespec start, now;
 	mseconds_t timeused;
-	tmout_action_t *tap;
+	tmout_action_t *tap = NULL;
 	int i;
 	int checks_running;
 	int definitives_running;
 	struct in_addr inaddr;
 	unsigned int ip, net, mask;
 	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
-	const char *ptr;
+	const char *ptr = NULL;
 	bool free_ta = false;
-	grey_tuple_t *requestcopy;
-	check_t *mycheck[MAXCHECKS];
+	grey_tuple_t *requestcopy = NULL;
+	check_t *mycheck[MAXCHECKS] = { NULL };
 	judgment_t judgment;
 	bool definitive;
 	char *reasonstr = NULL;

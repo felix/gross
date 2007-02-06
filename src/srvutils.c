@@ -32,6 +32,7 @@ char *acct_fmt(int type, const char *msg);
 int acct_put(int type, const char *msg);
 size_t date_fmt(char *msg, size_t len);
 
+#if 1
 int
 logstr(int level, const char *fmt, ...) {
 	char logfmt[MSGSZ];
@@ -60,6 +61,10 @@ logstr(int level, const char *fmt, ...) {
 	
 	return 0;
 }
+#else
+int
+logstr(int level, const char *fmt, ...) { return 0; }
+#endif
 
 int statstr(int level, const char *fmt, ...)
 {

@@ -38,9 +38,9 @@ static void *
 thread_pool(void *arg)
 {
 	int ret;
-	pool_ctx_t *pool_ctx;
+	pool_ctx_t *pool_ctx = NULL;
 	edict_message_t message;
-	edict_t *edict;
+	edict_t *edict = NULL;
 	mseconds_t timelimit;
 	thread_ctx_t thread_ctx = { NULL };
 
@@ -63,7 +63,7 @@ thread_pool(void *arg)
 		pool_ctx->count_idle++;
 		POOL_MUTEX_UNLOCK;
 
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit); 
+		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit);
 		if (ret > 0) {
 			/* we've got a message */
 			edict = message.edict;
