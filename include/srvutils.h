@@ -22,6 +22,8 @@
 
 #include "common.h"
 
+#define DATESTRLEN 26
+
 enum logmsgtype_t {
 	LOG_TYPE	   = 0x10000,
 	GLOG_EMERG         = LOG_TYPE | LOG_EMERG,

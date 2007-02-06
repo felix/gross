@@ -35,8 +35,8 @@ size_t date_fmt(char *msg, size_t len);
 #if 1
 int
 logstr(int level, const char *fmt, ...) {
-	char logfmt[MSGSZ];
-	char mbuf[MSGSZ];
+	char logfmt[MSGSZ] = { '\0' };
+	char mbuf[MSGSZ] = { '\0' };
 	va_list vap;
 
 	if (level > ctx->config.loglevel) {
@@ -517,14 +517,14 @@ acct_put(int type, const char *msg)
 size_t
 date_fmt(char *msg, size_t len) {
         time_t tt;
-        char *timestr;
+        char timestr[DATESTRLEN];
         char *buf;
         size_t ret;
 
         buf = Malloc(MSGSZ);
 
         tt = time(NULL);
-        timestr = ctime(&tt);
+        ctime_r(&tt, timestr);
         chomp(timestr);
 
         snprintf(buf, MSGSZ-1, "%s %s\n", timestr, msg);
