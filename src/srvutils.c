@@ -408,6 +408,7 @@ Malloc(size_t size)
 {
         void *chunk;
 
+	assert(size);
         chunk = malloc(size);
 
         if (! chunk)
@@ -518,10 +519,8 @@ size_t
 date_fmt(char *msg, size_t len) {
         time_t tt;
         char timestr[DATESTRLEN];
-        char *buf;
+        char buf[MSGSZ];
         size_t ret;
-
-        buf = Malloc(MSGSZ);
 
         tt = time(NULL);
         ctime_r(&tt, timestr);
@@ -531,7 +530,6 @@ date_fmt(char *msg, size_t len) {
         strncpy(msg, buf, len - 1);
         msg[len-1] = '\0';
 
-        Free(buf);
         return ret;
 }
 

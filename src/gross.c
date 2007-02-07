@@ -68,6 +68,9 @@ initialize_context()
 	/* Clear checks */
 	ctx->config.checks = 0;
 
+	/* Initialize checklist */
+	memset(ctx->checklist, 0, MAXCHECKS);
+
 	/* initial loglevel and facility, they will be set in configure_grossd() */
 	ctx->config.loglevel = 0;
 	ctx->config.syslogfacility = 0;
