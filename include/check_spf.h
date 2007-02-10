@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2006 Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2007 Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,8 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* 
- * Interface requires this file
- */
+#ifndef CHECK_SPF_H
+#define CHECK_SPF_H
 
-typedef int foo;
+void spf_init();
+
+#endif /* CHECK_SPF_H */
