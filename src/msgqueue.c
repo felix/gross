@@ -50,6 +50,10 @@ bool initialized = false;
 
 pthread_mutex_t global_queue_lk = PTHREAD_MUTEX_INITIALIZER;
 
+/*
+ *  queue_realloc	- doubles the space reservation for message queues
+ *  			  not thread safe, the caller MUST hold GLOBAL_QUEUE_LOCK
+ */
 void
 queue_realloc(void)
 {
@@ -60,15 +64,11 @@ queue_realloc(void)
 
 	logstr(GLOG_DEBUG, "doubling the space for message queues from %d to %d", queuespace, queuespace * 2);
 
-	GLOBAL_QUEUE_LOCK;
-
 	queuesize = queuespace * sizeof(msgqueue_t *);
 
 	/* double the size of the array */
 	queues = realloc(queues, queuesize * 2);
 	queuespace *= 2;
-
-	GLOBAL_QUEUE_UNLOCK;
 }
 
 
@@ -243,9 +243,7 @@ get_queue(void)
 
                 if (numqueues > queuespace) {
                         /* there is no space left in the array */
-                        GLOBAL_QUEUE_UNLOCK;
                         queue_realloc();
-                        GLOBAL_QUEUE_LOCK;
                 }
 
                 queues[i] = mq;
