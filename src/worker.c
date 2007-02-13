@@ -331,6 +331,10 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	/* Update counters */
 	/* FIX: include block and vip counts, too */
 	switch (retvalue) {
+	case STATUS_BLOCK:
+	  INCF_STATS(block);
+	  INCF_STATS(all_block);
+	  break;
 	case STATUS_MATCH:
 	  INCF_STATS(match);
 	  INCF_STATS(all_match);

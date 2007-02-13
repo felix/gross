@@ -87,6 +87,9 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 			logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
 			
 			switch (status.status) {
+			case STATUS_BLOCK:
+			  block_delay_update((double)delay);
+			  break;
 			case STATUS_MATCH:
 			  match_delay_update((double)delay);
 			  break;

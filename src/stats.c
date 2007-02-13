@@ -26,6 +26,7 @@ init_stats()
 
   ctx->stats.dnsbl_match = NULL;
   time( &(ctx->stats.startup) );
+  ctx->stats.all_block = 0;
   ctx->stats.all_greylist = 0;
   ctx->stats.all_match = 0;
   ctx->stats.all_trust = 0;
@@ -44,9 +45,11 @@ zero_stats()
 		   time( &(old.end) );
 
 		   /* Zero values */
+		   ctx->stats.block = 0;
 		   ctx->stats.greylist = 0;
 		   ctx->stats.match = 0;
 		   ctx->stats.trust = 0;
+		   ctx->stats.block_avg_delay = 0.0;
 		   ctx->stats.greylist_avg_delay = 0.0;
 		   ctx->stats.match_avg_delay = 0.0;
 		   ctx->stats.trust_avg_delay = 0.0;
@@ -90,6 +93,23 @@ stat_dnsbl_match(const char *name)
   if (!result)
     logstr(GLOG_WARNING, "Match from unknown dnsbl: %s", name);
   return result;
+}
+
+double 
+block_delay_update(double d)
+{
+  WITH_STATS_GUARD(
+		   if (0 == ctx->stats.block) {
+		     ctx->stats.block_avg_delay = d;
+		     logstr(GLOG_WARNING, "Block average updated before updating counters");
+		   } else {
+		     ctx->stats.block_avg_delay = (ctx->stats.block_avg_delay * (ctx->stats.block-1) + d)/(ctx->stats.block);
+		   }
+
+		   if (ctx->stats.block_max_delay<d) ctx->stats.block_max_delay = d;
+		   );
+
+  return ctx->stats.block_avg_delay;
 }
 		     
 double
@@ -196,17 +216,17 @@ log_stats()
   stats = zero_stats();
   
 
-  statstr(STATS_STATUS, "grossd status summary (begin, end, trust, match, greylist): %lu, %lu, %llu, %llu, %llu", 
-	  stats.begin, stats.end, stats.trust, stats.match, stats.greylist);
+  statstr(STATS_STATUS, "grossd status summary (begin, end, trust, match, greylist, block): %lu, %lu, %llu, %llu, %llu, %llu", 
+	  stats.begin, stats.end, stats.trust, stats.match, stats.greylist, stats.block);
 
-  statstr(STATS_DELAY, "grossd processing average delay (begin, end, trust[ms], match[ms], greylist[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf", 
-	  stats.begin, stats.end, stats.trust_avg_delay, stats.match_avg_delay, stats.greylist_avg_delay);
+  statstr(STATS_DELAY, "grossd processing average delay (begin, end, trust[ms], match[ms], greylist[ms], block[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf, %.3lf", 
+	  stats.begin, stats.end, stats.trust_avg_delay, stats.match_avg_delay, stats.greylist_avg_delay, stats.block_avg_delay);
 
-  statstr(STATS_DELAY, "grossd processing max delay (begin, end, trust[ms], match[ms], greylist[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf", 
-	  stats.begin, stats.end, stats.trust_max_delay, stats.match_max_delay, stats.greylist_max_delay);
+  statstr(STATS_DELAY, "grossd processing max delay (begin, end, trust[ms], match[ms], greylist[ms], block[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf, %.3lf", 
+	  stats.begin, stats.end, stats.trust_max_delay, stats.match_max_delay, stats.greylist_max_delay, stats.block_max_delay);
 
-  statstr(STATS_STATUS_BEGIN, "grossd summary since startup (startup, now, trust, match, greylist): %lu, %lu, %llu, %llu, %llu", 
-	  stats.startup, stats.end, stats.all_trust, stats.all_match, stats.all_greylist);
+  statstr(STATS_STATUS_BEGIN, "grossd summary since startup (startup, now, trust, match, greylist, block): %lu, %lu, %llu, %llu, %llu, %llu", 
+	  stats.startup, stats.end, stats.all_trust, stats.all_match, stats.all_greylist, stats.all_block);
 
   statstr(STATS_DNSBL, "%s", dnsbl_stats(buf, TMP_BUF_SIZE));
 

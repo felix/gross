@@ -32,15 +32,19 @@ typedef struct {
   time_t begin;
   time_t end;
   pthread_mutex_t mx;
+  uint64_t block;
   uint64_t greylist;
   uint64_t match;
   uint64_t trust;
+  uint64_t all_block;
   uint64_t all_greylist;
   uint64_t all_match;
   uint64_t all_trust;
+  double block_avg_delay;
   double greylist_avg_delay;
   double match_avg_delay;
   double trust_avg_delay;
+  double block_max_delay;
   double greylist_max_delay;
   double match_max_delay;
   double trust_max_delay;
@@ -51,6 +55,7 @@ void init_stats();
 stats_t zero_stats();
 stats_t log_stats();
 
+double block_delay_update(double d);
 double greylist_delay_update(double d);
 double match_delay_update(double d);
 double trust_delay_update(double d);
