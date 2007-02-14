@@ -36,6 +36,7 @@ typedef struct {
 	char *ipstr;
         int msglen;
         void *message;
+	bool single_query;
 } client_info_t;
 
 typedef struct {

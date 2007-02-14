@@ -103,6 +103,9 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 
 		
 			request_unlink(request);
+			/* check if the client requested a single query mode */
+			if (client_info->single_query)
+				break;
 		} else if (ret == PARSE_ERROR) {
 			logstr(GLOG_ERROR, "couldn't parse request, closing connection");
 			request_unlink(request);
@@ -173,6 +176,12 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 		if (match) {
 			grey_tuple->client_address = match;
 			logstr(GLOG_DEBUG, "client_address=%s", match);
+			continue;
+		}
+		match = try_match("grossd_mode=", line);
+		if (match) {
+			client_info->single_query = true;
+			logstr(GLOG_DEBUG, "Client requested a single connection mode");
 			continue;
 		}
 		
