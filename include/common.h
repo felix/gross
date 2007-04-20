@@ -124,9 +124,14 @@
  */
 
 #ifndef HAVE_BOOL
-   typedef int bool;
+# ifndef bool
+#  ifndef __bool_true_false_are_defined  
+#   define __bool_true_false_are_defined       1
+typedef int bool;
 #  define true 1
 #  define false 0
+#  endif /* __bool_true_false_are_defined */
+# endif /* bool */
 #endif /* HAVE_BOOL */
 
 typedef struct {

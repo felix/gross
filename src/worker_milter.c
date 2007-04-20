@@ -27,12 +27,14 @@
 struct private_ctx_s {
 	char *client_address;
 	char *sender;
+	char *helo_name;
 };	
 
 #define MILTER_PRIVATE	((struct private_ctx_s *) smfi_getpriv(milter_ctx))
 
 /* internal functions */
 sfsistat mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr);
+sfsistat mlfi_helo(SMFICTX *milter_ctx, char *helohost);
 sfsistat mlfi_envfrom(SMFICTX *milter_ctx, char **argv);
 sfsistat mlfi_envrcpt(SMFICTX *milter_ctx, char **argv);
 sfsistat mlfi_close(SMFICTX *milter_ctx);
@@ -43,7 +45,7 @@ struct smfiDesc grossfilter =
 	SMFI_VERSION,		/* version code -- do not change */
 	0,			/* flags */
 	mlfi_connect,		/* connection info filter */
-	NULL,			/* SMTP HELO command filter */
+	mlfi_helo,		/* SMTP HELO command filter */
 	mlfi_envfrom,		/* envelope sender filter */
 	mlfi_envrcpt,		/* envelope recipient filter */
 	NULL,			/* header filter */
@@ -84,6 +86,18 @@ mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr)
 }
 
 sfsistat
+mlfi_helo(SMFICTX *milter_ctx, char *helohost)
+{
+	struct private_ctx_s *priv = MILTER_PRIVATE;
+
+	logstr(GLOG_INSANE, "milter: helo");
+
+	priv->helo_name = strdup(helohost);
+
+	return SMFIS_CONTINUE;
+}
+
+sfsistat
 mlfi_envfrom(SMFICTX *milter_ctx, char **argv)
 {
 	struct private_ctx_s *priv = MILTER_PRIVATE;
@@ -111,6 +125,7 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 	tuple->sender = strdup(priv->sender);
 	tuple->recipient = strdup(argv[0]);
 	tuple->client_address = strdup(priv->client_address);
+	tuple->helo_name = priv->helo_name ? strdup(priv->helo_name) : strdup("NO-HELO");
 
 	ret = test_tuple(&status, tuple, NULL);
 	request_unlink(tuple);
@@ -143,6 +158,8 @@ mlfi_close(SMFICTX *milter_ctx)
 			Free(priv->sender);
 		if (priv->client_address)
 			Free(priv->client_address);
+		if (priv->helo_name)
+			Free(priv->helo_name);
 		Free(priv);
 		smfi_setpriv(milter_ctx, NULL);
 	}
