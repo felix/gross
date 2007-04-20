@@ -78,6 +78,7 @@ randomc(thread_ctx_t *thread_ctx, edict_t *edict)
 	} else if ((r % 5) == 0) {
 		logstr(GLOG_DEBUG, "random block: %s", request->client_address);
 		result->judgment = J_BLOCK;
+		result->reason = strdup("This is just a random block.");
 	} else if ((r % 3) == 0) {
 		logstr(GLOG_DEBUG, "random suspect: %s", request->client_address);
 		result->judgment = J_SUSPICIOUS;

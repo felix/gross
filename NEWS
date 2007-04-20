@@ -1,6 +1,10 @@
 Version svn
 
 * preliminary support for MILTER protocol, check config file
+* support for definitive checks: it's now possible to write 
+  checks that cause grossd to block or pass (whitelisting)
+
+- refactored tread counting in thread_pool.c
 
 Version 0.8.2
 

@@ -43,6 +43,7 @@ typedef struct {
         char *sender;
         char *recipient;
         char *client_address;
+	char *helo_name;
 	reference_count_t reference;
 } grey_tuple_t;
 

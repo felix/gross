@@ -24,6 +24,11 @@
 
 #define REASONTEMPLATE "%reason%"
 
+/* internal functions */
+int mappingstr(const char *from, char *to, size_t len);
+char *assemble_mapresult(char *template, char *reason);
+grey_tuple_t *unfold(grey_req_t *request);
+
 int
 mappingstr(const char *from, char *to, size_t len)
 {
@@ -47,27 +52,61 @@ mappingstr(const char *from, char *to, size_t len)
 		return 0;
 }
 
+
+char *
+assemble_mapresult(char *template, char *reason) 
+{
+	char result[MAXLINELEN] = { '\0' };
+	char *reasonsubstitute;
+	char *prologue;
+	char *epilogue;
+	char mapreason[MAXLINELEN] = { '\0' };
+
+	/* convert the reason string to mapping format */
+	mappingstr(reason, mapreason, MAXLINELEN);
+
+	/* ignore the reason if template does not use it */
+	prologue = strdup(template);
+	reasonsubstitute = strstr(prologue, REASONTEMPLATE);
+	if (NULL == reasonsubstitute) {
+		snprintf(result, MAXLINELEN, "%s", prologue);
+	} else {
+		/* null terminate the first part */
+		*reasonsubstitute = '\0';
+		epilogue = reasonsubstitute + strlen(REASONTEMPLATE);
+		snprintf(result, MAXLINELEN, "%s%s%s",
+			prologue, mapreason, epilogue);
+	}
+	Free(prologue);
+
+	return strdup(result);
+}
+
+
 grey_tuple_t *
 unfold(grey_req_t *request)
 {
         grey_tuple_t *tuple;
-        uint16_t sender, recipient, client_address;
+        uint16_t sender, recipient, client_address, helo_name;
 
 	tuple = request_new();
 
         sender = ntohs(request->sender);
         recipient = ntohs(request->recipient);
         client_address = ntohs(request->client_address);
+        helo_name = ntohs(request->helo_name);
 
         if (sender >= MAXLINELEN ||
                         recipient >= MAXLINELEN ||
-                        client_address >= MAXLINELEN) {
+                        client_address >= MAXLINELEN ||
+                        helo_name >= MAXLINELEN) {
                 errno = ENOMSG;
                 return NULL;
         }
         tuple->sender = strdup(request->message + sender);
         tuple->recipient = strdup(request->message + recipient);
         tuple->client_address = strdup(request->message + client_address);
+	tuple->helo_name = strdup(request->message + helo_name);
 
 	return tuple;
 }
@@ -99,13 +138,10 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 	sjsms_msg_t *msg;
 	grey_tuple_t *tuple;
 	char response[MAXLINELEN];
-	char reason[MAXLINELEN];
-	char *blocktemplate;
-	char *reasonsubstitute;
-	char *rest;
 	final_status_t status = { '\0' };
 	int ret;
 	tmout_action_t ta1, ta2;
+	char *mapstr;
 	char *str;
 	struct timespec start, end;
 	int delay;
@@ -159,23 +195,14 @@ sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 				snprintf(response, MAXLINELEN, "M %s", ctx->config.sjsms.responsematch);
 				break;
 			case STATUS_GREY:
-				snprintf(response, MAXLINELEN, "G %s", ctx->config.sjsms.responsegrey);
+				mapstr = assemble_mapresult(ctx->config.sjsms.responsegrey, status.reason);
+				snprintf(response, MAXLINELEN, "G %s", mapstr);
+				Free(mapstr);
 				break;
 			case STATUS_BLOCK:
-				mappingstr(status.reason, reason, MAXLINELEN);
-				/* ignore the reason if template does not use it */
-				blocktemplate = strdup(ctx->config.sjsms.responseblock);
-				reasonsubstitute = strstr(blocktemplate, REASONTEMPLATE);
-				if (NULL == reasonsubstitute) {
-					snprintf(response, MAXLINELEN, "B %s", blocktemplate);
-				} else {
-					/* null terminate the first part */
-					*reasonsubstitute = '\0';
-					rest = reasonsubstitute + strlen(REASONTEMPLATE);
-					snprintf(response, MAXLINELEN, "B %s%s%s",
-						blocktemplate, reason, rest);
-				}
-				Free(blocktemplate);
+				mapstr = assemble_mapresult(ctx->config.sjsms.responseblock, status.reason);
+				snprintf(response, MAXLINELEN, "B %s", mapstr);
+				Free(mapstr);
 				break;
 			case STATUS_TRUST:
 				snprintf(response, MAXLINELEN, "T %s", ctx->config.sjsms.responsetrust);

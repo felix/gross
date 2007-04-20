@@ -233,7 +233,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 		definitive = false;
 
 		/* 
-		 * wait until definitive result arrives, every check has
+		 * wait until a definitive result arrives, every check has
 		 * returned or timeout is reached.
 		 */
 		while (definitive == false && checks_running > 0 && ta) {
@@ -254,12 +254,16 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 					/* was this a definitive result? */
 					if (result->definitive)
 						definitives_running--;
+					if (result->reason) {
+						reasonstr = strdup(result->reason);
+						Free(result->reason);
+					}
 					Free(result);
 					/*
 					 * Do we have a definitive result so far?
 					 * That is,
 					 * 1. we have a whitelist match
-					 * 2. all the definitive checs must have returned,
+					 * 2. all the definitive checks have returned,
 					 *    and result is something else than J_UNDEFINED
 					 */
 					if (judgment == J_PASS

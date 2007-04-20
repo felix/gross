@@ -26,7 +26,7 @@
 			"filter_bits",		"22",		\
 			"number_buffers",	"8",            \
 			"stat_interval",	"300",		\
-			"sjsms_response_grey",	"$X4.4.3|$NPlease$ try$ again$ later", \
+			"sjsms_response_grey",	"$X4.4.3|$NPlease$ try$ again$ later.", \
 			"sjsms_response_match",	"$Y", 		\
 			"sjsms_response_trust",	"$Y",		\
 			"sjsms_response_block", "$N%reason%",	\

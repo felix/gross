@@ -69,7 +69,8 @@ postfix_connection(thread_ctx_t *thread_ctx, edict_t *edict)
 						status.reason ? status.reason : "Rejected");
 					break;
 				case STATUS_GREY:
-					snprintf(response, MAXLINELEN, "action=defer_if_permit Please try again later");
+					snprintf(response, MAXLINELEN, "action=defer_if_permit %s",
+						status.reason ? status.reason : "Please try again later");
 					break;
 				}
 			}
@@ -176,6 +177,12 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 		if (match) {
 			grey_tuple->client_address = match;
 			logstr(GLOG_DEBUG, "client_address=%s", match);
+			continue;
+		}
+		match = try_match("helo_name=", line);
+		if (match) {
+			grey_tuple->helo_name = match;
+			logstr(GLOG_DEBUG, "helo_name=%s", match);
 			continue;
 		}
 		match = try_match("grossd_mode=", line);

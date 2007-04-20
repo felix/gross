@@ -25,32 +25,38 @@ int send_sjsms_msg(int fd, struct sockaddr_in *grserv, sjsms_msg_t *message);
 
 int
 fold(grey_req_t *req, const char *sender,
-        const char *rcpt, const char *caddr)
+        const char *rcpt, const char *caddr, const char *helo)
 {
-        uint16_t sender_len, rcpt_len, caddr_len;
+        uint16_t sender_len, rcpt_len, caddr_len, helo_len;
 
         sender_len = strlen(sender);
         rcpt_len = strlen(rcpt);
         caddr_len = strlen(caddr);
+	helo_len = strlen(helo);
 
-        req->sender = 0;
-        memcpy(req->message + req->sender, sender, sender_len);
-        *(req->message + req->sender + sender_len) = '\0';
+	req->sender = 0;
+	memcpy(req->message + req->sender, sender, sender_len);
+	*(req->message + req->sender + sender_len) = '\0';
 
-        req->recipient = req->sender + sender_len + 1;
-        memcpy(req->message + req->recipient, rcpt , rcpt_len);
-        *(req->message + req->recipient + rcpt_len) = '\0';
+	req->recipient = req->sender + sender_len + 1;
+	memcpy(req->message + req->recipient, rcpt , rcpt_len);
+	*(req->message + req->recipient + rcpt_len) = '\0';
 
-        req->client_address = req->recipient + rcpt_len + 1;
-        memcpy(req->message + req->client_address, caddr , caddr_len);
-        *(req->message + req->client_address + caddr_len) = '\0';
+	req->client_address = req->recipient + rcpt_len + 1;
+	memcpy(req->message + req->client_address, caddr , caddr_len);
+	*(req->message + req->client_address + caddr_len) = '\0';
 
-        req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1;
+        req->helo_name = req->client_address + caddr_len + 1;
+        memcpy(req->message + req->helo_name, helo, helo_len);
+        *(req->message + req->helo_name + helo_len) = '\0';
+
+        req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1 + helo_len + 1;
 
 #define HTONS_SWAP(X) { X = htons(X); }
 	HTONS_SWAP(req->sender);
 	HTONS_SWAP(req->recipient);
 	HTONS_SWAP(req->client_address);
+	HTONS_SWAP(req->helo_name);
 	HTONS_SWAP(req->msglen);
 
         return 1;
@@ -66,7 +72,7 @@ senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...)
 	vsnprintf(message.message, MAXLINELEN, fmt, vap);
 	va_end(vap);
 
-	message.msglen = MIN(strlen(message.message), MAXLINELEN);
+	message.msglen = MIN(strlen(message.message) + 1, MAXLINELEN);
 	message.msgtype = LOGMSG;
 
 	return send_sjsms_msg(fd, gserv, &message);
@@ -77,7 +83,8 @@ int
 sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request)
 {
 	sjsms_msg_t message;
-	message.msglen = MIN(ntohs(request->msglen) + 4 * sizeof(uint16_t), MAXLINELEN);
+	/* check struct grey_req_t */
+	message.msglen = MIN(ntohs(request->msglen) + sizeof(grey_req_t) - sizeof(char *), MAXLINELEN);
 	message.msgtype = QUERY;
 	memcpy(&message.message, request, message.msglen);
 	return send_sjsms_msg(fd, gserv, &message);

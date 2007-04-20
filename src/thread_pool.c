@@ -56,14 +56,31 @@ thread_pool(void *arg)
 	POOL_MUTEX_UNLOCK;
 
 	for (;;) {
-		/* wait for new jobs */
 		timelimit = 60 * SI_KILO; /* one minute */
+		
+		/* check if there are idling threads (1 means two idling threads waiting) */
+		POOL_MUTEX_LOCK;
+		if (pool_ctx->count_idle > 1) {
+			pool_ctx->count_thread--;
+			POOL_MUTEX_UNLOCK;
+			logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down",
+				pool_ctx->info->name);
+			/* run a cleanup routine if defined */
+			if (thread_ctx.cleanup)
+				thread_ctx.cleanup(thread_ctx.state);
+			pthread_exit(NULL);
+		} else {
+			pool_ctx->count_idle++;
+			POOL_MUTEX_UNLOCK;
+		}
+
+		/* wait for new jobs */
+		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit);
 
 		POOL_MUTEX_LOCK;
-		pool_ctx->count_idle++;
+		pool_ctx->count_idle--;
 		POOL_MUTEX_UNLOCK;
 
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit);
 		if (ret > 0) {
 			/* we've got a message */
 			edict = message.edict;
@@ -72,14 +89,11 @@ thread_pool(void *arg)
 			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->info->name);
 	
 			POOL_MUTEX_LOCK;
-			
-			pool_ctx->count_idle--;
 			if (pool_ctx->count_idle < 1) {
-				/* We are the last idling thread, start another */
+				/* We were the last idling thread, start another */
 				logstr(GLOG_DEBUG, "threadpool '%s' starting another thread", pool_ctx->info->name);
 				Pthread_create(NULL, &thread_pool, pool_ctx);
 			}
-
 			POOL_MUTEX_UNLOCK;
 
 			/* run the routine with args */
@@ -89,24 +103,7 @@ thread_pool(void *arg)
 			edict_unlink(edict);
 		} else {
 			/* timeout occurred */
-
-			POOL_MUTEX_LOCK;
-
-			logstr(GLOG_INSANE, "threadpool '%s' notices it's idling", pool_ctx->info->name);
-
-			pool_ctx->count_idle--;
-			/* there should be at least one idling thread left */
-			if (pool_ctx->count_idle > 1) {
-				pool_ctx->count_thread--;
-				POOL_MUTEX_UNLOCK;
-				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down",
-					pool_ctx->info->name);
-				/* run a cleanup routine if defined */
-				if (thread_ctx.cleanup)
-					thread_ctx.cleanup(thread_ctx.state);
-				pthread_exit(NULL);
-			}
-			POOL_MUTEX_UNLOCK;
+			logstr(GLOG_INSANE, "threadpool '%s' idling", pool_ctx->info->name);
 		}
 	}
 }

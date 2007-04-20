@@ -82,6 +82,7 @@ typedef struct {
 typedef struct {
 	bool definitive;
 	judgment_t judgment;
+	char *reason;
 } chkresult_t;
 
 /* global context */

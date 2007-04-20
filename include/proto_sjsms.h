@@ -25,6 +25,7 @@ typedef struct {
         uint16_t sender;
         uint16_t recipient;
         uint16_t client_address;
+        uint16_t helo_name;
         char message[MAXLINELEN];
 } grey_req_t;
 
@@ -36,7 +37,7 @@ typedef struct {
 	char message[MAXLINELEN];
 } sjsms_msg_t;
 
-int fold(grey_req_t *request, const char *sender, const char *recipient, const char *caddr);
+int fold(grey_req_t *request, const char *sender, const char *recipient, const char *caddr, const char *helo);
 int sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request);
 int senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...);
 int sjsms_to_host_order(sjsms_msg_t *message);

@@ -53,6 +53,7 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	char sender[SBUFLEN] = { 0x00 };
 	char recipient[SBUFLEN] = { 0x00 };
 	char caddr[SBUFLEN] = { 0x00 };
+	char helo[SBUFLEN] = { 0x00 };
 	char recbuf[MAXLINELEN] = { 0x00 };
 	char *requestcopy = NULL; /* null terminated copy of the request */
 	int n = -1;
@@ -97,7 +98,7 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 #ifdef ARGDEBUG
 	foo = fopen("/tmp/argout", "a");
 	if (foo) {
-		fprintf(foo, "query: %s\n", buffer);
+		fprintf(foo, "query: %s\n", requestcopy);
 	}
 #endif
 
@@ -132,23 +133,36 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	GETNEXT;
 	strncpy(recipient, begin, SBUFLEN-1);
 
-	begin = end + 1;
-	end = strchr(begin, MAP_SEPARATOR); 
-	/* this is the last of the arguments */
-	if ( NULL != end) GROSSCHECK_ERROR; 
+	/* sender */
+	GETNEXT;
+	/* no empty sender */
 	if ( *begin == '\0') {
 		strncpy(sender, "<>", SBUFLEN-1);
 	} else {
 		strncpy(sender, begin, SBUFLEN-1);
 	}
+
+	/* helo */
+	begin = end + 1;
+	end = strchr(begin, MAP_SEPARATOR);
+	/* no empty helo string */
+	if ( *begin == '\0' ) {
+		strncpy(helo, "NO-HELO", SBUFLEN-1);
+	} else {
+		strncpy(helo, begin, SBUFLEN-1);
+	}
 	
+	/* end of arguments */
+	if ( NULL != end) GROSSCHECK_ERROR; 
+
 	gserv = &gserv1;
 
 	/* Make sure they are null terminated */
 	sender[SBUFLEN-1] = '\0';
 	recipient[SBUFLEN-1] = '\0';
 	caddr[SBUFLEN-1] = '\0';
-	fold(&request, sender, recipient, caddr);
+	helo[SBUFLEN-1] = '\0';
+	fold(&request, sender, recipient, caddr, helo);
 
 QUERY:
 	sendquery(fd, gserv, &request);

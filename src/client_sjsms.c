@@ -61,7 +61,7 @@ client_sjsms(int argc, char **argv)
 		senderrormsg(fd, &gserv, "yhteyskokeilu");
 #endif
 
-		fold(&request, sender, recipient, caddr);
+		fold(&request, sender, recipient, caddr, "");
 
 		sendquery(fd, &gserv, &request);
 	  

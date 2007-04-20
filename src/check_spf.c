@@ -77,6 +77,28 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 		goto ERROR;
 	}
 
+	/* FIXME: no helo domain from clients yet */
+	ret = SPF_request_set_helo_dom(spf_request, "");
+	if (ret) {
+		logstr(GLOG_ERROR, "invalid HELO domain: %s.", "");
+		goto ERROR;
+	}
+
+	ret = SPF_request_set_env_from(spf_request, request->sender);
+	if (ret) {
+		logstr(GLOG_ERROR, "invalid envelope sender address %s", request->sender);
+		goto ERROR;
+	}
+
+        SPF_request_query_mailfrom(spf_request, &spf_response);
+
+	ret = SPF_response_result(spf_response);
+	if (ret != SPF_RESULT_PASS) {
+		SPF_request_query_rcptto(spf_request, &spf_response_2mx, request->recipient);
+		ret = SPF_response_result(spf_response_2mx);
+		if (ret == SPF_RESULT_PASS) {
+		}
+	}
 
 ERROR:
         if (spf_request)
