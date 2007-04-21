@@ -90,10 +90,57 @@ request_new()
         return request;
 }
 
+char *
+grey_mask(char *ipstr)
+{
+	int ret;
+	unsigned int ip, net, mask;
+	const char *ptr = NULL;
+	char masked[INET_ADDRSTRLEN] = { '\0' };
+	struct in_addr inaddr;
+
+	/*
+	 * apply checkmask to the ip 
+	 */ 
+	if (strlen(ipstr) > INET_ADDRSTRLEN) {
+		logstr(GLOG_NOTICE, "invalid ipaddress: %s", ipstr);
+		return NULL;
+	}
+
+	ret = inet_pton(AF_INET, ipstr, &inaddr);
+	switch(ret) {
+	case -1:
+		logstr(GLOG_ERROR, "test_tuple: inet_pton: %s", strerror(errno));
+		return NULL;
+		break;
+	case 0:
+		logstr(GLOG_ERROR, "not a valid ip address: %s", ipstr);
+		return NULL;
+		break;
+	}
+
+	/* case default */
+	ip = inaddr.s_addr;
+
+	/* this is 0xffffffff ^ (2 ** (32 - mask - 1) - 1) */
+	mask = 0xffffffff ^ ((1 << (32 - ctx->config.grey_mask)) - 1); 
+
+	/* ip is in network order */
+	net = ip & htonl(mask);
+
+	ptr = inet_ntop(AF_INET, &net, masked, INET_ADDRSTRLEN);
+	if (! ptr) {
+		logstr(GLOG_ERROR, "test_tuple: inet_ntop: %s", strerror(errno));
+		return NULL;
+	}
+	return strdup(masked);
+}
+
 int
 test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	char maskedtuple[MSGSZ];
 	char realtuple[MSGSZ];
+	char *chkipstr;
 	sha_256_t digest;
 	update_message_t update;
 	int ret;
@@ -110,10 +157,6 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	int i;
 	int checks_running;
 	int definitives_running;
-	struct in_addr inaddr;
-	unsigned int ip, net, mask;
-	char chkipstr[INET_ADDRSTRLEN] = { '\0' };
-	const char *ptr = NULL;
 	bool free_ta = false;
 	grey_tuple_t *requestcopy = NULL;
 	check_t *mycheck[MAXCHECKS] = { NULL };
@@ -127,41 +170,13 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	/* default value */
 	final->status = STATUS_FAIL;
 
-	/*
-	 * apply checkmask to the ip 
-	 */ 
-	if (strlen(request->client_address) > INET_ADDRSTRLEN) {
-		logstr(GLOG_NOTICE, "invalid ipaddress: %s", request->client_address);
+	/* apply grey_mask for client_address */
+	chkipstr = grey_mask(request->client_address);
+	if (NULL == chkipstr) {
+		logstr(GLOG_ERROR, "applying grey_mask failed: %s", ipstr);
 		return -1;
 	}
 
-	ret = inet_pton(AF_INET, request->client_address, &inaddr);
-	switch(ret) {
-	case -1:
-		logstr(GLOG_ERROR, "test_tuple: inet_pton: %s", strerror(errno));
-		return -1;
-		break;
-	case 0:
-		logstr(GLOG_ERROR, "not a valid ip address: %s", request->client_address);
-		return -1;
-		break;
-	}
-
-	/* case default */
-	ip = inaddr.s_addr;
-
-	/* this is 0xffffffff ^ (2 ** (32 - mask - 1) - 1) */
-	mask = 0xffffffff ^ ((1 << (32 - ctx->config.grey_mask)) - 1); 
-
-	/* ip is in network order */
-	net = ip & htonl(mask);
-
-	ptr = inet_ntop(AF_INET, &net, chkipstr, INET_ADDRSTRLEN);
-	if (! ptr) {
-		logstr(GLOG_ERROR, "test_tuple: inet_ntop: %s", strerror(errno));
-		return -1;
-	}
-	
 	/* greylist */
 	snprintf(maskedtuple, MSGSZ, "%s %s %s",
 			chkipstr,
@@ -175,8 +190,8 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			request->sender,
 			request->recipient);
 
-	logstr(GLOG_INSANE, "checking ip=%s mask=0x%x, net=%s",
-		request->client_address, mask, chkipstr);
+	logstr(GLOG_INSANE, "checking ip=%s, net=%s",
+		request->client_address, chkipstr);
 
 	/* check status */
 	if ( is_in_ring_queue(ctx->filter, digest) ) {
