@@ -157,9 +157,9 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	int i;
 	int checks_running;
 	int definitives_running;
+	int checkcount;
 	bool free_ta = false;
 	grey_tuple_t *requestcopy = NULL;
-	check_t *mycheck[MAXCHECKS] = { NULL };
 	judgment_t judgment;
 	bool definitive;
 	char *reasonstr = NULL;
@@ -193,17 +193,23 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	logstr(GLOG_INSANE, "checking ip=%s, net=%s",
 		request->client_address, chkipstr);
 
+	/* how many checks to run */
+	i = 0;
+	while (ctx->checklist[i])
+		++i;
+	checkcount = i;
+
 	/* check status */
 	if ( is_in_ring_queue(ctx->filter, digest) ) {
 		logstr(GLOG_INFO, "match: %s", realtuple);
 		acctstr(ACCT_MATCH, "%s", realtuple);
 		retvalue = STATUS_MATCH;
-	} else {
-#ifndef DNSBL
+	} else if (0 == checkcount) {
+		/* traditional greylister */
 		logstr(GLOG_INFO, "greylist: %s", realtuple);
 		acctstr(ACCT_GREY, "%s", realtuple);
 		retvalue = STATUS_GREY;
-#else
+	} else {
 		/* build default entry, if timeout not given */
 		if (! ta) {
 			free_ta = true;
@@ -222,7 +228,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			tap = tap->next;
 		}
 
-		/* here should be loop over all checks */
+		/* submit jobs for checks */
 		i = 0;
 		definitives_running = 0;
 		while (ctx->checklist[i]) {
@@ -233,8 +239,6 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			i++;
 		}
 		checks_running = i;
-		/* make sure the array is terminated */
-		mycheck[i] = NULL;
 
 		/* judgment is the final combined result of all checks */
 		judgment = J_UNDEFINED;
@@ -319,7 +323,6 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 		}
 
 		edict_unlink(edict);
-#endif /* DNSBL */
 	}
 
 	/* we cannot free(ta) if we got it as parameter */

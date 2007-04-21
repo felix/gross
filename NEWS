@@ -4,7 +4,10 @@ Version svn
 * support for definitive checks: it's now possible to write 
   checks that cause grossd to block or pass (whitelisting)
 
-- refactored tread counting in thread_pool.c
+- improved thread counting in thread_pool.c
+
+Issues fixed:
+#46: Make dnsbl checking run time configurable (RFE)
 
 Version 0.8.2
 

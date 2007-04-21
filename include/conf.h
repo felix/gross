@@ -36,7 +36,6 @@
 			"stat_type",		"status",	\
 			"grey_mask",		"0",		\
 			"grey_delay",		"10",           \
-			"check",		"dnsbl",	\
 			"syslog_facility",	"mail",		\
 			"blocker_port",		"4466",		\
 			"query_timelimit",	"5000"
