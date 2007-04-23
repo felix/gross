@@ -8,6 +8,7 @@ Version svn
 
 Issues fixed:
 #46: Make dnsbl checking run time configurable (RFE)
+#47: Grossd will not run any checks if configured with --disable-dnsbl
 
 Version 0.8.2
 
