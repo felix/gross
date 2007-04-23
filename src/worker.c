@@ -32,6 +32,10 @@
 void postfix_server_init();
 void sjsms_server_init();
 
+/* internals */
+void update_counters(int status);
+char *grey_mask(char *ipstr);
+
 /*
  * destructor for client_info_t
  */
@@ -134,6 +138,31 @@ grey_mask(char *ipstr)
 		return NULL;
 	}
 	return strdup(masked);
+}
+
+void
+update_counters(int status)
+{
+	/* Update counters */
+	/* FIX: include block and vip counts, too */
+	switch (status) {
+	case STATUS_BLOCK:
+	  INCF_STATS(block);
+	  INCF_STATS(all_block);
+	  break;
+	case STATUS_MATCH:
+	  INCF_STATS(match);
+	  INCF_STATS(all_match);
+	  break;
+	case STATUS_GREY:
+	  INCF_STATS(greylist);
+	  INCF_STATS(all_greylist);
+	  break;
+	case STATUS_TRUST:
+	  INCF_STATS(trust);
+	  INCF_STATS(all_trust);
+	  break;
+	}
 }
 
 int
@@ -350,26 +379,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	if (ctx->config.flags & FLG_DRYRUN)
 		retvalue = STATUS_TRUST;
 
-	/* Update counters */
-	/* FIX: include block and vip counts, too */
-	switch (retvalue) {
-	case STATUS_BLOCK:
-	  INCF_STATS(block);
-	  INCF_STATS(all_block);
-	  break;
-	case STATUS_MATCH:
-	  INCF_STATS(match);
-	  INCF_STATS(all_match);
-	  break;
-	case STATUS_GREY:
-	  INCF_STATS(greylist);
-	  INCF_STATS(all_greylist);
-	  break;
-	case STATUS_TRUST:
-	  INCF_STATS(trust);
-	  INCF_STATS(all_trust);
-	  break;
-	}
+	update_counters(retvalue);
 
 	final->status = retvalue;
 	if (reasonstr)
