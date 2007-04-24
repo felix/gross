@@ -255,7 +255,7 @@ postfix_server(void *arg)
 
         /* initialize the thread pool */
         logstr(GLOG_INFO, "initializing postfix thread pool");
-        postfix_pool = create_thread_pool("postfix", &postfix_connection);
+        postfix_pool = create_thread_pool("postfix", &postfix_connection, NULL);
         if (postfix_pool == NULL)
                 daemon_perror("create_thread_pool");
 

@@ -41,12 +41,21 @@ typedef struct {
 	int (*cleanup)();
 } thread_ctx_t;
 
+typedef struct {
+	int max_thread;
+	int max_idle;
+	int idle_time;
+} pool_limits_t;
+
 typedef struct pool_ctx_s {
 	pthread_mutex_t *mx;
 	int (*routine)(thread_ctx_t *, edict_t *);
 	thread_pool_t *info; 	/* public info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
+	int max_thread;		/* maximum threads in the pool*/
+	int max_idle;		/* thread will shut down if there are more idling */
+	int idle_time; 		/* how many seconds to wait new jobs */
 } pool_ctx_t;
 
 /* message queue wrap for edicts */
@@ -56,7 +65,7 @@ typedef struct edict_message_s {
 } edict_message_t;
 
 int submit_job(thread_pool_t *pool, edict_t *edict);
-thread_pool_t *create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *));
+thread_pool_t *create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *), pool_limits_t *limits);
 edict_t *edict_get();
 edict_t *edict_get();
 void send_result(edict_t *edict, void *result);

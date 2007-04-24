@@ -103,13 +103,13 @@ FINISH:
 }
 
 void
-blocker_init()
+blocker_init(pool_limits_t *limits)
 {
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
         logstr(GLOG_INFO, "initializing Sophos blocker thread pool");
-	pool = create_thread_pool("blocker", &blocker);
+	pool = create_thread_pool("blocker", &blocker, limits);
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 

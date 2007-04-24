@@ -43,6 +43,10 @@ thread_pool(void *arg)
 	edict_t *edict = NULL;
 	mseconds_t timelimit;
 	thread_ctx_t thread_ctx = { NULL };
+	bool process;
+	int waited;
+	struct timespec start, end;
+	bool idlecheck = false;
 
 	pool_ctx = (pool_ctx_t *)arg;
 	assert(pool_ctx->mx);
@@ -51,31 +55,42 @@ thread_pool(void *arg)
 
 	logstr(GLOG_DEBUG, "threadpool '%s' starting", pool_ctx->info->name);
 
+	timelimit = pool_ctx->idle_time * SI_KILO;
+		
 	POOL_MUTEX_LOCK;
 	pool_ctx->count_thread++;
 	POOL_MUTEX_UNLOCK;
 
 	for (;;) {
-		timelimit = 60 * SI_KILO; /* one minute */
-		
-		/* check if there are idling threads (1 means two idling threads waiting) */
-		POOL_MUTEX_LOCK;
-		if (pool_ctx->count_idle > 1) {
-			pool_ctx->count_thread--;
-			POOL_MUTEX_UNLOCK;
-			logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down",
-				pool_ctx->info->name);
-			/* run a cleanup routine if defined */
-			if (thread_ctx.cleanup)
-				thread_ctx.cleanup(thread_ctx.state);
-			pthread_exit(NULL);
+		if (idlecheck) {
+			/* check if there are too many idling threads */
+			POOL_MUTEX_LOCK;
+			if (idlecheck && pool_ctx->count_idle >= pool_ctx->max_idle) {
+				pool_ctx->count_thread--;
+				POOL_MUTEX_UNLOCK;
+				logstr(GLOG_ERROR, "threadpool '%s' thread shutting down",
+					pool_ctx->info->name);
+				/* run a cleanup routine if defined */
+				if (thread_ctx.cleanup)
+					thread_ctx.cleanup(thread_ctx.state);
+				pthread_exit(NULL);
+			} else {
+				idlecheck = false;
+				pool_ctx->count_idle++;
+				POOL_MUTEX_UNLOCK;
+			}
 		} else {
+			POOL_MUTEX_LOCK;
 			pool_ctx->count_idle++;
 			POOL_MUTEX_UNLOCK;
 		}
 
 		/* wait for new jobs */
+		clock_gettime(CLOCK_TYPE, &start);
 		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit);
+		clock_gettime(CLOCK_TYPE, &end);
+
+		process = true;
 
 		POOL_MUTEX_LOCK;
 		pool_ctx->count_idle--;
@@ -91,25 +106,44 @@ thread_pool(void *arg)
 			POOL_MUTEX_LOCK;
 			if (pool_ctx->count_idle < 1) {
 				/* We were the last idling thread, start another */
-				logstr(GLOG_DEBUG, "threadpool '%s' starting another thread", pool_ctx->info->name);
-				Pthread_create(NULL, &thread_pool, pool_ctx);
+				if (pool_ctx->count_thread <= pool_ctx->max_thread || 0 == pool_ctx->max_thread) {
+					logstr(GLOG_ERROR, "threadpool '%s' starting another thread, count=%d",
+						pool_ctx->info->name, pool_ctx->count_thread);
+					Pthread_create(NULL, &thread_pool, pool_ctx);
+				} else {
+					logstr(GLOG_ERROR, "threadpool '%s': maximum thread count (%d) reached",
+						pool_ctx->info->name, pool_ctx->max_thread);
+					process = false;
+				}
 			}
 			POOL_MUTEX_UNLOCK;
 
 			/* run the routine with args */
-			pool_ctx->routine(&thread_ctx, edict);
+			if (process) 
+				pool_ctx->routine(&thread_ctx, edict);
 
 			/* we are done */
 			edict_unlink(edict);
+
+			/*
+			 * how long we had to wait for the job request?
+			 * if the wait time * number of idling threads > max_idle_time,
+			 * we may shut down a thread 
+			 */
+			waited = ms_diff(&end, &start);
+			/* no mutex lock necessary */
+			if (pool_ctx->count_idle * waited > timelimit)
+				idlecheck = true;
 		} else {
 			/* timeout occurred */
 			logstr(GLOG_INSANE, "threadpool '%s' idling", pool_ctx->info->name);
+			idlecheck = true;
 		}
 	}
 }
 
 thread_pool_t *
-create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *))
+create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *), pool_limits_t *limits)
 {
 	thread_pool_t *pool;
 	pthread_mutex_t *pool_mx;
@@ -136,6 +170,9 @@ create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *))
 	pool_ctx->info = pool;
 	pool_ctx->count_thread = 0;
 	pool_ctx->count_idle = 0;
+	pool_ctx->max_thread = limits ? limits->max_thread : 0; 
+	pool_ctx->max_idle = limits ? limits->max_idle : 1;
+	pool_ctx->idle_time = limits ? limits->idle_time : 60;
 	pool_ctx->info->name = name;
 
 	/* start controller thread */

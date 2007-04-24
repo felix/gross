@@ -317,13 +317,13 @@ FINISH:
 }
 
 void
-dnsbl_init()
+dnsbl_init(pool_limits_t *limits)
 {
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
         logstr(GLOG_INFO, "initializing dnsbl checker thread pool");
-	pool = create_thread_pool("dnsbl", &dnsblc);
+	pool = create_thread_pool("dnsbl", &dnsblc, limits);
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 

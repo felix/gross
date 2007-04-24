@@ -114,13 +114,13 @@ FINISH:
 }
 
 void
-spf_init()
+spf_init(pool_limits_t *limits)
 {
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
         logstr(GLOG_INFO, "initializing spf checker thread pool");
-	pool = create_thread_pool("spf", &spfc);
+	pool = create_thread_pool("spf", &spfc, limits);
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 

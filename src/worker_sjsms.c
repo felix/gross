@@ -289,7 +289,7 @@ sjsms_server(void *arg)
 
         /* initialize the thread pool */
         logstr(GLOG_INFO, "initializing sjsms worker thread pool");
-        sjsms_pool = create_thread_pool("sjsms", &sjsms_connection);
+        sjsms_pool = create_thread_pool("sjsms", &sjsms_connection, NULL);
         if (sjsms_pool == NULL)
                 daemon_perror("create_thread_pool");
 

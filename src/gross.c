@@ -419,6 +419,7 @@ main(int argc, char *argv[])
 	extern int optind, optopt;
 	int c;
 	struct timespec *delay;
+	pool_limits_t limits;
 
 	/* mind the signals */
 	signal(SIGHUP, SIG_IGN);
@@ -507,15 +508,20 @@ main(int argc, char *argv[])
 	 * for client requests
 	 */
 
+	/* default limits, these should be configurable */
+	limits.max_thread = 100;
+	limits.max_idle = 1;
+	limits.idle_time = 60;
+
 	/* start the check pools */
 #ifdef DNSBL
 	if (ctx->config.checks & CHECK_DNSBL)
-		dnsbl_init();
+		dnsbl_init(&limits);
 #endif /* DNSBL */
 	if (ctx->config.checks & CHECK_BLOCKER)
-		blocker_init();
+		blocker_init(&limits);
 	if (ctx->config.checks & CHECK_RANDOM)
-		random_init();
+		random_init(&limits);
 
 	/* start the worker thread */
 	worker_init();

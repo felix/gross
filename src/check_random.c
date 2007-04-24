@@ -93,13 +93,13 @@ FINISH:
 }
 
 void
-random_init()
+random_init(pool_limits_t *limits)
 {
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
         logstr(GLOG_INFO, "initializing random check thread pool");
-	pool = create_thread_pool("random", &randomc);
+	pool = create_thread_pool("random", &randomc, limits);
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 
