@@ -231,12 +231,10 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	/* check status */
 	if ( is_in_ring_queue(ctx->filter, digest) ) {
 		logstr(GLOG_INFO, "match: %s", realtuple);
-		acctstr(ACCT_MATCH, "%s", realtuple);
 		retvalue = STATUS_MATCH;
 	} else if (0 == checkcount) {
 		/* traditional greylister */
 		logstr(GLOG_INFO, "greylist: %s", realtuple);
-		acctstr(ACCT_GREY, "%s", realtuple);
 		retvalue = STATUS_GREY;
 	} else {
 		/* build default entry, if timeout not given */

@@ -24,7 +24,7 @@ typedef struct {
 	dnsbl_t *dnsbl;
 	int *matches;
 	int *timeout;
-	const char *client_address;
+	const char *querystr;
 } callback_arg_t;
 
 typedef enum { TYPE_DNSBL, TYPE_RHSBL, TYPE_DNSWL } dns_check_type_t;
@@ -34,6 +34,7 @@ typedef struct {
 	bool definitive;
 	int block_threshold;
 	dns_check_type_t type;
+	dnsbl_t *dnsbase;
 } dns_check_info_t;
 
 int add_dnsbl(dnsbl_t **current, const char *name, int weight);

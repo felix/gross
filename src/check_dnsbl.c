@@ -106,14 +106,12 @@ addrinfo_callback(void *arg, int status, struct hostent *host)
 		*cba->matches = 1;
 		stat_dnsbl_match(cba->dnsbl->name);
 		logstr(GLOG_DEBUG, "dns-match: %s for %s",
-			cba->dnsbl->name, cba->client_address);
-		acctstr(ACCT_DNS_MATCH, "%s for %s", cba->dnsbl->name, cba->client_address);
+			cba->dnsbl->name, cba->querystr);
 	}
 
 	if (*cba->timeout) {
 		logstr(GLOG_DEBUG, "dns-timeout: %s for %s",
-			cba->dnsbl->name, cba->client_address);
-		acctstr(ACCT_DNS_TMOUT, "%s for %s", cba->dnsbl->name, cba->client_address);
+			cba->dnsbl->name, cba->querystr);
 		/* decrement tolerancecounter */
 		cba->dnsbl->tolerancecounter--;
 	}
@@ -195,49 +193,29 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	struct timespec ts, start, now, timeleft;
 	char buffer[MAXQUERYSTRLEN];
 	char *query;
-	char *ipstr;
+	char *qstr;
+	char *sender;
+	char *ptr;
+	const char *orig_qstr;
 	dnsbl_t *dnsbl;
 	callback_arg_t *callback_arg;
 	int timeused;
-	const char *client_address;
 	chkresult_t *result;
 	grey_tuple_t *request;
 	dns_check_info_t *check_info;
 
 	logstr(GLOG_DEBUG, "dnsblc called");
 
-	request = (grey_tuple_t *)edict->job;
-	client_address = request->client_address;
-	assert(client_address);
-
-	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
-	memset(result, 0, sizeof(*result));
-
-	ipstr = strdup(client_address);
-	
 	/* fetch check_info */
-	if (info->arg) {
-		check_info = (dns_check_info_t *)info->arg;
-	}
-
-	if (strlen(ipstr) > INET_ADDRSTRLEN - 1) {
-		logstr(GLOG_ERROR, "invalid ipaddress: %s", ipstr);
-		Free(ipstr);
-		goto FINISH;
-	}
-
-	ret = reverse_inet_addr(ipstr);
-	if (ret < 0) {
-		Free(ipstr);
-		goto FINISH;
-	}
+	assert(info);
+	assert(info->arg);
+	check_info = (dns_check_info_t *)info->arg;
 	
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
 		channel = Malloc(sizeof(channel));
 		if (ares_init(&channel) != ARES_SUCCESS) {
 			perror("ares_init");
-			Free(ipstr);
 			goto FINISH;
 		}
 		thread_ctx->state = channel;
@@ -246,27 +224,71 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		channel = (ares_channel)thread_ctx->state;
 	}
 
-	dnsbl = ctx->dnsbl;
+	request = (grey_tuple_t *)edict->job;
+	assert(request);
+	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
+	memset(result, 0, sizeof(*result));
+
+	if (check_info->type == TYPE_DNSBL || check_info->type == TYPE_DNSWL) {
+		/* test the client ip address */
+		assert(request->client_address);
+		orig_qstr = request->client_address;
+		qstr = strdup(request->client_address);
+
+		if (strlen(qstr) > INET_ADDRSTRLEN - 1) {
+			logstr(GLOG_ERROR, "invalid ipaddress: %s", qstr);
+			Free(qstr);
+			goto FINISH;
+		}
+
+		ret = reverse_inet_addr(qstr);
+		if (ret < 0) {
+			Free(qstr);
+			goto FINISH;
+		}
+	} else if (check_info->type == TYPE_RHSBL) {
+		/*
+		 * try to find the last '@' of the sender address 
+		 */
+		sender = strdup(request->sender);
+		assert(sender);
+		ptr = sender + strlen(sender); /* end of the address */
+		while ((ptr > sender) && (*ptr != '@'))
+			ptr--;
+		
+		if (ptr > sender) {
+			/* found */
+			/* skip '@' */
+			orig_qstr = qstr = strdup(ptr + 1);
+			Free(sender);
+		} else {
+			/* no sender domain, no check */
+			Free(sender);
+			goto FINISH;
+		}
+	} else {
+		logstr(GLOG_ERROR, "invalid check type");
+		goto FINISH;
+	}
+
+	/* dns base list ;-) */
+	dnsbl = check_info->dnsbase;
 
 	/* initiate dnsbl queries */
 	while (dnsbl) {
 		assert(dnsbl->name);
-		snprintf(buffer, MAXQUERYSTRLEN, "%s.%s", ipstr, dnsbl->name);
+		snprintf(buffer, MAXQUERYSTRLEN, "%s.%s", qstr, dnsbl->name);
 		query = strdup(buffer);
 		if (query_clearance(dnsbl) == TRUE) {
 			logstr(GLOG_INSANE, "initiating dnsbl query: %s", query);
-			/* we should only count the queries, not log them */
-			/* acctstr(ACCT_DNS_QUERY, "%s for %s (%s)", dnsbl->name, client_address, query); */
-
 			callback_arg = Malloc(sizeof(callback_arg_t));
 			callback_arg->dnsbl = dnsbl;
 			callback_arg->matches = &match_found;
 			callback_arg->timeout = &timeout;
-			callback_arg->client_address = client_address;
+			callback_arg->querystr = orig_qstr;
 			ares_gethostbyname(channel, query, PF_INET, &addrinfo_callback, callback_arg);
 		} else {
 			logstr(GLOG_DEBUG, "Skipping dnsbl %s due to timeouts.", dnsbl->name);
-			acctstr(ACCT_DNS_SKIP, "%s for %s (%s)", dnsbl->name, client_address, query);
 		}
 		Free(query);
 		dnsbl = dnsbl->next;
@@ -310,12 +332,15 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		}
 	}
 
-	Free(ipstr);
+	Free(qstr);
 
 	ares_cancel(channel);
 FINISH:
 	if (match_found > 0)
-		result->judgment = J_SUSPICIOUS;
+		if (check_info->type == TYPE_DNSWL)
+			result->judgment = J_PASS;
+		else
+			result->judgment = J_SUSPICIOUS;
 	else
 		result->judgment = J_UNDEFINED;
 	send_result(edict, result);

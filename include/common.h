@@ -174,7 +174,6 @@ typedef struct {
 	int loglevel;
 	int syslogfacility;
         int statlevel;
-	int acctmask;
 	int flags;
 	int checks;
 	int grey_mask;

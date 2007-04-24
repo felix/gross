@@ -53,13 +53,14 @@ thread_pool(void *arg)
 	assert(pool_ctx->routine);
 	assert(pool_ctx->info);
 
-	logstr(GLOG_DEBUG, "threadpool '%s' starting", pool_ctx->info->name);
-
 	timelimit = pool_ctx->idle_time * SI_KILO;
 		
 	POOL_MUTEX_LOCK;
 	pool_ctx->count_thread++;
 	POOL_MUTEX_UNLOCK;
+
+	logstr(GLOG_DEBUG, "threadpool '%s' thread #%d starting",
+		pool_ctx->info->name, pool_ctx->count_thread);
 
 	for (;;) {
 		if (idlecheck) {
@@ -107,8 +108,8 @@ thread_pool(void *arg)
 			if (pool_ctx->count_idle < 1) {
 				/* We were the last idling thread, start another */
 				if (pool_ctx->count_thread <= pool_ctx->max_thread || 0 == pool_ctx->max_thread) {
-					logstr(GLOG_INFO, "threadpool '%s' starting another thread, count=%d",
-						pool_ctx->info->name, pool_ctx->count_thread);
+					logstr(GLOG_INFO, "threadpool '%s' starting another thread",
+						pool_ctx->info->name);
 					Pthread_create(NULL, &thread_pool, pool_ctx);
 				} else {
 					logstr(GLOG_ERROR, "threadpool '%s': maximum thread count (%d) reached",

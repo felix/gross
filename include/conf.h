@@ -41,12 +41,16 @@
 			"query_timelimit",	"5000"
 
 #define MULTIVALUES	"dnsbl",	\
+			"rhsbl",	\
+			"dnswl",	\
 			"check",	\
                         "stat_type",	\
 			"protocol", 	\
 			"log_method"
 
 #define VALID_NAMES     "dnsbl",			\
+			"rhsbl",			\
+			"dnswl",			\
 			"host",				\
 			"port",				\
                         "filter_bits",			\

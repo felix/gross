@@ -28,8 +28,6 @@ gross_ctx_t *ctx;
 
 /* prototypes of internals */
 int log_put(const char *msg);
-char *acct_fmt(int type, const char *msg);
-int acct_put(int type, const char *msg);
 size_t date_fmt(char *msg, size_t len);
 
 #if 1
@@ -94,36 +92,6 @@ int statstr(int level, const char *fmt, ...)
 	
 	return 0;
 }
-
-/*
- * remove acctstr as redundant for now
- * accounting must be redesigned 
- */
-#if 0
-int
-acctstr(int level, const char *fmt, ...) {
-	char logfmt[MSGSZ];
-	char mbuf[MSGSZ];
-	char *final;
-	va_list vap;
-
-	if (level & ctx->config.acctmask == 0)
-		return 0;
-
-	va_start(vap, fmt);
-	vsnprintf(mbuf, MSGSZ, fmt, vap);
-	va_end(vap);
-
-	if (ctx->config.flags & FLG_NODAEMON)
-		return acct_put(level, mbuf);
-	
-	final = acct_fmt(level, mbuf);
-	syslog(LOG_INFO, "%s", final);
-	Free(final);
-
-	return 0;
-}
-#endif
 
 void
 daemon_shutdown(int return_code, const char *fmt, ...)
@@ -461,57 +429,6 @@ log_put(const char *msg)
         printf("%s", final);
         Free(final);
 	fflush(stdout);
-        return 0;
-}
-
-char *acct_fmt(int type, const char *msg)
-{
-        char *final;
-
-        final = Malloc(MSGSZ);
-
-        switch (type & ACCT_FULL) {
-                case ACCT_GREY:
-                        snprintf(final, MSGSZ-1, "grey %s", msg);
-                        break;
-                case ACCT_MATCH:
-                        snprintf(final, MSGSZ-1, "match %s", msg);
-                        break;
-                case ACCT_TRUST:
-                        snprintf(final, MSGSZ-1, "trust %s", msg);
-                        break;
-                case ACCT_DNS_TMOUT:
-                        snprintf(final, MSGSZ-1, "dns-timeout %s", msg);
-                        break;
-                case ACCT_DNS_MATCH:
-                        snprintf(final, MSGSZ-1, "dns-match %s", msg);
-                        break;
-                case ACCT_DNS_SKIP:
-                        snprintf(final, MSGSZ-1, "dns-skip %s", msg);
-                        break;
-		/* FIX: this should be accounted only, if debugging */
-                case ACCT_DNS_QUERY:
-                        snprintf(final, MSGSZ-1, "dns-query %s", msg);
-                        break;
-                default:
-                        return NULL;
-                        break;
-        }
-
-        return final;
-}
-int
-acct_put(int type, const char *msg)
-{
-        char *final;
-
-	final = acct_fmt(type, msg);
-
-	assert(final);
-
-        date_fmt(final, MSGSZ);
-        printf("%s", final);
-        Free(final);
         return 0;
 }
 
