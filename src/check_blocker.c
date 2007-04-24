@@ -29,7 +29,7 @@
 #include "worker.h"
 
 int 
-blocker(thread_ctx_t *thread_ctx, edict_t *edict)
+blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
 	int blocker;
@@ -109,7 +109,7 @@ blocker_init(pool_limits_t *limits)
 
 	/* initialize the thread pool */
         logstr(GLOG_INFO, "initializing Sophos blocker thread pool");
-	pool = create_thread_pool("blocker", &blocker, limits);
+	pool = create_thread_pool("blocker", &blocker, limits, NULL);
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 

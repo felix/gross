@@ -17,6 +17,6 @@
 #ifndef CHECK_RANDOM_H
 #define CHECK_RANDOM_H
 
-void random_init();
+void random_init(pool_limits_t *limits);
 
 #endif /* CHECK_RANDOM_H */

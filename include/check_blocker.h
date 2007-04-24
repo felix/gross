@@ -17,6 +17,6 @@
 #ifndef CHECK_BLOCKER_H
 #define CHECK_BLOCKER_H
 
-void blocker_init();
+void blocker_init(pool_limits_t *limits);
 
 #endif /* CHECK_BLOCKER_H */

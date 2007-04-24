@@ -68,7 +68,7 @@ thread_pool(void *arg)
 			if (idlecheck && pool_ctx->count_idle >= pool_ctx->max_idle) {
 				pool_ctx->count_thread--;
 				POOL_MUTEX_UNLOCK;
-				logstr(GLOG_ERROR, "threadpool '%s' thread shutting down",
+				logstr(GLOG_INFO, "threadpool '%s' thread shutting down",
 					pool_ctx->info->name);
 				/* run a cleanup routine if defined */
 				if (thread_ctx.cleanup)
@@ -107,7 +107,7 @@ thread_pool(void *arg)
 			if (pool_ctx->count_idle < 1) {
 				/* We were the last idling thread, start another */
 				if (pool_ctx->count_thread <= pool_ctx->max_thread || 0 == pool_ctx->max_thread) {
-					logstr(GLOG_ERROR, "threadpool '%s' starting another thread, count=%d",
+					logstr(GLOG_INFO, "threadpool '%s' starting another thread, count=%d",
 						pool_ctx->info->name, pool_ctx->count_thread);
 					Pthread_create(NULL, &thread_pool, pool_ctx);
 				} else {
@@ -120,7 +120,7 @@ thread_pool(void *arg)
 
 			/* run the routine with args */
 			if (process) 
-				pool_ctx->routine(&thread_ctx, edict);
+				pool_ctx->routine(pool_ctx->info, &thread_ctx, edict);
 
 			/* we are done */
 			edict_unlink(edict);
@@ -143,7 +143,8 @@ thread_pool(void *arg)
 }
 
 thread_pool_t *
-create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *), pool_limits_t *limits)
+create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_t *, edict_t *),
+	pool_limits_t *limits, void *arg)
 {
 	thread_pool_t *pool;
 	pthread_mutex_t *pool_mx;
@@ -157,6 +158,9 @@ create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *), 
 		Free(pool);
 		return NULL;
 	}
+
+	pool->arg = arg;
+	pool->name = name;
 
 	pool_mx = (pthread_mutex_t *)Malloc(sizeof(pthread_mutex_t));
 	ret = pthread_mutex_init(pool_mx, NULL);
@@ -173,7 +177,6 @@ create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *), 
 	pool_ctx->max_thread = limits ? limits->max_thread : 0; 
 	pool_ctx->max_idle = limits ? limits->max_idle : 1;
 	pool_ctx->idle_time = limits ? limits->idle_time : 60;
-	pool_ctx->info->name = name;
 
 	/* start controller thread */
 	Pthread_create(NULL, &thread_pool, pool_ctx);

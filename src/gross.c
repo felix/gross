@@ -420,6 +420,7 @@ main(int argc, char *argv[])
 	int c;
 	struct timespec *delay;
 	pool_limits_t limits;
+	dns_check_info_t *dns_check_info;
 
 	/* mind the signals */
 	signal(SIGHUP, SIG_IGN);
@@ -515,8 +516,14 @@ main(int argc, char *argv[])
 
 	/* start the check pools */
 #ifdef DNSBL
-	if (ctx->config.checks & CHECK_DNSBL)
-		dnsbl_init(&limits);
+	if (ctx->config.checks & CHECK_DNSBL) {
+		dns_check_info = Malloc(sizeof(dns_check_info_t));
+		dns_check_info->definitive = false;
+		dns_check_info->type = TYPE_DNSBL;
+		dns_check_info->block_threshold = 2;
+		dns_check_info->name = "dnsbl";
+		dnsbl_init(dns_check_info, &limits);
+	}
 #endif /* DNSBL */
 	if (ctx->config.checks & CHECK_BLOCKER)
 		blocker_init(&limits);

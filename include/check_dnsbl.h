@@ -27,9 +27,18 @@ typedef struct {
 	const char *client_address;
 } callback_arg_t;
 
+typedef enum { TYPE_DNSBL, TYPE_RHSBL, TYPE_DNSWL } dns_check_type_t;
+
+typedef struct {
+	const char *name;
+	bool definitive;
+	int block_threshold;
+	dns_check_type_t type;
+} dns_check_info_t;
+
 int add_dnsbl(dnsbl_t **current, const char *name, int weight);
 int tolerate_dnsbl(dnsbl_t *dnsbl);
 int increment_dnsbl_tolerance_counters(dnsbl_t *dnsbl);
-void dnsbl_init();
+void dnsbl_init(dns_check_info_t *check_info, pool_limits_t *limits);
 
 #endif /* DNSBLC_H */

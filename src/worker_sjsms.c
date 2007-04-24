@@ -131,7 +131,7 @@ void calm_client(void *arg, mseconds_t timeused) {
  * sjsms_connection    - the actual greylist server
  */
 int
-sjsms_connection(thread_ctx_t *thread_ctx, edict_t *edict)
+sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	socklen_t len;
 	grey_req_t request;
@@ -289,7 +289,7 @@ sjsms_server(void *arg)
 
         /* initialize the thread pool */
         logstr(GLOG_INFO, "initializing sjsms worker thread pool");
-        sjsms_pool = create_thread_pool("sjsms", &sjsms_connection, NULL);
+        sjsms_pool = create_thread_pool("sjsms", &sjsms_connection, NULL, NULL);
         if (sjsms_pool == NULL)
                 daemon_perror("create_thread_pool");
 

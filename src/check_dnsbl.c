@@ -16,6 +16,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ * check_dnsbl.c implements all dns-based checks:
+ * 	dnsbl, rhsbl and dnswl
+ */ 
+
 #include "common.h"
 #include "check_dnsbl.h"
 #include "srvutils.h"
@@ -179,7 +184,7 @@ reverse_inet_addr(char *ipstr)
 }
 
 int
-dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
+dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	ares_channel channel;
 	int nfds, count, ret;
@@ -197,6 +202,7 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 	const char *client_address;
 	chkresult_t *result;
 	grey_tuple_t *request;
+	dns_check_info_t *check_info;
 
 	logstr(GLOG_DEBUG, "dnsblc called");
 
@@ -208,6 +214,11 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 	memset(result, 0, sizeof(*result));
 
 	ipstr = strdup(client_address);
+	
+	/* fetch check_info */
+	if (info->arg) {
+		check_info = (dns_check_info_t *)info->arg;
+	}
 
 	if (strlen(ipstr) > INET_ADDRSTRLEN - 1) {
 		logstr(GLOG_ERROR, "invalid ipaddress: %s", ipstr);
@@ -293,7 +304,6 @@ dnsblc(thread_ctx_t *thread_ctx, edict_t *edict)
 		if (match_found || nfds == 0)
 			break;
 	
-		logstr(GLOG_INSANE, "debug before %d", match_found);
 		if (timeused > edict->timelimit) {
 			/* the final timeout value */
 			timeout = 1;
@@ -317,15 +327,15 @@ FINISH:
 }
 
 void
-dnsbl_init(pool_limits_t *limits)
+dnsbl_init(dns_check_info_t *check_info, pool_limits_t *limits)
 {
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
-        logstr(GLOG_INFO, "initializing dnsbl checker thread pool");
-	pool = create_thread_pool("dnsbl", &dnsblc, limits);
+        logstr(GLOG_INFO, "initializing dns checker thread pool '%s'", check_info->name);
+	pool = create_thread_pool(check_info->name, &dnsblc, limits, (void *)check_info);
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 
-	register_check(pool, false);
+	register_check(pool, check_info->definitive);
 }

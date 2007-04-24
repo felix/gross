@@ -22,6 +22,7 @@ typedef int mseconds_t;
 typedef struct thread_pool_s {
 	int work_queue_id;
 	const char *name;	/* name of the pool for logging purposes */
+	void *arg;		/* pool specific arguments, if needed */
 } thread_pool_t;
 
 typedef struct {
@@ -49,8 +50,8 @@ typedef struct {
 
 typedef struct pool_ctx_s {
 	pthread_mutex_t *mx;
-	int (*routine)(thread_ctx_t *, edict_t *);
-	thread_pool_t *info; 	/* public info */
+	int (*routine)(thread_pool_t *, thread_ctx_t *, edict_t *);
+	thread_pool_t *info; 	/* pool specific info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
 	int max_thread;		/* maximum threads in the pool*/
@@ -65,7 +66,8 @@ typedef struct edict_message_s {
 } edict_message_t;
 
 int submit_job(thread_pool_t *pool, edict_t *edict);
-thread_pool_t *create_thread_pool(const char *name, int (*routine)(thread_ctx_t *, edict_t *), pool_limits_t *limits);
+thread_pool_t *create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_t *, edict_t *),
+	pool_limits_t *limits, void *arg);
 edict_t *edict_get();
 edict_t *edict_get();
 void send_result(edict_t *edict, void *result);

@@ -38,7 +38,7 @@ cleanup_random(void *state)
 }
 
 int 
-randomc(thread_ctx_t *thread_ctx, edict_t *edict)
+randomc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
 	int blocker;
@@ -99,7 +99,7 @@ random_init(pool_limits_t *limits)
 
 	/* initialize the thread pool */
         logstr(GLOG_INFO, "initializing random check thread pool");
-	pool = create_thread_pool("random", &randomc, limits);
+	pool = create_thread_pool("random", &randomc, limits, NULL);
         if (pool == NULL)
                 daemon_perror("create_thread_pool");
 
