@@ -34,15 +34,10 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	chkresult_t *result;
 	int blocker;
 	int ret;
-	int flags;
-	int count;
-	fd_set readers, writers;
         grey_tuple_t *request;
         const char *client_address;
 	char buffer[MAXLINELEN] = { '\0' };
-	struct timespec start, now, timeleft;
-	mseconds_t elapsed;
-	struct timespec foo;
+	struct timespec start, timeleft;
 
         request = (grey_tuple_t *)edict->job;
         client_address = request->client_address;

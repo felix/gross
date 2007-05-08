@@ -38,7 +38,6 @@ stats_t
 zero_stats()
 {
   stats_t old;
-  dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
 
   WITH_STATS_GUARD(/* Take a copy of the old values */
 		   old = ctx->stats;

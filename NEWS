@@ -3,10 +3,17 @@ Version svn
 * preliminary support for MILTER protocol, check config file
 * support for definitive checks: it's now possible to write 
   checks that cause grossd to block or pass (whitelisting)
+* dnsbl check is now run time configurable
+* two new check types: RHSBL and DNSWL - check config file
+  for documentation and examples. DNSWL is first definitive
+  check. 
 
 - improved thread counting in thread_pool.c
+- code cleaning
 
 Issues fixed:
+#40: new type of check - RHSBL (RFE)
+#41: new type of check - DNSWL (RFE)
 #46: Make dnsbl checking run time configurable (RFE)
 #47: Grossd will not run any checks if configured with --disable-dnsbl
 

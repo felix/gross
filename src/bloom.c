@@ -296,6 +296,7 @@ bitindex_t optimal_size(unsigned int n, double c)
 
 	/* Never reached */
 	assert(0);
+	return 0;
 }
 
 /* Adds filter rvalue to lvalue and return the address of lvalue */

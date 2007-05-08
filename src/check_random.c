@@ -41,18 +41,9 @@ int
 randomc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
-	int blocker;
-	int ret;
-	int flags;
-	int count;
 	int r;
-	fd_set readers, writers;
         grey_tuple_t *request;
         const char *client_address;
-	char buffer[MAXLINELEN] = { '\0' };
-	struct timespec start, now, timeleft;
-	mseconds_t elapsed;
-	struct timespec foo;
 
 	/* Check if the random number generator has been initialized */
 	if (NULL == thread_ctx->state) {
@@ -84,7 +75,6 @@ randomc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		result->judgment = J_SUSPICIOUS;
 	}
 
-FINISH:
 	send_result(edict, result);
 	logstr(GLOG_DEBUG, "blocker returning");
 	request_unlink(request);

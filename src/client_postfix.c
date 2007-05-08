@@ -30,7 +30,6 @@ client_postfix(int argc, char **argv)
 	int counter = 0;
 	int match = 0;
 	int cmatch = 0;
-	//	sha_256_t digest;
 	int runs = 1;
         char *sender, *recipient, *caddr;
 	

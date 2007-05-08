@@ -176,7 +176,7 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool_ctx->count_thread = 0;
 	pool_ctx->count_idle = 0;
 	pool_ctx->max_thread = limits ? limits->max_thread : 0; 
-	pool_ctx->max_idle = limits ? limits->max_idle : 1;
+	pool_ctx->max_idle = limits ? limits->max_idle : 2;
 	pool_ctx->idle_time = limits ? limits->idle_time : 60;
 
 	/* start controller thread */

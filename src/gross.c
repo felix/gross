@@ -89,6 +89,8 @@ initialize_context()
 
 #ifdef DNSBL
 	ctx->dnsbl = NULL;
+	ctx->dnswl = NULL;
+	ctx->rhsbl = NULL;
 #endif /* DNSBL */
 
 	return ctx;
@@ -255,17 +257,34 @@ configure_grossd(configlist_t *config)
 
 #ifdef DNSBL
 	/* Make sure init_stats() have been called */
-	ctx->dnsbl = NULL;
+	cp = config;
+	while (cp) {
+		if (strcmp(cp->name, "dnsbl") == 0) {
+			add_dnsbl(&ctx->dnsbl, cp->value, 1);
+			stat_add_dnsbl(cp->value);
+		}
+		cp = cp->next;
+	}
 
 	cp = config;
 	while (cp) {
-	  if (strcmp(cp->name, "dnsbl") == 0) {
-	    add_dnsbl(&ctx->dnsbl, cp->value, 1);
-	    stat_add_dnsbl(cp->value);
-	  }
-	  
-	  cp = cp->next;
+		if (strcmp(cp->name, "dnswl") == 0) {
+			add_dnsbl(&ctx->dnswl, cp->value, 1);
+			stat_add_dnsbl(cp->value);
+		}
+		cp = cp->next;
 	}
+
+	cp = config;
+	while (cp) {
+		if (strcmp(cp->name, "rhsbl") == 0) {
+			add_dnsbl(&ctx->rhsbl, cp->value, 1);
+			stat_add_dnsbl(cp->value);
+		}
+		cp = cp->next;
+	}
+
+
 #endif /* DNSBL */
 
 	ctx->config.query_timelimit = atoi(CONF("query_timelimit"));
@@ -294,6 +313,10 @@ configure_grossd(configlist_t *config)
 		if (strcmp(cp->name, "check") == 0) {
 			if (strcmp(cp->value, "dnsbl") == 0) 
 				ctx->config.checks |= CHECK_DNSBL;
+			else if (strcmp(cp->value, "dnswl") == 0) 
+				ctx->config.checks |= CHECK_DNSWL;
+			else if (strcmp(cp->value, "rhsbl") == 0) 
+				ctx->config.checks |= CHECK_RHSBL;
 			else if (strcmp(cp->value, "blocker") == 0) 
 				ctx->config.checks |= CHECK_BLOCKER;
 			else if (strcmp(cp->value, "random") == 0) 
@@ -509,7 +532,7 @@ main(int argc, char *argv[])
 
 	/* default limits, these should be configurable */
 	limits.max_thread = 100;
-	limits.max_idle = 1;
+	limits.max_idle = 2;		/* don't use lower that 2 */
 	limits.idle_time = 60;
 
 	/* start the check pools */
@@ -521,6 +544,23 @@ main(int argc, char *argv[])
 		dns_check_info->block_threshold = 0;
 		dns_check_info->name = "dnsbl";
 		dns_check_info->dnsbase = ctx->dnsbl;
+		dnsbl_init(dns_check_info, &limits);
+	}
+	if (ctx->config.checks & CHECK_DNSWL) {
+		dns_check_info = Malloc(sizeof(dns_check_info_t));
+		dns_check_info->definitive = true;
+		dns_check_info->type = TYPE_DNSWL;
+		dns_check_info->name = "dnswl";
+		dns_check_info->dnsbase = ctx->dnswl;
+		dnsbl_init(dns_check_info, &limits);
+	}
+	if (ctx->config.checks & CHECK_RHSBL) {
+		dns_check_info = Malloc(sizeof(dns_check_info_t));
+		dns_check_info->definitive = false;
+		dns_check_info->type = TYPE_RHSBL;
+		dns_check_info->block_threshold = 0;
+		dns_check_info->name = "rhsbl";
+		dns_check_info->dnsbase = ctx->rhsbl;
 		dnsbl_init(dns_check_info, &limits);
 	}
 #endif /* DNSBL */

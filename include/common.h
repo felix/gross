@@ -103,6 +103,8 @@
 #define CHECK_DNSBL (int)0x01
 #define CHECK_BLOCKER (int)0x02
 #define CHECK_RANDOM (int)0x04
+#define CHECK_RHSBL (int)0x08
+#define CHECK_DNSWL (int)0x10
 
 #define PROTO_SJSMS (int)0x01
 #define PROTO_POSTFIX (int)0x02
@@ -223,6 +225,9 @@ typedef struct {
 typedef struct {
 	thread_pool_t *pool;
 	bool definitive;
+	char *name;
+	void (*init_routine)(void *, pool_limits_t *);
+	void *check_arg;
 } check_t;
 
 typedef struct {
@@ -235,6 +240,8 @@ typedef struct {
         time_t* last_rotate;
 #ifdef DNSBL
         dnsbl_t *dnsbl;
+        dnsbl_t *dnswl;
+        dnsbl_t *rhsbl;
 #endif /* ENDBL */
         gross_config_t config;
         mmapped_brq_t *mmap_info;

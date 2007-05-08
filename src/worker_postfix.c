@@ -72,6 +72,8 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 					snprintf(response, MAXLINELEN, "action=defer_if_permit %s",
 						status.reason ? status.reason : "Please try again later");
 					break;
+				default:
+					snprintf(response, MAXLINELEN, "action=dunno");
 				}
 			}
 
@@ -100,6 +102,9 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 			case STATUS_TRUST:
 			  trust_delay_update((double)delay);
 			  break;
+			default:
+			  /* FIX: count errors */
+			  ;
 			}
 
 		

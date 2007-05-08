@@ -178,8 +178,6 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	edict_t *edict = NULL;
 	poolresult_message_t message;
 	chkresult_t *result = NULL;
-	bool suspicious = false;
-	bool got_response = false;
 	struct timespec start, now;
 	mseconds_t timeused;
 	tmout_action_t *tap = NULL;
@@ -188,7 +186,6 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	int definitives_running;
 	int checkcount;
 	bool free_ta = false;
-	grey_tuple_t *requestcopy = NULL;
 	judgment_t judgment;
 	bool definitive;
 	char *reasonstr = NULL;

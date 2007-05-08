@@ -207,6 +207,8 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			case STATUS_TRUST:
 				snprintf(response, MAXLINELEN, "T %s", ctx->config.sjsms.responsetrust);
 				break;
+			default:
+				snprintf(response, MAXLINELEN, "F");
 			}
 		}
 
@@ -232,6 +234,9 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		case STATUS_TRUST:
 		  trust_delay_update((double)delay);
 		  break;
+		default:
+		  /* FIX: count errors */
+		  ;
 		}
 
 		request_unlink(tuple);
