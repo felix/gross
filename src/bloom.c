@@ -162,7 +162,8 @@ is_in_array(bloom_filter_t * filter, sha_256_t digest)
 }
 
 void 
-insert_digest_to_group_member(bloom_filter_group_t * filter_group, unsigned int member_index, sha_256_t digest)
+insert_digest_to_group_member(bloom_filter_group_t * filter_group,
+unsigned int member_index, sha_256_t digest)
 {
 	assert(filter_group);
 	assert(member_index < filter_group->group_size);
@@ -236,11 +237,11 @@ copy_bloom_filter(bloom_filter_t* filter, int empty)
 bloom_filter_group_t *
 create_bloom_filter_group(unsigned int num, bitindex_t num_bits)
 {
-	bloom_filter_group_t *result = (bloom_filter_group_t *)Malloc(sizeof(bloom_filter_group_t));
+	bloom_filter_group_t *result;
 	unsigned int i;
 
 	assert(num > 0);
-	assert(result);
+ 	result = (bloom_filter_group_t *)Malloc(sizeof(bloom_filter_group_t));
 
 	result->group_size = num;
 	result->filter_group = (bloom_filter_t **)Malloc(sizeof(bloom_filter_group_t *) * num);
@@ -279,7 +280,8 @@ bloom_error_rate(unsigned int n, unsigned int k, unsigned int m)
 unsigned int 
 bloom_required_size(double c, unsigned int k, unsigned int n)
 {
-	return (unsigned int)((-(double) k) * ((double) n) / log(1.0 - pow(c, (1.0 / ((double) k)))));
+	return (unsigned int)((-(double) k) * ((double) n) /
+log(1.0 - pow(c, (1.0 / ((double) k)))));
 }
 
 
@@ -320,9 +322,9 @@ bloom_filter_t * add_filter(bloom_filter_t * lvalue, const bloom_filter_t * rval
 bloom_ring_queue_t *
 create_bloom_ring_queue(unsigned int num, bitindex_t num_bits)
 {
-	bloom_ring_queue_t *result = (bloom_ring_queue_t *)Malloc(sizeof(bloom_ring_queue_t));
+	bloom_ring_queue_t *result;
 
-	assert(result);
+	result = (bloom_ring_queue_t *)Malloc(sizeof(bloom_ring_queue_t));
 
 	result->group = create_bloom_filter_group(num, num_bits);
 	result->current_index = 0;
@@ -424,7 +426,8 @@ debug_print_ring_queue(bloom_ring_queue_t * brq, int with_newline)
 }
 
 void 
-insert_absolute_bloom_ring_queue(bloom_ring_queue_t * brq, bitarray_base_t buffer[], int size, int index, unsigned int buf_index)
+insert_absolute_bloom_ring_queue(bloom_ring_queue_t * brq, bitarray_base_t buffer[],
+int size, int index, unsigned int buf_index)
 {
 	bitindex_t i;
 	

@@ -27,7 +27,7 @@
 /* internal functions */
 int mappingstr(const char *from, char *to, size_t len);
 char *assemble_mapresult(char *template, char *reason);
-grey_tuple_t *unfold(grey_req_t *request);
+grey_tuple_t *unfold(grey_req_t *request, bool with_helo);
 
 int
 mappingstr(const char *from, char *to, size_t len)
@@ -84,7 +84,7 @@ assemble_mapresult(char *template, char *reason)
 
 
 grey_tuple_t *
-unfold(grey_req_t *request)
+unfold(grey_req_t *request, bool with_helo)
 {
         grey_tuple_t *tuple;
         uint16_t sender, recipient, client_address, helo_name;
@@ -94,7 +94,10 @@ unfold(grey_req_t *request)
         sender = ntohs(request->sender);
         recipient = ntohs(request->recipient);
         client_address = ntohs(request->client_address);
-        helo_name = ntohs(request->helo_name);
+	if (with_helo)
+		helo_name = ntohs(request->helo_name);
+	else
+		helo_name = 0;
 
         if (sender >= MAXLINELEN ||
                         recipient >= MAXLINELEN ||
@@ -106,7 +109,10 @@ unfold(grey_req_t *request)
         tuple->sender = strdup(request->message + sender);
         tuple->recipient = strdup(request->message + recipient);
         tuple->client_address = strdup(request->message + client_address);
-	tuple->helo_name = strdup(request->message + helo_name);
+	if (with_helo)
+		tuple->helo_name = strdup(request->message + helo_name);
+	else
+		tuple->helo_name = strdup("NO-HELO");
 
 	return tuple;
 }
@@ -175,10 +181,11 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	switch (msg->msgtype) {
 	case QUERY:
+	case QUERY_V2:
 		recvquery(msg, &request);
 		clock_gettime(CLOCK_TYPE, &start);
 
-		tuple = unfold(&request);
+		tuple = unfold(&request, QUERY_V2 == msg->msgtype);
 
 		/* FIX: shouldn't crash the whole server */
 		if (! tuple)

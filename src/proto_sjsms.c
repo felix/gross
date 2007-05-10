@@ -85,7 +85,7 @@ sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request)
 	sjsms_msg_t message;
 	/* check struct grey_req_t */
 	message.msglen = MIN(ntohs(request->msglen) + sizeof(grey_req_t) - sizeof(char *), MAXLINELEN);
-	message.msgtype = QUERY;
+	message.msgtype = QUERY_V2;
 	memcpy(&message.message, request, message.msglen);
 	return send_sjsms_msg(fd, gserv, &message);
 }
