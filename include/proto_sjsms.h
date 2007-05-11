@@ -29,8 +29,8 @@ typedef struct {
         char message[MAXLINELEN];
 } grey_req_t;
 
-enum msgtype_t { QUERY, LOGMSG };
-
+enum msgtype_t { QUERY, LOGMSG, QUERY_V2 }; /* QUERY_V2 is for queries with helo_name */
+					    /* it's for backwards compatibility */
 typedef struct {
 	uint16_t msgtype;
 	uint16_t msglen;

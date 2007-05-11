@@ -144,18 +144,24 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 		strncpy(sender, begin, SBUFLEN-1);
 	}
 
-	/* helo */
-	begin = end + 1;
-	end = strchr(begin, MAP_SEPARATOR);
-	/* no empty helo string */
-	if ( *begin == '\0' ) {
-		strncpy(helo, "NO-HELO", SBUFLEN-1);
-	} else {
-		strncpy(helo, begin, SBUFLEN-1);
-	}
+	/* check if helo is sent from the mapping call */
+	if (NULL != end) {
+		/* helo */
+		begin = end + 1;
+		end = strchr(begin, MAP_SEPARATOR);
+		/* no empty helo string */
+		if ( *begin == '\0' ) {
+			strncpy(helo, "NO-HELO", SBUFLEN-1);
+		} else {
+			strncpy(helo, begin, SBUFLEN-1);
+		}
 	
-	/* end of arguments */
-	if ( NULL != end) GROSSCHECK_ERROR; 
+		/* end of arguments */
+		if ( NULL != end) GROSSCHECK_ERROR; 
+	} else {
+		/* no helo */
+		strncpy(helo, "NO-HELO", SBUFLEN-1);
+	}
 
 	gserv = &gserv1;
 
