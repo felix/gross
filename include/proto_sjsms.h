@@ -20,17 +20,21 @@
 #include "common.h"
 #include "worker.h"
 
+#define WITH_HELO 0
+
 typedef struct {
         uint16_t msglen;
         uint16_t sender;
         uint16_t recipient;
         uint16_t client_address;
+#if WITH_HELO
         uint16_t helo_name;
+#endif
         char message[MAXLINELEN];
 } grey_req_t;
 
-#define MSGTYPE_QUERY    ((uint16_t) 1)
-#define MSGTYPE_LOGMSG   ((uint16_t) 2)
+#define MSGTYPE_QUERY    ((uint16_t) 0)
+#define MSGTYPE_LOGMSG   ((uint16_t) 1)
 
 typedef struct {
 	uint16_t msgtype;

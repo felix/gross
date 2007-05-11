@@ -20,6 +20,8 @@
 
 #include "proto_sjsms.h"
 
+#define WITH_HELO 0
+
 /* prototypes of internals */
 int send_sjsms_msg(int fd, struct sockaddr_in *grserv, sjsms_msg_t *message);
 
@@ -46,17 +48,23 @@ fold(grey_req_t *req, const char *sender,
 	memcpy(req->message + req->client_address, caddr , caddr_len);
 	*(req->message + req->client_address + caddr_len) = '\0';
 
+#if WITH_HELO
         req->helo_name = req->client_address + caddr_len + 1;
         memcpy(req->message + req->helo_name, helo, helo_len);
         *(req->message + req->helo_name + helo_len) = '\0';
 
         req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1 + helo_len + 1;
+#else
+        req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1;
+#endif
 
 #define HTONS_SWAP(X) { X = htons(X); }
 	HTONS_SWAP(req->sender);
 	HTONS_SWAP(req->recipient);
 	HTONS_SWAP(req->client_address);
+#if WITH_HELO
 	HTONS_SWAP(req->helo_name);
+#endif
 	HTONS_SWAP(req->msglen);
 
         return 1;

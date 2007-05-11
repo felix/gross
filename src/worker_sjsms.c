@@ -94,7 +94,11 @@ unfold(grey_req_t *request)
         sender = ntohs(request->sender);
         recipient = ntohs(request->recipient);
         client_address = ntohs(request->client_address);
+#if WITH_HELO
 	helo_name = ntohs(request->helo_name);
+#else
+	helo_name = 0;
+#endif
 
         if (sender >= MAXLINELEN ||
                         recipient >= MAXLINELEN ||
@@ -106,8 +110,11 @@ unfold(grey_req_t *request)
         tuple->sender = strdup(request->message + sender);
         tuple->recipient = strdup(request->message + recipient);
         tuple->client_address = strdup(request->message + client_address);
+#if WITH_HELO
 	tuple->helo_name = strdup(request->message + helo_name);
-
+#else
+	tuple->helo_name = strdup("NO-HELO");
+#endif
 	return tuple;
 }
 
