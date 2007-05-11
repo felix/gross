@@ -532,7 +532,6 @@ main(int argc, char *argv[])
 
 	/* default limits, these should be configurable */
 	limits.max_thread = 100;
-	limits.max_idle = 2;		/* don't use lower that 2 */
 	limits.idle_time = 60;
 
 	/* start the check pools */

@@ -44,7 +44,6 @@ typedef struct {
 
 typedef struct {
 	int max_thread;
-	int max_idle;
 	int idle_time;
 } pool_limits_t;
 
@@ -54,8 +53,9 @@ typedef struct pool_ctx_s {
 	thread_pool_t *info; 	/* pool specific info */
 	int count_thread;	/* number of threads in the pool */
 	int count_idle;		/* idling threads */
+	float ewma_idle;	/* moving average of count_idle */
+	struct timespec last_idle_check; 
 	int max_thread;		/* maximum threads in the pool*/
-	int max_idle;		/* thread will shut down if there are more idling */
 	int idle_time; 		/* how many seconds to wait new jobs */
 } pool_ctx_t;
 
@@ -64,6 +64,9 @@ typedef struct edict_message_s {
 	long       mtype;
 	edict_t    *edict;
 } edict_message_t;
+
+#define LAMBDA 0.5
+#define EWMA(ewma, observation) (ewma = (LAMBDA * observation + (1 - LAMBDA) * ewma))
 
 int submit_job(thread_pool_t *pool, edict_t *edict);
 thread_pool_t *create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_t *, edict_t *),

@@ -44,9 +44,8 @@ thread_pool(void *arg)
 	mseconds_t timelimit;
 	thread_ctx_t thread_ctx = { NULL };
 	bool process;
+	struct timespec now;
 	int waited;
-	struct timespec start, end;
-	bool idlecheck = false;
 
 	pool_ctx = (pool_ctx_t *)arg;
 	assert(pool_ctx->mx);
@@ -63,11 +62,17 @@ thread_pool(void *arg)
 		pool_ctx->info->name, pool_ctx->count_thread);
 
 	for (;;) {
-		if (idlecheck) {
-			/* check if there are too many idling threads */
-			POOL_MUTEX_LOCK;
-			if (idlecheck && pool_ctx->count_idle >= pool_ctx->max_idle) {
+		/* check if there are too many idling threads */
+		POOL_MUTEX_LOCK;
+		clock_gettime(CLOCK_TYPE, &now);
+		waited = ms_diff(&now, &pool_ctx->last_idle_check);
+		if (waited > timelimit) {
+			/* update the reference time */
+			clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);
+			if  (pool_ctx->count_thread > 2 && pool_ctx->ewma_idle > 2) {
 				pool_ctx->count_thread--;
+				/* update the moving average */
+				EWMA(pool_ctx->ewma_idle, pool_ctx->count_idle);
 				POOL_MUTEX_UNLOCK;
 				logstr(GLOG_INFO, "threadpool '%s' thread shutting down",
 					pool_ctx->info->name);
@@ -75,21 +80,15 @@ thread_pool(void *arg)
 				if (thread_ctx.cleanup)
 					thread_ctx.cleanup(thread_ctx.state);
 				pthread_exit(NULL);
-			} else {
-				idlecheck = false;
-				pool_ctx->count_idle++;
-				POOL_MUTEX_UNLOCK;
 			}
-		} else {
-			POOL_MUTEX_LOCK;
-			pool_ctx->count_idle++;
-			POOL_MUTEX_UNLOCK;
 		}
+		/* update the moving average */
+		EWMA(pool_ctx->ewma_idle, pool_ctx->count_idle);
+		pool_ctx->count_idle++;
+		POOL_MUTEX_UNLOCK;
 
 		/* wait for new jobs */
-		clock_gettime(CLOCK_TYPE, &start);
 		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit);
-		clock_gettime(CLOCK_TYPE, &end);
 
 		process = true;
 
@@ -125,20 +124,9 @@ thread_pool(void *arg)
 
 			/* we are done */
 			edict_unlink(edict);
-
-			/*
-			 * how long we had to wait for the job request?
-			 * if the wait time * number of idling threads > max_idle_time,
-			 * we may shut down a thread 
-			 */
-			waited = ms_diff(&end, &start);
-			/* no mutex lock necessary */
-			if (pool_ctx->count_idle * waited > timelimit)
-				idlecheck = true;
 		} else {
 			/* timeout occurred */
 			logstr(GLOG_INSANE, "threadpool '%s' idling", pool_ctx->info->name);
-			idlecheck = true;
 		}
 	}
 }
@@ -175,9 +163,10 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool_ctx->info = pool;
 	pool_ctx->count_thread = 0;
 	pool_ctx->count_idle = 0;
+	pool_ctx->ewma_idle = 0;
 	pool_ctx->max_thread = limits ? limits->max_thread : 0; 
-	pool_ctx->max_idle = limits ? limits->max_idle : 2;
-	pool_ctx->idle_time = limits ? limits->idle_time : 60;
+	pool_ctx->idle_time = limits ? limits->idle_time : 60;		/* how often to check, in seconds */
+	clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);		/* idle check reference time */
 
 	/* start controller thread */
 	Pthread_create(NULL, &thread_pool, pool_ctx);
