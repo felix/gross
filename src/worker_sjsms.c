@@ -27,7 +27,7 @@
 /* internal functions */
 int mappingstr(const char *from, char *to, size_t len);
 char *assemble_mapresult(char *template, char *reason);
-grey_tuple_t *unfold(grey_req_t *request, bool with_helo);
+grey_tuple_t *unfold(grey_req_t *request);
 
 int
 mappingstr(const char *from, char *to, size_t len)
@@ -84,7 +84,7 @@ assemble_mapresult(char *template, char *reason)
 
 
 grey_tuple_t *
-unfold(grey_req_t *request, bool with_helo)
+unfold(grey_req_t *request)
 {
         grey_tuple_t *tuple;
         uint16_t sender, recipient, client_address, helo_name;
@@ -94,10 +94,7 @@ unfold(grey_req_t *request, bool with_helo)
         sender = ntohs(request->sender);
         recipient = ntohs(request->recipient);
         client_address = ntohs(request->client_address);
-	if (with_helo)
-		helo_name = ntohs(request->helo_name);
-	else
-		helo_name = 0;
+	helo_name = ntohs(request->helo_name);
 
         if (sender >= MAXLINELEN ||
                         recipient >= MAXLINELEN ||
@@ -109,10 +106,7 @@ unfold(grey_req_t *request, bool with_helo)
         tuple->sender = strdup(request->message + sender);
         tuple->recipient = strdup(request->message + recipient);
         tuple->client_address = strdup(request->message + client_address);
-	if (with_helo)
-		tuple->helo_name = strdup(request->message + helo_name);
-	else
-		tuple->helo_name = strdup("NO-HELO");
+	tuple->helo_name = strdup(request->message + helo_name);
 
 	return tuple;
 }
@@ -180,12 +174,11 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	sjsms_to_host_order(msg);
 
 	switch (msg->msgtype) {
-	case QUERY:
-	case QUERY_V2:
+	case MSGTYPE_QUERY:
 		recvquery(msg, &request);
 		clock_gettime(CLOCK_TYPE, &start);
 
-		tuple = unfold(&request, QUERY_V2 == msg->msgtype);
+		tuple = unfold(&request);
 
 		/* FIX: shouldn't crash the whole server */
 		if (! tuple)
@@ -248,7 +241,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 		request_unlink(tuple);
 		break;
-	case LOGMSG:
+	case MSGTYPE_LOGMSG:
 		str = (char *)Malloc(msg->msglen);
 		memcpy(str, msg->message, MIN(msg->msglen, MAXLINELEN));
 		str[msg->msglen-1] = '\0';

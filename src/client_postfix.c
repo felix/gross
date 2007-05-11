@@ -81,7 +81,6 @@ client_postfix(int argc, char **argv)
 			sender, recipient, caddr);
 #endif /* RANDOM */
 
-		// printf(mbuf);
 		writen(fd, mbuf, strlen(mbuf));
 	  
 		do {
@@ -98,7 +97,6 @@ client_postfix(int argc, char **argv)
 				match++;
 				cmatch++;
 			}
-			// printf("%s\n",line);
 
 		} while (strlen(line) > 0);
 
