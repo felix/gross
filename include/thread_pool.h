@@ -65,7 +65,7 @@ typedef struct edict_message_s {
 	edict_t    *edict;
 } edict_message_t;
 
-#define LAMBDA 0.5
+#define LAMBDA 0.1
 #define EWMA(ewma, observation) (ewma = (LAMBDA * observation + (1 - LAMBDA) * ewma))
 
 int submit_job(thread_pool_t *pool, edict_t *edict);
