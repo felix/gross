@@ -56,6 +56,7 @@ thread_pool(void *arg)
 		
 	POOL_MUTEX_LOCK;
 	pool_ctx->count_thread++;
+	clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);		/* idle check reference time */
 	POOL_MUTEX_UNLOCK;
 
 	logstr(GLOG_DEBUG, "threadpool '%s' thread #%d starting",
@@ -69,7 +70,7 @@ thread_pool(void *arg)
 		if (waited > timelimit) {
 			/* update the reference time */
 			clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);
-			if  (pool_ctx->count_thread > 2 && pool_ctx->ewma_idle > 2) {
+			if  (pool_ctx->count_thread > 5 && pool_ctx->ewma_idle > 5) {
 				pool_ctx->count_thread--;
 				/* update the moving average */
 				EWMA(pool_ctx->ewma_idle, pool_ctx->count_idle);
@@ -166,7 +167,6 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool_ctx->ewma_idle = 0;
 	pool_ctx->max_thread = limits ? limits->max_thread : 0; 
 	pool_ctx->idle_time = limits ? limits->idle_time : 60;		/* how often to check, in seconds */
-	clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);		/* idle check reference time */
 
 	/* start controller thread */
 	Pthread_create(NULL, &thread_pool, pool_ctx);
