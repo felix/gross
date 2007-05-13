@@ -64,7 +64,7 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	char *rstr = 0x00;
 	char *begin;
 	char *end;
-	grey_req_t request;
+	char *request;
 	bool success = false;
 #ifdef ARGDEBUG
 	FILE *foo;
@@ -80,7 +80,6 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	assert(res);
 	assert(reslen);
 
-	memset(&request, 0, sizeof(request));
         fd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	if (fd < 0)
@@ -170,10 +169,10 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	recipient[SBUFLEN-1] = '\0';
 	caddr[SBUFLEN-1] = '\0';
 	helo[SBUFLEN-1] = '\0';
-	fold(&request, sender, recipient, caddr, helo);
+	request = buildquerystr(sender, recipient, caddr, helo);
 
 QUERY:
-	sendquery(fd, gserv, &request);
+	sendquerystr(fd, gserv, request);
 
 	/* initial timeout value */
 	tv.tv_sec = 2;	/* 1 second of server timeout + some extra */
@@ -252,6 +251,7 @@ QUERY:
 
 	}
 	Free(requestcopy);
+	Free(request);
 	close(fd);
 	return success ? MAP_SUCCESS : MAP_FAIL;
 }

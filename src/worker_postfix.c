@@ -26,7 +26,6 @@ enum parse_status_t { PARSE_OK, PARSE_CLOSED, PARSE_ERROR, PARSE_SYS_ERROR };
 /* prototypes of internals */
 int postfix_connection(thread_pool_t *, thread_ctx_t *, edict_t *edict);
 int parse_postfix(client_info_t *info, grey_tuple_t *grey_tuple);
-char *try_match(char *matcher, char *matchee);
 
 /*
  * postfix_connection	- the actual server for policy delegation
@@ -143,7 +142,6 @@ int
 parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 {
 	char line[MAXLINELEN];
-/* 	ssize_t linelen; */
 	char *match;
 	int input = 0;
 	int ret;
@@ -199,23 +197,11 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 		
 	} while (strlen(line) > 0);
 	
-	if ( grey_tuple->sender &&
-             grey_tuple->recipient &&
-	     grey_tuple->client_address ) {
-		return PARSE_OK;
-	} else {
+	ret = check_request(grey_tuple);
+	if (ret < 0)
 		return PARSE_ERROR;
-	}
-}
-
-char *
-try_match(char *matcher, char *matchee) 
-{
-	if (strncmp(matcher, matchee, strlen(matcher)) == 0)
-		/* found a match, return part after the match */
-		return strdup(matchee + strlen(matcher));
 	else
-		return NULL;
+		return PARSE_OK;
 }
 
 /*

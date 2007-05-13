@@ -35,6 +35,7 @@ typedef struct {
 
 #define MSGTYPE_QUERY    ((uint16_t) 0)
 #define MSGTYPE_LOGMSG   ((uint16_t) 1)
+#define MSGTYPE_QUERY_V2 ((uint16_t) 2)
 
 typedef struct {
 	uint16_t msgtype;
@@ -44,8 +45,11 @@ typedef struct {
 
 int fold(grey_req_t *request, const char *sender, const char *recipient, const char *caddr, const char *helo);
 int sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request);
+int sendquerystr(int fd, struct sockaddr_in *gserv, const char *querystr);
 int senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...);
 int sjsms_to_host_order(sjsms_msg_t *message);
 int recvquery(sjsms_msg_t *message, grey_req_t *request);
+char *recvquerystr(sjsms_msg_t *message);
+char *buildquerystr(const char *sender, const char *rcpt, const char *caddr, const char *helo);
 
 #endif

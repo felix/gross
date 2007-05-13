@@ -53,5 +53,8 @@ int test_tuple(final_status_t *final, grey_tuple_t *tuple, tmout_action_t *ta);
 void free_client_info(client_info_t *arg);
 void request_unlink(grey_tuple_t *request);
 grey_tuple_t *request_new();
+int process_parameter(grey_tuple_t *tuple, const char *str);
+char *try_match(const char *matcher, const char *matchee);
+int check_request(grey_tuple_t *tuple);
 
 #endif /* #ifndef WORKER_H */

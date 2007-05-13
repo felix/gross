@@ -26,7 +26,7 @@ client_sjsms(int argc, char **argv)
 	char recbuf[MAXLINELEN + 1];
 	int runs = 1;
 	int counter = 0, n;
-	grey_req_t request;
+	const char *request;
 	char *sender, *recipient, *caddr;
 	
 	if (argc != 8 && argc != 6 && argc != 5) {
@@ -61,9 +61,9 @@ client_sjsms(int argc, char **argv)
 		senderrormsg(fd, &gserv, "yhteyskokeilu");
 #endif
 
-		fold(&request, sender, recipient, caddr, "");
+		request = buildquerystr(sender, recipient, caddr, NULL);
 
-		sendquery(fd, &gserv, &request);
+		sendquerystr(fd, &gserv, request);
 	  
 		do {
 			n = recvfrom(fd, recbuf, MAXLINELEN, 0, NULL, NULL);

@@ -82,6 +82,41 @@ assemble_mapresult(char *template, char *reason)
 	return strdup(result);
 }
 
+grey_tuple_t *
+parsequery(const char *request)
+{
+	grey_tuple_t *tuple;
+	char *copy, *start, *end;
+	int ret;
+	
+	tuple = request_new();
+	start = end = copy = strdup(request);
+
+	/* for each line */
+	do {
+		start = end;
+		end = strchr(start, '\n');
+		/* NULL or double nl ends the processing */
+		if (NULL == end || end == start)
+			break;
+		/* null terminate the string */
+		*end = '\0';
+		ret = process_parameter(tuple, start);
+		if (ret < 0)
+			logstr(GLOG_ERROR, "unknown request parameter: %s", start);
+		end++;
+	} while (1);
+
+	Free(copy);
+
+	ret = check_request(tuple);
+	if (ret < 0) {
+		Free(tuple);
+		errno = ENOMSG;
+		return NULL;
+	}
+	return tuple;
+}
 
 grey_tuple_t *
 unfold(grey_req_t *request)
@@ -112,8 +147,6 @@ unfold(grey_req_t *request)
         tuple->client_address = strdup(request->message + client_address);
 #if WITH_HELO
 	tuple->helo_name = strdup(request->message + helo_name);
-#else
-	tuple->helo_name = strdup("NO-HELO");
 #endif
 	return tuple;
 }
@@ -153,6 +186,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	struct timespec start, end;
 	int delay;
 	client_info_t *client_info;
+	const char *querystr;
 
 	client_info = edict->job;
 	assert(client_info);
@@ -182,14 +216,20 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	switch (msg->msgtype) {
 	case MSGTYPE_QUERY:
-		recvquery(msg, &request);
+	case MSGTYPE_QUERY_V2:
 		clock_gettime(CLOCK_TYPE, &start);
-
-		tuple = unfold(&request);
+		if (MSGTYPE_QUERY == msg->msgtype) {
+			recvquery(msg, &request);
+			tuple = unfold(&request);
+		} else {
+			querystr = recvquerystr(msg);
+			printf("---\nquerystr: %s\n---\n", querystr);
+			tuple = parsequery(querystr);
+		}
 
 		/* FIX: shouldn't crash the whole server */
 		if (! tuple)
-			daemon_perror("unfold");
+			daemon_perror("unfold:");
 
 		/* We are go */
 		ret = test_tuple(&status, tuple, &ta1);

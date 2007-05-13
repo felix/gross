@@ -25,6 +25,17 @@
 /* prototypes of internals */
 int send_sjsms_msg(int fd, struct sockaddr_in *grserv, sjsms_msg_t *message);
 
+char *
+buildquerystr(const char *sender, const char *rcpt, const char *caddr, const char *helo)
+{
+	char buffer[MAXLINELEN];
+
+	snprintf(buffer, MAXLINELEN - 1, "sender=%s\nrecipient=%s\nclient_address=%s%s%s\n\n",
+		sender, rcpt, caddr, helo ? "\nhelo_name=" : "", helo ? helo : "");
+
+	return strdup(buffer);
+}
+
 int
 fold(grey_req_t *req, const char *sender,
         const char *rcpt, const char *caddr, const char *helo)
@@ -98,6 +109,17 @@ sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request)
 	return send_sjsms_msg(fd, gserv, &message);
 }
 
+int 
+sendquerystr(int fd, struct sockaddr_in *gserv, const char *querystr)
+{
+	sjsms_msg_t message;
+
+	message.msglen = MIN(strlen(querystr), MAXLINELEN);
+	message.msgtype = MSGTYPE_QUERY_V2;
+	memcpy(&message.message, querystr, message.msglen);
+	return send_sjsms_msg(fd, gserv, &message);
+}
+
 int
 recvquery(sjsms_msg_t *message, grey_req_t *request)
 {
@@ -105,6 +127,17 @@ recvquery(sjsms_msg_t *message, grey_req_t *request)
   request->message[MAXLINELEN-1] = '\0';
   
   return 1;
+}
+
+char *
+recvquerystr(sjsms_msg_t *message) 
+{
+	char querystr[MAXLINELEN] = { '\0' };
+
+	snprintf(querystr, MAXLINELEN - 1, "%s", message->message);
+	querystr[MAXLINELEN-1] = '\0';
+	
+	return strdup(querystr);
 }
 
 int

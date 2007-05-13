@@ -382,6 +382,67 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	return 0;
 }
 
+int
+process_parameter(grey_tuple_t *tuple, const char *str)
+{
+        int ret = 0;
+	char *match;
+
+        /* matching switch */
+        do {
+                match = try_match("sender=", str);
+                if (match) {
+                        tuple->sender = match;
+                        logstr(GLOG_DEBUG, "sender=%s", match);
+                        continue;
+                }
+                match = try_match("recipient=", str);
+                if (match) {
+                        tuple->recipient = match;
+                        logstr(GLOG_DEBUG, "recipient=%s", match);
+                        continue;
+                }
+                match = try_match("client_address=", str);
+                if (match) {
+                        tuple->client_address = match;
+                        logstr(GLOG_DEBUG, "client_address=%s", match);
+                        continue;
+                }
+                match = try_match("helo_name=", str);
+                if (match) {
+                        tuple->helo_name = match;
+                        logstr(GLOG_DEBUG, "helo_name=%s", match);
+                        continue;
+                }
+                /* no match */
+                return -1;
+        } while (0);
+
+        /* match */
+        return 0;
+}
+
+int
+check_request(grey_tuple_t *tuple)
+{
+	if ( tuple->sender &&
+             tuple->recipient &&
+             tuple->client_address) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+char *
+try_match(const char *matcher, const char *matchee)
+{
+        if (strncmp(matcher, matchee, strlen(matcher)) == 0)
+                /* found a match, return part after the match */
+                return strdup(matchee + strlen(matcher));
+        else
+                return NULL;
+}
 
 void
 worker_init()
