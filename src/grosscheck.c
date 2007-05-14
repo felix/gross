@@ -38,14 +38,14 @@
 
 #define MAP_SEPARATOR ','
 
+/* #define ARGDEBUG */
+
 #define GROSSCHECK_ERROR { 						\
 	senderrormsg(fd, gserv, "ERROR: request was: %s", requestcopy); \
 	Free(requestcopy); 						\
 	close(fd);							\
 	return MAP_FAIL; 						\
 }
-
-/* #define ARGDEBUG */
 
 int
 grosscheck(char *arg, long *arglen, char *res, long *reslen)
@@ -135,7 +135,10 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	strncpy(recipient, begin, SBUFLEN-1);
 
 	/* sender */
-	GETNEXT;
+	begin = end + 1;
+	end = strchr(begin, MAP_SEPARATOR);
+	if (end)
+		*end = '\0';
 	/* no empty sender */
 	if ( *begin == '\0') {
 		strncpy(sender, "<>", SBUFLEN-1);
@@ -144,22 +147,17 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	}
 
 	/* check if helo is sent from the mapping call */
-	if (NULL != end) {
-		/* helo */
+	if (end) {
 		begin = end + 1;
+		/* helo */
+		strncpy(helo, begin, SBUFLEN-1);
+
+		/* no more arguments */
 		end = strchr(begin, MAP_SEPARATOR);
-		/* no empty helo string */
-		if ( *begin == '\0' ) {
-			strncpy(helo, "NO-HELO", SBUFLEN-1);
-		} else {
-			strncpy(helo, begin, SBUFLEN-1);
-		}
-	
-		/* end of arguments */
-		if ( NULL != end) GROSSCHECK_ERROR; 
+		if (NULL != end) GROSSCHECK_ERROR;
 	} else {
 		/* no helo */
-		strncpy(helo, "NO-HELO", SBUFLEN-1);
+		strncpy(helo, "", SBUFLEN-1);
 	}
 
 	gserv = &gserv1;
@@ -169,7 +167,7 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	recipient[SBUFLEN-1] = '\0';
 	caddr[SBUFLEN-1] = '\0';
 	helo[SBUFLEN-1] = '\0';
-	request = buildquerystr(sender, recipient, caddr, strcmp(helo, "NO-HELO") ? helo : NULL);
+	request = buildquerystr(sender, recipient, caddr, strlen(helo) ? helo : NULL);
 
 #ifdef ARGDEBUG
         if (foo) {

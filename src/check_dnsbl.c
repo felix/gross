@@ -280,7 +280,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		snprintf(buffer, MAXQUERYSTRLEN, "%s.%s", qstr, dnsbl->name);
 		query = strdup(buffer);
 		if (query_clearance(dnsbl) == TRUE) {
-			logstr(GLOG_INSANE, "initiating dnsbl query: %s", query);
+			logstr(GLOG_INSANE, "initiating dns query: %s", query);
 			callback_arg = Malloc(sizeof(callback_arg_t));
 			callback_arg->dnsbl = dnsbl;
 			callback_arg->matches = &match_found;
@@ -323,13 +323,13 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			ares_process(channel, &readers, &writers);
 		} while (!match_found);
 
-		if (match_found || nfds == 0)
-			break;
-	
 		if (timeused > edict->timelimit) {
 			/* the final timeout value */
 			timeout = 1;
 		}
+
+		if (match_found || nfds == 0)
+			break;
 	}
 
 	Free(qstr);
