@@ -223,13 +223,14 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			tuple = unfold(&request);
 		} else {
 			querystr = recvquerystr(msg);
-			printf("---\nquerystr: %s\n---\n", querystr);
 			tuple = parsequery(querystr);
 		}
 
 		/* FIX: shouldn't crash the whole server */
-		if (! tuple)
-			daemon_perror("unfold:");
+		if (! tuple) {
+			logstr(GLOG_ERROR, "unfold: %s", strerror(errno));
+			goto OUT;
+		}
 
 		/* We are go */
 		ret = test_tuple(&status, tuple, &ta1);
@@ -300,6 +301,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			client_info->ipstr);
 		break;
 	}
+OUT:
 	Free(msg);
 
 	free_client_info(client_info);

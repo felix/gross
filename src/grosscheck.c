@@ -169,7 +169,13 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	recipient[SBUFLEN-1] = '\0';
 	caddr[SBUFLEN-1] = '\0';
 	helo[SBUFLEN-1] = '\0';
-	request = buildquerystr(sender, recipient, caddr, helo);
+	request = buildquerystr(sender, recipient, caddr, strcmp(helo, "NO-HELO") ? helo : NULL);
+
+#ifdef ARGDEBUG
+        if (foo) {
+                fprintf(foo, "querystr:\n%s---\n", request);
+        }
+#endif
 
 QUERY:
 	sendquerystr(fd, gserv, request);
