@@ -19,7 +19,7 @@
 /*
  * check_dnsbl.c implements all dns-based checks:
  * 	dnsbl, rhsbl and dnswl
- */ 
+ */
 
 #include "common.h"
 #include "check_dnsbl.h"
@@ -32,8 +32,8 @@ int
 cleanup_dnsblc(void *state)
 {
 	ares_channel channel;
-	
-	channel = (ares_channel)state;
+
+	channel = (ares_channel) state;
 	ares_destroy(channel);
 	return 0;
 }
@@ -44,13 +44,13 @@ add_dnsbl(dnsbl_t **current, const char *name, int weight)
 	dnsbl_t *new;
 
 	logstr(GLOG_INFO, "adding dnsbl: %s", name);
-	
+
 	new = Malloc(sizeof(dnsbl_t));
 	memset(new, 0, sizeof(dnsbl_t));
 
 	/*
-	 * this is not threadsafe, but we do not need
-	 * an exact result, we can afford errors here 
+	 * this is not threadsafe, but we do not need an exact result, we can
+	 * afford errors here
 	 */
 	new->tolerancecounter = ERRORTOLERANCE;
 
@@ -96,26 +96,24 @@ increment_dnsbl_tolerance_counters(dnsbl_t *dnsbl)
 }
 
 static void
-addrinfo_callback(void *arg, int status, struct hostent *host)
+addrinfo_callback(void *arg, int status, struct hostent * host)
 {
 	callback_arg_t *cba;
 
-	cba = (callback_arg_t *)arg;
+	cba = (callback_arg_t *) arg;
 
 	if (status == ARES_SUCCESS) {
 		*cba->matches = 1;
 		stat_dnsbl_match(cba->dnsbl->name);
 		logstr(GLOG_DEBUG, "dns-match: %s for %s",
-			cba->dnsbl->name, cba->querystr);
+		       cba->dnsbl->name, cba->querystr);
 	}
-
 	if (*cba->timeout) {
 		logstr(GLOG_DEBUG, "dns-timeout: %s for %s",
-			cba->dnsbl->name, cba->querystr);
+		       cba->dnsbl->name, cba->querystr);
 		/* decrement tolerancecounter */
 		cba->dnsbl->tolerancecounter--;
 	}
-
 	Free(cba);
 }
 
@@ -132,27 +130,26 @@ reverse_inet_addr(char *ipstr)
 	int ret;
 	struct in_addr inaddr;
 	const char *ptr;
-        char tmpstr[INET_ADDRSTRLEN];
+	char tmpstr[INET_ADDRSTRLEN];
 	size_t iplen;
 
 	if ((iplen = strlen(ipstr)) > INET_ADDRSTRLEN) {
 		fprintf(stderr, "invalid ipaddress: %s\n", ipstr);
 		return -1;
 	}
-
 	ret = inet_pton(AF_INET, ipstr, &inaddr);
-        switch (ret) {
-        case -1:
-                perror("reverse_inet_addr inet_pton");
-                return -1;
-                break;
-        case 0:
-                logstr(GLOG_ERROR, "not a valid ip address: %s", ipstr);
-                return -1;
-                break;
-        }
+	switch (ret) {
+	case -1:
+		perror("reverse_inet_addr inet_pton");
+		return -1;
+		break;
+	case 0:
+		logstr(GLOG_ERROR, "not a valid ip address: %s", ipstr);
+		return -1;
+		break;
+	}
 
-        /* case default */
+	/* case default */
 	ipa = inaddr.s_addr;
 
 	tmp = 0;
@@ -163,20 +160,19 @@ reverse_inet_addr(char *ipstr)
 		ipa = ipa >> 8;
 	}
 
-        /* this tmpstr hack here is because at least FreeBSD
-         * seems to handle buffer lengths differently from
-         * Linux and Solaris. Specifically, with
-         * inet_ntop(AF_INET, &tmp, ipstr, iplen) one gets
-         * a truncated address in ipstr in FreeBSD.
-         */
-        ptr = inet_ntop(AF_INET, &tmp, tmpstr, INET_ADDRSTRLEN);
-	if (! ptr) {
+	/*
+	 * this tmpstr hack here is because at least FreeBSD seems to handle
+	 * buffer lengths differently from Linux and Solaris. Specifically,
+	 * with inet_ntop(AF_INET, &tmp, ipstr, iplen) one gets a truncated
+	 * address in ipstr in FreeBSD.
+	 */
+	ptr = inet_ntop(AF_INET, &tmp, tmpstr, INET_ADDRSTRLEN);
+	if (!ptr) {
 		perror("inet_ntop");
 		return -1;
 	}
-	
-        assert(strlen(tmpstr) == iplen);
-        strncpy(ipstr, tmpstr, iplen);
+	assert(strlen(tmpstr) == iplen);
+	strncpy(ipstr, tmpstr, iplen);
 
 	return 0;
 }
@@ -200,6 +196,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	dnsbl_t *dnsbl;
 	callback_arg_t *callback_arg;
 	int timeused;
+
 	chkresult_t *result;
 	grey_tuple_t *request;
 	dns_check_info_t *check_info;
@@ -209,8 +206,8 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	/* fetch check_info */
 	assert(info);
 	assert(info->arg);
-	check_info = (dns_check_info_t *)info->arg;
-	
+	check_info = (dns_check_info_t *) info->arg;
+
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
 		channel = Malloc(sizeof(channel));
@@ -221,12 +218,12 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		thread_ctx->state = channel;
 		thread_ctx->cleanup = &cleanup_dnsblc;
 	} else {
-		channel = (ares_channel)thread_ctx->state;
+		channel = (ares_channel) thread_ctx->state;
 	}
 
-	request = (grey_tuple_t *)edict->job;
+	request = (grey_tuple_t *) edict->job;
 	assert(request);
-	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
+	result = (chkresult_t *) Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
 
 	if (check_info->type == TYPE_DNSBL || check_info->type == TYPE_DNSWL) {
@@ -240,22 +237,22 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			Free(qstr);
 			goto FINISH;
 		}
-
 		ret = reverse_inet_addr(qstr);
 		if (ret < 0) {
 			Free(qstr);
 			goto FINISH;
 		}
 	} else if (check_info->type == TYPE_RHSBL) {
+
 		/*
-		 * try to find the last '@' of the sender address 
+		 * try to find the last '@' of the sender address
 		 */
 		sender = strdup(request->sender);
 		assert(sender);
-		ptr = sender + strlen(sender); /* end of the address */
+		ptr = sender + strlen(sender);	/* end of the address */
 		while ((ptr > sender) && (*ptr != '@'))
 			ptr--;
-		
+
 		if (ptr > sender) {
 			/* found */
 			/* skip '@' */
@@ -296,7 +293,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	clock_gettime(CLOCK_TYPE, &start);
 
-	while (! timeout) {
+	while (!timeout) {
 		do {
 			clock_gettime(CLOCK_TYPE, &now);
 			timeused = ms_diff(&now, &start);
@@ -312,12 +309,12 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 				break;
 			ares_timeout(channel, NULL, &tv);
 			tvtots(&tv, &ts);
-			
+
 			if (ms_diff(&timeleft, &ts) < 0)
 				memcpy(&ts, &timeleft, sizeof(timeleft));
 
 			tstotv(&ts, &tv);
-			
+
 
 			count = select(nfds, &readers, &writers, NULL, &tv);
 			ares_process(channel, &readers, &writers);
@@ -327,7 +324,6 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			/* the final timeout value */
 			timeout = 1;
 		}
-
 		if (match_found || nfds == 0)
 			break;
 	}
@@ -344,7 +340,7 @@ FINISH:
 	else
 		result->judgment = J_UNDEFINED;
 	send_result(edict, result);
-	
+
 	logstr(GLOG_DEBUG, "dnsblc returning");
 	request_unlink(request);
 
@@ -357,10 +353,10 @@ dnsbl_init(dns_check_info_t *check_info, pool_limits_t *limits)
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
-        logstr(GLOG_INFO, "initializing dns checker thread pool '%s'", check_info->name);
-	pool = create_thread_pool(check_info->name, &dnsblc, limits, (void *)check_info);
-        if (pool == NULL)
-                daemon_perror("create_thread_pool");
+	logstr(GLOG_INFO, "initializing dns checker thread pool '%s'", check_info->name);
+	pool = create_thread_pool(check_info->name, &dnsblc, limits, (void *) check_info);
+	if (pool == NULL)
+		daemon_perror("create_thread_pool");
 
 	register_check(pool, check_info->definitive);
 }

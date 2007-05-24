@@ -20,7 +20,7 @@
  * query Sophos blocker list. Idea for this came from Jesse Thompson,
  * <jesse.thompson@doit.wisc.edu> and code was written after viewing the
  * message Bernd Cappel <cappel@uni-duesseldorf.de> wrote on the
- * perlmx@ca.sophos.com mail list. 
+ * perlmx@ca.sophos.com mail list.
  */
 
 #include "common.h"
@@ -28,22 +28,23 @@
 #include "utils.h"
 #include "worker.h"
 
-int 
+int
 blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
 	int blocker;
 	int ret;
-        grey_tuple_t *request;
-        const char *client_address;
-	char buffer[MAXLINELEN] = { '\0' };
+
+	grey_tuple_t *request;
+	const char *client_address;
+	char buffer[MAXLINELEN] = {'\0'};
 	struct timespec start, timeleft;
 
-        request = (grey_tuple_t *)edict->job;
-        client_address = request->client_address;
-        assert(client_address);
+	request = (grey_tuple_t *) edict->job;
+	client_address = request->client_address;
+	assert(client_address);
 
-	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
+	result = (chkresult_t *) Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
 	result->judgment = J_UNDEFINED;
 
@@ -55,18 +56,16 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		logstr(GLOG_ERROR, "blocker: socket: %s", strerror(errno));
 		goto FINISH;
 	}
-
-	ret = connect(blocker, (struct sockaddr *)&ctx->config.blocker.server,
-		sizeof(struct sockaddr_in));
+	ret = connect(blocker, (struct sockaddr *) & ctx->config.blocker.server,
+		      sizeof(struct sockaddr_in));
 	if (ret < 0) {
 		logstr(GLOG_ERROR, "blocker: connect: %s", strerror(errno));
 		close(blocker);
 		goto FINISH;
 	}
-
 	/* build a query string */
 	snprintf(buffer, MAXLINELEN, "client_address=%s\n\n", request->client_address);
-	buffer[MAXLINELEN-1] = '\0';
+	buffer[MAXLINELEN - 1] = '\0';
 
 	/* send the query */
 	ret = writen(blocker, buffer, strlen(buffer));
@@ -75,7 +74,6 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		close(blocker);
 		goto FINISH;
 	}
-
 	ret = readline(blocker, &buffer, MAXLINELEN);
 	if (ret < 0) {
 		logstr(GLOG_ERROR, "blocker: readline: %s", strerror(errno));
@@ -88,12 +86,11 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		logstr(GLOG_DEBUG, "found match from blocker: %s", request->client_address);
 		result->judgment = J_SUSPICIOUS;
 	}
-
 FINISH:
 	send_result(edict, result);
 	logstr(GLOG_DEBUG, "blocker returning");
 	request_unlink(request);
-	
+
 	return 0;
 }
 
@@ -103,10 +100,10 @@ blocker_init(pool_limits_t *limits)
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
-        logstr(GLOG_INFO, "initializing Sophos blocker thread pool");
+	logstr(GLOG_INFO, "initializing Sophos blocker thread pool");
 	pool = create_thread_pool("blocker", &blocker, limits, NULL);
-        if (pool == NULL)
-                daemon_perror("create_thread_pool");
+	if (pool == NULL)
+		daemon_perror("create_thread_pool");
 
 	register_check(pool, false);
 }
