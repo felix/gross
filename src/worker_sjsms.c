@@ -186,7 +186,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	struct timespec start, end;
 	int delay;
 	client_info_t *client_info;
-	const char *querystr;
+	char *querystr = NULL;
 
 	client_info = edict->job;
 	assert(client_info);
@@ -224,6 +224,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		} else {
 			querystr = recvquerystr(msg);
 			tuple = parsequery(querystr);
+			Free(querystr);
 		}
 
 		/* FIX: shouldn't crash the whole server */

@@ -169,7 +169,7 @@ int
 test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	char maskedtuple[MSGSZ];
 	char realtuple[MSGSZ];
-	char *chkipstr;
+	char *chkipstr = NULL;
 	sha_256_t digest;
 	update_message_t update;
 	int ret;
@@ -218,6 +218,8 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 
 	logstr(GLOG_INSANE, "checking ip=%s, net=%s",
 		request->client_address, chkipstr);
+
+	Free(chkipstr);
 
 	/* how many checks to run */
 	i = 0;
