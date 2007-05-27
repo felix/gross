@@ -70,10 +70,13 @@ thread_pool(void *arg)
 		if (waited > timelimit) {
 			/* update the reference time */
 			clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);
-			if  (pool_ctx->count_thread > 5 && pool_ctx->ewma_idle > 5) {
+			if  (pool_ctx->count_thread > 8 && pool_ctx->ewma_idle > pool_ctx->count_thread / 2) {
 				pool_ctx->count_thread--;
-				/* update the moving average */
-				EWMA(pool_ctx->ewma_idle, pool_ctx->count_idle);
+				/*
+				 * update the moving average by decrementing it
+			         * brutal, but efficient for the purpose
+				 */
+				pool_ctx->ewma_idle--;
 				POOL_MUTEX_UNLOCK;
 				logstr(GLOG_INFO, "threadpool '%s' thread shutting down",
 					pool_ctx->info->name);
