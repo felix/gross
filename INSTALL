@@ -11,8 +11,12 @@ COMPILING
 
 You should be able to compile it for testing by just commanding:
 
-$ ./configure --prefix=/tmp/gross
-$ make install
+$ ./configure
+$ sudo make install
+
+Default install location is /usr/local which can be overridden by
+specifying a --prefix argument to configure.  Run ./configure --help 
+for other options.
 
 BASIC CONFIGURATION
 
@@ -21,48 +25,62 @@ It is installed also as the default configuration in
 $PREFIX/etc/grossd.conf. You may tell grossd to use another config
 file via -f command line option. 
 
+sync_listen is the server ip, and sync_peer stands for the replication
+partners ip address.
+
+Grossd query server defaults to port 1111/tcp with proto=postfix,
+port 1111/udp with proto=sjsms and replication service
+(if configured) to port 1112/tcp.
+
+Detailed information about each option is included within the 
+example configuration file.
+
+BLOOM FILTER CONFIGURATION
+
 The server keeps the state information in the Bloom filter bit arrays.
 By the nature of the filters you can insert elements in the filters, but
 not to remove them. So we actually use several filters, and rotate them
 on intervals. The actual filter is just a logical OR of those rotating
 filters. number_buffers is the number of the rotating filters, and
-rotate_interval is the interval in seconds. So, 8 buffers with 2 minutes
-rotate interval will give you approximately 2 * 7.5 minutes worth of
-state information. That is, any greylisted triplet will be stored for
-some 15 minutes. Of course, you have to modify the numbers when going
-into production. Default interval is 3600 seconds. This is the
-configuration we use on our production servers:
+rotate_interval is the interval in seconds. 
 
-dnsbl=rbl-plus.mail-abuse.org
-dnsbl=bl.spamcop.net
-dnsbl=sbl.spamhaus.org
-dnsbl=dnsbl.njabl.org
-dnsbl=cbl.abuseat.org
-dnsbl=xbl.smaphaus.org
-dnsbl=dnsbl.sorbs.net
-host=smtp02
-sync_listen=smtp02
-sync_peer=smtp01
-number_buffers=12
-filter_bits=24
-statefile=/usr/local/gross/etc/grossd.state
-stat_type=full
-protocol=sjsms
+The default setting in the example grossd.cnf is:
+number_buffers = 8
+rotate_interval = 3600
 
-sync_listen is the server ip, and sync_peer stands for the replication
-partners ip address.
+So, this will give you approximately 60 * 7.5 minutes worth of state 
+information. That is, any greylisted triplet will be stored for 
+7.5 hours on average.  If you find that remote servers are taking 
+longer than 7.5 hours to retry their messages, then you should increase
+the the number_buffers setting accordingly.  Alternatively, you could
+increase the rotate_interval, but setting this value too high isn't 
+recommended.
+
+The filter_bits setting (default is 22) defines the size of each 
+Bloom filter.  Increasing the filter_bits setting will reduce the 
+likelihood of false positives within the filter.  See
+http://en.wikipedia.org/wiki/Bloom_filter for more information.
+
+CREATE STATEFILE
 
 If you get this far, you can start the server. I suggest you
 run the server first in foreground with -d option. If you
 configured statefile, you have to start grossd with -C option
 in order to create the state file.
 
-Grossd query server defaults to port 1111/tcp with proto=postfix,
-port 1111/udp with proto=sjsms and replication service
-(if configured) to port 1112/tcp.
+$ sudo -u nobody $PREFIX/sbin/grossd -C
+(wait until the statefile stops growing, then kill grossd)
+
+Note: make sure that the run-time user has permissions to create
+and write to the statefile.
+
+SERVER STARTUP
+
+To start the grossd server, just run this.
+
+$ sudo -u nobody $PREFIX/sbin/grossd
 
 After starting, you can test it with $PREFIX/bin/gclient.
-Good luck, and don't hesitate to ask me if in doubt!
 
 MTA CONFIGURATION
 
@@ -88,6 +106,19 @@ First, when you have only one server, you can test it like this:
 
   TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/path/to/grosscheck.so,grosscheck,127.0.0.1,,1111,$2,$=$8$_,$=$6$_]
 
+SOPHOS BLOCKER INTEGRATION
+
+grossd is able to query the proprietary Sophos Blocker service, which 
+is basically a private DNSBL that is part of the Sophos PureMessage 
+product.  You can configure grossd to query your existing 
+PureMessage system, or install it on the same server(s) as gross.
+
+DNS CACHING
+
+If you process a high volume of email traffic, then you will
+definitely want to install a local caching DNS server. 
+BIND/named is recommended.
+
 KNOWN ISSUES
 
 See http://code.google.com/p/gross/issues/list for bugs
@@ -102,3 +133,55 @@ defaults to INFO. You can control logging with 'log_level' and
 You can enable full debugging by starting grossd with -D command line
 option. You may also want -d, as grossd then writes output on standard
 terminal instead of syslog.
+
+gclient is a tool for manually querying the grossd server.  You can 
+install and run gclient on any server.
+
+$ gclient PROTOCOL sender recipient ip_address [runs] [host port]
+$ /usr/local/bin/gclient sjsms foo@abc.com bar@def.org 127.0.0.2 2 10.10.10.13 1111
+
+(note that 127.0.0.2 will always be blacklisted)
+
+SOLARIS 10 SERVICE MANAGEMENT FACILITY
+
+If you are running Gross on Solaris 10, then you should utilize the
+Service Management Facility.  SMF is better than init.d scripts
+for starting and stopping services.  SMF will detect if Gross dies or
+is killed, and will restart it automatically.
+
+An example SMF configuration is included in doc/examples/smf-definition.xml
+
+To import the service:
+
+$ sudo svccfg import doc/examples/smf-definition.xml
+
+To start/stop Gross:
+
+$ sudo svcadm [enable|disable] grossd
+
+To check the status of Gross:
+
+$ svcs -x -v grossd
+
+http://www.sun.com/bigadmin/content/selfheal/smf-quickstart.html
+
+INSTALLING ON SOLARIS 10 ZONES
+
+Gross can be installed on Solaris 10 zones.  The one caveat is that
+you can't install things in /usr when you are using sparse zones.  
+This means that you must either
+
+a) install c-ares and gross in /usr on the global zone
+
+   The sparse zone will be able to execute the gross binary from 
+   /usr but your configuration and state file should be kept on the 
+   sparse zone (e.g. in /opt)
+
+b) install c-ares and gross in /opt (for example) on the sparse zone
+
+   For example, you can install c-ares on the sparse zone 
+   with "--prefix=/opt/local".  Then, to configure grossd, run this:
+
+   $ env LDFLAGS='-L/opt/local/lib -R/opt/local/lib' ./configure
+   --prefix=/opt/gross
+

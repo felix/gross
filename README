@@ -75,21 +75,24 @@ DNS queries are done asynchronously using c-ares library
 
 DOCUMENTATION
 
-Documentation is nearly nonexistent, and should be extended
-to cover at least the installation process. Please, don't
-hesitate to contact the authors directly if you have any
-questions!
+See INSTALL for installation instructions and for more
+information about configuration.
+
+See doc/examples/grossd.conf for an example configuration
+along with additional information about each feature.
+
+There is a mailing list linked from the project's home page.
+Please, don't hesitate to contact the authors directly 
+if you have any questions!
 
 PERFORMANCE AND STABILITY
 
 Gross is currently doing greylisting for the mail gateways
-of the University of Turku.
+of the University of Turku and the University of Wisconsin.
 
-Although the current release has never crashed, do a decent
-testing before putting it in production. After all, it's
-been on production on just a single platform.
-
-We run grossd (and SJSMS) on Solaris 9 on Sun Sparc platform.
+Gross has proven to be very stable on Solaris (9 and 10) 
+on Sun Sparc.  It has also been run on a production Red Hat
+server with minor stability issues.
 
 When we enabled Gross on our servers, we saw a tremendous 
 drop on our internet originated mail flow. Also,
@@ -99,11 +102,7 @@ DEVELOPMENT AND LICENSING
 
 Gross is published on a BSD-like license.
 
-Things on our TODO-list are: documentation, make logging 
-more configurable, implement a way to collect statistics
-from the running servers, implement an administrative
-interface for i.e. querying the database without updating
-it.
+See http://code.google.com/p/gross/ for more information.
 
 If you have any suggestions regarding the software or wish
 to take part on the development, feel free to contact the authors.
