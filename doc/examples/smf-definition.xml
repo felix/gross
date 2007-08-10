@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+    Service definition for Grossd greylisting server
+
+    SMF References:
+    http://www.cuddletech.com/blog/pivot/entry.php?id=182
+    http://www.sun.com/bigadmin/content/selfheal/sdev_intro.html
+-->
+
+<service_bundle type='manifest' name='grossd'>
+<service name='application/grossd' type='service' version='1'>
+
+    <!-- start by default -->
+    <create_default_instance enabled='true' />
+
+    <!-- make sure that only one grossd is running -->
+    <single_instance />
+
+    <!-- ensure that named is running -->
+    <dependency 
+            name='nameservice'
+            grouping='require_all'
+            restart_on='error'
+            type='service'>
+                <service_fmri value='svc:/milestone/name-services' />
+    </dependency>
+
+    <!-- ensure that pmx is running
+         comment this dependency if not using sophos blocker -->
+    <dependency 
+            name='pmx'
+            grouping='require_all'
+            restart_on='error'
+            type='service'>
+                <service_fmri value='svc:/application/pmx' />
+    </dependency>
+
+    <!-- start method -->
+    <exec_method 
+        type='method' 
+        name='start'
+        exec='/usr/local/sbin/grossd'
+        timeout_seconds='60'>
+        <method_context>
+            <method_credential user='nobody' group='nobody'/>
+        </method_context> 
+    </exec_method>
+
+    <!-- stop method -->
+    <exec_method type='method' 
+        name='stop'
+        exec=':kill'
+        timeout_seconds='60' />
+
+    <!-- not sure what this does -->
+    <stability value='Unstable' />
+
+    <template>
+        <common_name>
+            <loctext xml:lang='C'>Grossd - greylisting server</loctext>
+        </common_name>
+    </template>
+</service>
+</service_bundle>
+
