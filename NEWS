@@ -16,6 +16,7 @@ Issues fixed:
 #41: new type of check - DNSWL (RFE)
 #46: Make dnsbl checking run time configurable (RFE)
 #47: Grossd will not run any checks if configured with --disable-dnsbl
+#54: Grossd dies without error msg in non-localhost setup (with linux)
 
 Version 0.8.2
 
