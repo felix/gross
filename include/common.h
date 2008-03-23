@@ -212,8 +212,8 @@ typedef struct tmout_action_s {
 } tmout_action_t;
 
 typedef struct {
-  pthread_t* thread;
-  time_t watchdog;
+	pthread_t* thread;
+	/*time_t watchdog;*/
 } thread_info_t;
 
 typedef struct {
@@ -235,7 +235,6 @@ typedef struct {
 
 typedef struct {
         bloom_ring_queue_t *filter;
-        int log_q;
         int update_q;
         sem_t* sync_guard;
         pthread_mutex_t bloom_guard;

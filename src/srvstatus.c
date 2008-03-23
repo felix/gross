@@ -53,10 +53,9 @@ int test_thread(pthread_t* thread)
 void get_srvstatus(char* buf, int len) 
 {
 	int state = SRV_OK;
-	unsigned int update_len_in = in_queue_len(ctx->update_q) + 1;
+	unsigned int update_len_in = in_queue_len(ctx->update_q);
 	unsigned int update_len_out = out_queue_len(ctx->update_q);
 	unsigned int update_len = update_len_in + update_len_out;
-	unsigned int log_len = out_queue_len(ctx->log_q);
 
 	if ( test_thread(ctx->process_parts.bloommgr.thread) == -1) {
 		state |= SRV_ERR;
@@ -76,15 +75,9 @@ void get_srvstatus(char* buf, int len)
 	} else if (update_len_out > QUEUE_ERR) {
 		state |= SRV_ERR;
 		snprintf(buf, len - strlen(buf), "%d: Update queue length %d (In: %d + Out: %d).", state, update_len, update_len_in, update_len_out);
-	} else if (log_len > QUEUE_ERR) {
-		state |= SRV_ERR;
-		snprintf(buf, len - strlen(buf), "%d: Log queue length %d.", state, log_len);
 	} else if (update_len_out > QUEUE_WARN) {
 		state |= SRV_WARN;
 		snprintf(buf, len - strlen(buf), "%d: Update queue length %d (In: %d + Out: %d).", state, update_len, update_len_in, update_len_out);
-	} else if (log_len > QUEUE_WARN) {
-		state |= SRV_WARN;
-		snprintf(buf, len - strlen(buf), "%d: Log queue length %d.", state, log_len);
 	} else if ( (ctx->config.peer.connected < 1) && (( ctx->config.flags & FLG_NOREPLICATE ) == 0 ) ) {
 		state |= SRV_WARN;
 		snprintf(buf, len - strlen(buf), "%d: Peer unreachable.", state);

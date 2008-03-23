@@ -58,6 +58,7 @@ initialize_context()
 /* 	int ret; */
 	
 	ctx = Malloc(sizeof(gross_ctx_t));
+	memset(ctx, 0, sizeof(gross_ctx_t));
 
 	/* Clear flags  */
 	ctx->config.flags = 0;
@@ -69,7 +70,7 @@ initialize_context()
 	ctx->config.checks = 0;
 
 	/* Initialize checklist */
-	memset(ctx->checklist, 0, MAXCHECKS);
+	memset(ctx->checklist, 0, MAXCHECKS * sizeof(*ctx->checklist));
 
 	/* initial loglevel and facility, they will be set in configure_grossd() */
 	ctx->config.loglevel = 0;
@@ -404,6 +405,8 @@ configure_grossd(configlist_t *config)
 	
 	if (CONF("block_threshold"))
 		ctx->config.block_threshold = atoi(CONF("block_threshold"));
+	else
+		ctx->config.block_threshold = 0;
 
 	if (CONF("block_reason"))
 		ctx->config.block_reason = strdup(CONF("block_reason"));
