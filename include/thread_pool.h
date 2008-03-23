@@ -30,9 +30,21 @@ typedef struct {
 	pthread_mutex_t	mx;
 } reference_count_t;
 
+#ifndef HAVE_BOOL
+# ifndef bool
+#  ifndef __bool_true_false_are_defined
+#   define __bool_true_false_are_defined       1
+typedef int bool;
+#  define true 1
+#  define false 0
+#  endif /* __bool_true_false_are_defined */
+# endif /* bool */
+#endif /* HAVE_BOOL */
+
 typedef struct edict_s {
         void *job;
         int resultmq;
+	bool obsolete;
 	reference_count_t reference;
         mseconds_t timelimit;
 } edict_t;

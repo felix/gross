@@ -338,6 +338,9 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			}
 		}
 
+		/* we don't want more results */
+		edict->obsolete = true;
+
 		/* Let's sum up the results */
 		switch(judgment) {
 		case J_PASS:

@@ -342,13 +342,13 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 			count = select(nfds, &readers, &writers, NULL, &tv);
 			ares_process(channel, &readers, &writers);
-		} while (!done);
+		} while (! (done || edict->obsolete));
 
 		if (timeused > edict->timelimit) {
 			/* the final timeout value */
 			timeout = 1;
 		}
-		if (done || nfds == 0)
+		if (edict->obsolete || done || nfds == 0)
 			break;
 	}
 
