@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006,2007
+ * Copyright (c) 2006,2007,2008
  *                    Eino Tuominen <eino@utu.fi>
  *                    Antti Siira <antti@utu.fi>
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006,2007
+ * Copyright (c) 2006,2007,2008
  *                    Eino Tuominen <eino@utu.fi>
  *                    Antti Siira <antti@utu.fi>
  *
@@ -17,8 +17,9 @@
  */
 
 /*
- * This is a check for debug purposes. It will randomly return 
- * different results.
+ * This check does various checks with client_ip reverse name:
+ * - if there is a reverse for client_ip
+ * - if it looks like a generic pooled host name
  */
 
 #include "common.h"

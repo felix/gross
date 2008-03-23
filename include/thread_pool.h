@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2007 Eino Tuominen <eino@utu.fi>
+ * Copyright (c) 2007,2008
+ *               Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
