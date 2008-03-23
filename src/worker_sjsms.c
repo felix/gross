@@ -38,7 +38,8 @@ mappingstr(const char *from, char *to, size_t len)
 	from_ptr = from;
 	to_ptr = to;
 	
-	while (from_ptr && from_ptr - from < len - 3) {
+	while (from && *from_ptr && from_ptr - from < len - 3) {
+		assert(*from_ptr);
 		switch(*from_ptr) {
 		case ' ':
 			*to_ptr++ = '$';

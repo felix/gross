@@ -21,6 +21,8 @@
 #include "srvutils.h"
 #include "utils.h"
 
+int a_delim_b(char *buffer, char delim, char **stra, char **strb);
+
 /*
  * multivalue		- checks if name is a multivalue property
  */
@@ -42,10 +44,50 @@ multivalue(const char *name) {
 }
 
 /*
+ * maxparams		- returns maximum parameters for a config option
+ */
+uint32_t
+maxparams(const char *name) {
+	int i;
+	const char *paramcounts[] = {
+		PARAMS,
+		NULL
+	};
+
+	i = 0;
+	while (paramcounts[i]) {
+		if (strcmp(name, paramcounts[i]) == 0) 
+			return atoi(paramcounts[i+2]);
+		i++;
+	}
+	return 0;
+}
+
+/*
+ * minparams		- returns minimum parameters for a config option
+ */
+uint32_t
+minparams(const char *name) {
+	int i;
+	const char *paramcounts[] = {
+		PARAMS,
+		NULL
+	};
+
+	i = 0;
+	while (paramcounts[i]) {
+		if (strcmp(name, paramcounts[i]) == 0) 
+			return atoi(paramcounts[i+1]);
+		i++;
+	}
+	return 0;
+}
+
+/*
  * add_config_item	- add an item to a linked list
  */
 int
-add_config_item(configlist_t **current, const char *name, const char *value, bool is_default)
+add_config_item(configlist_t **current, const char *name, const char *value, params_t *params, bool is_default)
 {
 	configlist_t *new;
 
@@ -54,6 +96,7 @@ add_config_item(configlist_t **current, const char *name, const char *value, boo
 
 	new->name = name;
 	new->value = value;
+	new->params = params;
 	new->is_default = is_default;
 	new->next = *current;
 	*current = new;
@@ -65,7 +108,7 @@ add_config_item(configlist_t **current, const char *name, const char *value, boo
  * a multivalue property, add otherwise
  */
 int
-record_config_item(configlist_t **config, const char *name, const char *value)
+record_config_item(configlist_t **config, const char *name, const char *value, params_t *params)
 {
 	configlist_t *cp, *prev, *delete;
 
@@ -86,7 +129,7 @@ record_config_item(configlist_t **config, const char *name, const char *value)
 				cp = cp->next;
 			}
 		}
-		add_config_item(config, name, value, false);
+		add_config_item(config, name, value, params, false);
 	} else {
 		while (cp) {
 			if (strcmp(cp->name, name) == 0) {
@@ -97,7 +140,7 @@ record_config_item(configlist_t **config, const char *name, const char *value)
 		}
 		if (cp == NULL) {
 			/* name not found in configlist */
-			add_config_item(config, name, value, false);
+			add_config_item(config, name, value, params, false);
 		}
 	}
 	return 1;
@@ -118,14 +161,18 @@ gconf(configlist_t *config, const char *name)
 	return NULL;
 }
 
-
 /*
- * namevalue	- search a name = value pair from the buffer
+ * namevalueparams	- search a name = value pair and check
+ *			  if value has optional parameters
  */
 int
-namevalue(char *buffer, char **name, char **value)
+namevalueparams(char *buffer, char **name, char **value, params_t **params)
 {
 	char *ptr;
+	params_t *p;
+	char *head;
+	char *tail;
+	int ret;
 	
         /*
          * *name and *value will point inside the buffer
@@ -139,24 +186,75 @@ namevalue(char *buffer, char **name, char **value)
 		*ptr = '\0';
 
 	/*  search the delimiter (== '=')*/
-	ptr = strchr(buffer, '=');
+	ret = a_delim_b(buffer, '=', name, value);
+	if (1 == ret) {
+		/* success */
+		*params = NULL;
+		tail = *value;
+		/* loop through value to find any optional parameters */
+		while (1 == a_delim_b(tail, ';', &head, &tail)) {
+			p = *params;
+			/* first node? */
+			if (NULL == *params) {
+				*params = p = Malloc(sizeof(p));
+				memset(p, 0, sizeof(p));
+			} else {
+				/* find the end of the list */
+				while (p->next)
+					p = p->next;
+				p->next = Malloc(sizeof(p->next));
+				p = p->next;
+				memset(p, 0, sizeof(p));
+			}
+ 			/* p->value contains whole tail, so strdup must be done at the later stage */
+			p->value = tail;
+			p->next = NULL;
+		}
+		/* now that the params list is splitted with \0-characters we can strdup those values */
+		p = *params;
+		while (p) {
+			p->value = strdup(p->value);
+			p = p->next;
+		}
+		*name = strdup(*name);
+		*value = strdup(*value);
+		return 1;
+	} else {
+		return ret;
+	}
+}
+
+/*
+ * a_delim_b	- search stra delim strb pair from the buffer
+ *		  and trim whitespace
+ */
+int
+a_delim_b(char *buffer, char delim, char **stra, char **strb)
+{
+	char *ptr;
+	
+        /*
+         * *stra and *strb will point inside the buffer
+         * or NULL if no pair is found
+         */
+	*stra = *strb = NULL;
+
+	/*  search the delimiter */
+	ptr = strchr(buffer, delim);
 	if (ptr) {
 		/* delimiter found, possible match */
-		*name = buffer;
+		*stra = buffer;
 		*ptr = '\0';
-		*value = ptr + 1;
+		*strb = ptr + 1;
 
-		if (!trim(name))
+		if (!trim(stra))
 			return -1;
-		if (!trim(value))
+		if (!trim(strb))
 			return -1;
+		assert(*stra);
+		assert(*strb);
 		return 1;
-	}
-	if(trim(&buffer)) {
-		/* couldn't parse buffer */
-		return -1;
 	} else {
-		/* an empy line or a line containing only whitespace */
 		return 0;
 	}
 }
@@ -181,7 +279,7 @@ default_config(void)
 	while (defaults[i]) {
 		assert(defaults[i]);
 		assert(defaults[i+1]);
-		add_config_item(&config, defaults[i], defaults[i+1], true);
+		add_config_item(&config, defaults[i], defaults[i+1], NULL, true);
 		i += 2;
 	}
 	return config;
@@ -200,6 +298,9 @@ read_config(const char *filename)
 	int rlstatus, ret, i, count = 0;
 	char *name[1];
 	char *value[1];
+	params_t *params[1];
+	params_t *paramptr;
+	int paramcount;
 	const char *valids[] = {
 		VALID_NAMES,
 		NULL
@@ -229,7 +330,7 @@ read_config(const char *filename)
 
 		strncpy(line, buffer, MAXLINELEN);
 
-		ret = namevalue(buffer, name, value);
+		ret = namevalueparams(buffer, name, value, params);
 		if (ret < 0) {
 			fprintf(stderr, "Couldn't parse line %d: %s\n", count, line);
 			exit(1);
@@ -241,14 +342,15 @@ read_config(const char *filename)
 				i++;
 			}
 			if (valids[i]) {
-				/*
-				 * we must strdup() name and value because those are just
-				 * part of the working buffer which will be overwritten on
-				 * every cycle of this loop
-				 */
-				record_config_item(&config, strdup(*name), strdup(*value));
-				if (ret < 0)
-					daemon_perror("record_config_item");
+				paramptr = *params;
+				for (paramcount = 0; paramptr; paramptr = paramptr->next) paramcount++;
+				if (paramcount <= maxparams(*name) && paramcount >= minparams(*name)) {
+					record_config_item(&config, *name, *value, *params);
+					if (ret < 0)
+						daemon_perror("record_config_item");
+				} else {
+					daemon_shutdown(1, "Invalid parameter count for configuration parameter: %s", *name);
+				}
 			} else {
 				i = 0;
 				while (deprecated[i]) {

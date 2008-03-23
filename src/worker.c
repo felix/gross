@@ -144,21 +144,24 @@ void
 update_counters(int status)
 {
 	/* Update counters */
-	/* FIX: include block and vip counts, too */
 	switch (status) {
 	case STATUS_BLOCK:
+	  logstr(GLOG_INSANE, "updating block counters", status);
 	  INCF_STATS(block);
 	  INCF_STATS(all_block);
 	  break;
 	case STATUS_MATCH:
+	  logstr(GLOG_INSANE, "updating match counters", status);
 	  INCF_STATS(match);
 	  INCF_STATS(all_match);
 	  break;
 	case STATUS_GREY:
+	  logstr(GLOG_INSANE, "updating grey counters", status);
 	  INCF_STATS(greylist);
 	  INCF_STATS(all_greylist);
 	  break;
 	case STATUS_TRUST:
+	  logstr(GLOG_INSANE, "updating trust counters", status);
 	  INCF_STATS(trust);
 	  INCF_STATS(all_trust);
 	  break;
@@ -186,6 +189,8 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	int checks_running;
 	int definitives_running;
 	int checkcount;
+	int susp_weight = 0;
+	int block_threshold;
 	bool free_ta = false;
 	judgment_t judgment;
 	bool definitive;
@@ -196,6 +201,8 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 
 	/* default value */
 	final->status = STATUS_FAIL;
+
+	block_threshold = ctx->config.block_threshold;
 
 	/* apply grey_mask for client_address */
 	chkipstr = grey_mask(request->client_address);
@@ -292,12 +299,18 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 					sizeof(message.result), 0, ta->timeout - timeused);
 				if (ret > 0) {
 					/* We've got a response */
-					checks_running--;
 					result = (chkresult_t *)message.result;
-					logstr(GLOG_INSANE, "Received a check result, judgment = %d",
-						result->judgment);
+					logstr(GLOG_INSANE, "Received a check result, judgment = %d, weight = %d",
+						result->judgment, result->weight);
+					/* was this a final result from the check? */
+					if (! result->wait)
+						checks_running--;
 					/* update the judgment */
 					judgment = MAX(judgment, result->judgment);
+					/* weights only count for J_SUSPICOUS restuls */
+					if (J_SUSPICIOUS == result->judgment)
+						susp_weight += result->weight;
+
 					/* was this a definitive result? */
 					if (result->definitive)
 						definitives_running--;
@@ -309,12 +322,12 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 					/*
 					 * Do we have a definitive result so far?
 					 * That is,
-					 * 1. we have a whitelist match
-					 * 2. all the definitive checks have returned,
-					 *    and result is something else than J_UNDEFINED
+					 * 1.  we have a whitelist match, or
+					 * 2a. all the definitive checks have returned, and
+					 * 2b. susp_weight > grey_threshold
 					 */
 					if (judgment == J_PASS
-						|| (0 == definitives_running && judgment > J_UNDEFINED))
+						|| (0 == definitives_running && susp_weight > block_threshold))
 						definitive = true;
 				} 
 			} else if (ta->action) {
@@ -336,8 +349,14 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			retvalue = STATUS_BLOCK;
 			break;
 		case J_SUSPICIOUS:
-			logstr(GLOG_INFO, "greylist: %s", realtuple);
-			retvalue = STATUS_GREY;
+			if (block_threshold > 0 && susp_weight > block_threshold) {
+				logstr(GLOG_INFO, "block: %s (susp_weight=%d)", realtuple, susp_weight);
+				retvalue = STATUS_BLOCK;
+				reasonstr = strdup(ctx->config.block_reason);
+			} else {
+				logstr(GLOG_INFO, "greylist: %s", realtuple);
+				retvalue = STATUS_GREY;
+			}
 			break;
 		case J_UNDEFINED:
 			logstr(GLOG_INFO, "trust: %s", realtuple);

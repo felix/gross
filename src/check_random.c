@@ -73,6 +73,7 @@ randomc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	} else if ((r % 3) == 0) {
 		logstr(GLOG_DEBUG, "random suspect: %s", request->client_address);
 		result->judgment = J_SUSPICIOUS;
+		result->weight = 1; 	/* FIXME: needs to be configurable */
 	}
 
 	send_result(edict, result);

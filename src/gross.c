@@ -103,11 +103,20 @@ configure_grossd(configlist_t *config)
 	configlist_t *cp;
 	const char *updatestr;
 	struct hostent *host = NULL;
+	char buffer[MAXLINELEN] = { '\0' };
+	params_t *pp;
 
 	cp = config;
 	if (ctx->config.flags & (FLG_NODAEMON))
 		while (cp) {
-			logstr(GLOG_INSANE, "config: %s = %s", cp->name, cp->value);
+			pp = cp->params;
+			*buffer = '\0';
+			while(pp) {
+				strncat(buffer, " ; ", MAXLINELEN-1);
+				strncat(buffer, pp->value, MAXLINELEN-1);
+				pp = pp->next;
+			}
+			logstr(GLOG_DEBUG, "config: %s = %s%s", cp->name, cp->value, buffer);
 			cp = cp->next;
 		}
 
@@ -260,7 +269,10 @@ configure_grossd(configlist_t *config)
 	cp = config;
 	while (cp) {
 		if (strcmp(cp->name, "dnsbl") == 0) {
-			add_dnsbl(&ctx->dnsbl, cp->value, 1);
+			if (cp->params) 
+		    		add_dnsbl(&ctx->dnsbl, cp->value, atoi(cp->params->value));
+			else 
+				add_dnsbl(&ctx->dnsbl, cp->value, 1);
 			stat_add_dnsbl(cp->value);
 		}
 		cp = cp->next;
@@ -390,6 +402,12 @@ configure_grossd(configlist_t *config)
 			htons(atoi(CONF("blocker_port")));
 	}
 	
+	if (CONF("block_threshold"))
+		ctx->config.block_threshold = atoi(CONF("block_threshold"));
+
+	if (CONF("block_reason"))
+		ctx->config.block_reason = strdup(CONF("block_reason"));
+
 #ifdef MILTER
 	/* milter */
 	if (CONF("milter_listen"))

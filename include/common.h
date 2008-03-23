@@ -47,6 +47,7 @@
 
 #ifdef HAVE_ARES_H
 # include <ares.h>
+# include <ares_version.h>
 # define DNSBL
 #endif
 
@@ -87,7 +88,7 @@
  */
 #define MSGSZ           1024
 #define MAXLINELEN      MSGSZ
-#define GROSSPORT	1111	/* default port for server */
+#define GROSSPORT	5225	/* default port for server */
 
 #define STARTUP_SYNC ((uint32_t)0x00)
 #define OPER_SYNC ((uint32_t)0x01)
@@ -184,6 +185,8 @@ typedef struct {
 	sjsms_config_t sjsms;
 	blocker_config_t blocker;
 	mseconds_t query_timelimit;
+	int block_threshold;
+	char *block_reason;
 #ifdef MILTER
 	milter_config_t milter;
 #endif /* MILTER */

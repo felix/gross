@@ -81,6 +81,8 @@ typedef struct {
 
 typedef struct {
 	bool definitive;
+	bool wait;
+	int weight;
 	judgment_t judgment;
 	char *reason;
 } chkresult_t;

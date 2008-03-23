@@ -20,13 +20,6 @@
 #define MAXQUERYSTRLEN 256
 #define ERRORTOLERANCE 5
 
-typedef struct {
-	dnsbl_t *dnsbl;
-	int *matches;
-	int *timeout;
-	const char *querystr;
-} callback_arg_t;
-
 typedef enum { TYPE_DNSBL, TYPE_RHSBL, TYPE_DNSWL } dns_check_type_t;
 
 typedef struct {
@@ -36,6 +29,15 @@ typedef struct {
 	dns_check_type_t type;
 	dnsbl_t *dnsbase;
 } dns_check_info_t;
+
+typedef struct {
+	dnsbl_t *dnsbl;
+	bool *done;
+	int *timeout;
+	const char *querystr;
+	edict_t *edict;
+	dns_check_info_t *check_info;
+} callback_arg_t;
 
 int add_dnsbl(dnsbl_t **current, const char *name, int weight);
 int tolerate_dnsbl(dnsbl_t *dnsbl);

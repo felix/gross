@@ -85,6 +85,7 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	if (strncmp(buffer, "action=565 ", 11) == 0) {
 		logstr(GLOG_DEBUG, "found match from blocker: %s", request->client_address);
 		result->judgment = J_SUSPICIOUS;
+		result->weight = 1;	/* FIXME: needs to be configurable */
 	}
 FINISH:
 	send_result(edict, result);

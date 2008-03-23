@@ -19,9 +19,9 @@
 
 #define DEFAULT_CONFIG	"update",		"grey", 	\
 			"host",			"127.0.0.1",	\
-			"port",			"1111",		\
-			"sync_port",		"1112",		\
-			"status_port",		"1121",		\
+			"port",			"5225",		\
+			"sync_port",		"5226",		\
+			"status_port",		"5222",		\
 			"rotate_interval", 	"3600",		\
 			"filter_bits",		"22",		\
 			"number_buffers",	"8",            \
@@ -34,10 +34,11 @@
 			"log_level",		"info",		\
 			"stat_type",		"delay",	\
 			"stat_type",		"status",	\
-			"grey_mask",		"0",		\
+			"grey_mask",		"24",		\
 			"grey_delay",		"10",           \
 			"syslog_facility",	"mail",		\
 			"blocker_port",		"4466",		\
+			"block_reason",		"Bad reputation", \
 			"query_timelimit",	"5000"
 
 #define MULTIVALUES	"dnsbl",	\
@@ -79,6 +80,8 @@
 			"blocker_host",			\
 			"blocker_port",			\
 			"query_timelimit",		\
+			"block_threshold",		\
+			"block_reason",			\
 			"milter_listen"
 
 #define DEPRECATED_NAMES 	"syncport",		\
@@ -88,10 +91,24 @@
 				"statushost",		\
 				"statusport"		
 
+
+/*
+ * How many parameters a given keyword accepts, format is
+ * "keyword", MIN, MAX. -1 as maximum means unlimited
+ */
+#define PARAMS	"dnsbl",	"0",	"1",	\
+		"rhsbl",	"0",	"1"
+
+typedef struct params_s {
+	const char *value;
+	struct params_s *next;  /* linked list */
+} params_t;
+
 typedef struct configlist_s {
 	bool is_default;
 	const char *name;
 	const char *value;
+	params_t *params;
 	struct configlist_s *next;  /* linked list */
 } configlist_t;
 

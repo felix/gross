@@ -65,6 +65,6 @@ char *dnsbl_stats(char *buf, int32_t size);
 
 
 #define WITH_STATS_GUARD(X) { pthread_mutex_lock( &(ctx->stats.mx) ); X; pthread_mutex_unlock( &(ctx->stats.mx) ); }
-#define INCF_STATS(member) { WITH_STATS_GUARD( ++(ctx->stats.member) ;) }
+#define INCF_STATS(member) { WITH_STATS_GUARD( ++(ctx->stats.member) ) }
 
 #endif /* STATS_H */

@@ -26,8 +26,8 @@ typedef enum { STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_F
 #define LEGALREASONCHARACTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890 .-_@";
 
 typedef struct {
-        grey_status_t status;
         char *reason;
+        grey_status_t status;
 } final_status_t;
 
 typedef struct {

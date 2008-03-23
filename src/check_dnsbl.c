@@ -43,7 +43,7 @@ add_dnsbl(dnsbl_t **current, const char *name, int weight)
 {
 	dnsbl_t *new;
 
-	logstr(GLOG_INFO, "adding dnsbl: %s", name);
+	logstr(GLOG_INFO, "adding dnsbl: %s, weight %d", name, weight);
 
 	new = Malloc(sizeof(dnsbl_t));
 	memset(new, 0, sizeof(dnsbl_t));
@@ -51,11 +51,15 @@ add_dnsbl(dnsbl_t **current, const char *name, int weight)
 	/*
 	 * this is not threadsafe, but we do not need an exact result, we can
 	 * afford errors here
+	 * EDIT: time has passed, and I noticed that the comment
+	 * is not very clear. The race condition the comment above
+	 * refers to is in tolerate_dnsbl(). 
 	 */
 	new->tolerancecounter = ERRORTOLERANCE;
 
 	new->name = strdup(name);
 	new->next = *current;
+	new->weight = weight;
 	*current = new;
 	return 1;
 }
@@ -95,15 +99,34 @@ increment_dnsbl_tolerance_counters(dnsbl_t *dnsbl)
 	return 0;
 }
 
+
 static void
+#if ARES_VERSION_MAJOR > 0 && ARES_VERSION_MINOR > 4
+addrinfo_callback(void *arg, int status, int timeouts, struct hostent * host)
+#else
 addrinfo_callback(void *arg, int status, struct hostent * host)
+#endif
 {
+        chkresult_t *result;
 	callback_arg_t *cba;
 
 	cba = (callback_arg_t *) arg;
 
 	if (status == ARES_SUCCESS) {
-		*cba->matches = 1;
+		/*
+		 * DNSWL is definive, so it shortcuts after one match, so we don't
+		 * need to send result here.
+		 */
+		if (cba->check_info->type != TYPE_DNSWL) {
+			result = Malloc(sizeof(chkresult_t));
+			memset(result, 0, sizeof(*result));
+			result->judgment = J_SUSPICIOUS;
+			result->weight = cba->dnsbl->weight;
+			result->wait = true;
+			send_result(cba->edict, result);
+		} else {
+			*cba->done = true;
+		}
 		stat_dnsbl_match(cba->dnsbl->name);
 		logstr(GLOG_DEBUG, "dns-match: %s for %s",
 		       cba->dnsbl->name, cba->querystr);
@@ -182,7 +205,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	ares_channel channel;
 	int nfds, count, ret;
-	int match_found = 0;
+	bool done = false;
 	int timeout = 0;
 	fd_set readers, writers;
 	struct timeval tv;
@@ -280,9 +303,11 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			logstr(GLOG_INSANE, "initiating dns query: %s", query);
 			callback_arg = Malloc(sizeof(callback_arg_t));
 			callback_arg->dnsbl = dnsbl;
-			callback_arg->matches = &match_found;
+			callback_arg->done = &done;
 			callback_arg->timeout = &timeout;
 			callback_arg->querystr = orig_qstr;
+			callback_arg->edict = edict;
+			callback_arg->check_info = check_info;
 			ares_gethostbyname(channel, query, PF_INET, &addrinfo_callback, callback_arg);
 		} else {
 			logstr(GLOG_DEBUG, "Skipping dnsbl %s due to timeouts.", dnsbl->name);
@@ -315,16 +340,15 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 			tstotv(&ts, &tv);
 
-
 			count = select(nfds, &readers, &writers, NULL, &tv);
 			ares_process(channel, &readers, &writers);
-		} while (!match_found);
+		} while (!done);
 
 		if (timeused > edict->timelimit) {
 			/* the final timeout value */
 			timeout = 1;
 		}
-		if (match_found || nfds == 0)
+		if (done || nfds == 0)
 			break;
 	}
 
@@ -332,11 +356,8 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	ares_cancel(channel);
 FINISH:
-	if (match_found > 0)
-		if (check_info->type == TYPE_DNSWL)
-			result->judgment = J_PASS;
-		else
-			result->judgment = J_SUSPICIOUS;
+	if (done && check_info->type == TYPE_DNSWL)
+		result->judgment = J_PASS;
 	else
 		result->judgment = J_UNDEFINED;
 	send_result(edict, result);

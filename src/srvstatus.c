@@ -89,8 +89,8 @@ void get_srvstatus(char* buf, int len)
     state |= SRV_OK;
     snprintf(buf, len - strlen(buf), "%d: Grossd OK. Update queue: %d (In: %d + Out: %d)", 
 	     state, update_len, update_len_in, update_len_out);
-    WITH_STATS_GUARD(snprintf(buf+strlen(buf), len - strlen(buf), " Trust: %llu Match: %llu Greylist: %llu Queries/sec: %lf", 
-			     ctx->stats.all_trust, ctx->stats.all_match, ctx->stats.all_greylist, (double)(ctx->stats.all_trust + ctx->stats.all_match + ctx->stats.all_greylist)/(double)(time(NULL) - ctx->stats.startup)); );
+    WITH_STATS_GUARD(snprintf(buf+strlen(buf), len - strlen(buf), " Trust: %llu Match: %llu Greylist: %llu Block: %llu Queries/sec: %lf", 
+			     ctx->stats.all_trust, ctx->stats.all_match, ctx->stats.all_greylist, ctx->stats.all_block, (double)(ctx->stats.all_trust + ctx->stats.all_match + ctx->stats.all_greylist + ctx->stats.all_block)/(double)(time(NULL) - ctx->stats.startup)); );
     WITH_STATS_GUARD(snprintf(buf+strlen(buf), len - strlen(buf), " Dnsbl matches: ");
 		     dnsbl_stats(buf+strlen(buf), len - strlen(buf)); );
   }
