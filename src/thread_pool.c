@@ -41,42 +41,86 @@ thread_pool(void *arg)
 	pool_ctx_t *pool_ctx = NULL;
 	edict_message_t message;
 	edict_t *edict = NULL;
-	mseconds_t timelimit;
 	thread_ctx_t thread_ctx = { NULL };
+	watchdog_t *dogp;
 	bool process;
 	struct timespec now;
 	int waited;
+	int lastseenms;
 
 	pool_ctx = (pool_ctx_t *)arg;
 	assert(pool_ctx->mx);
 	assert(pool_ctx->routine);
 	assert(pool_ctx->info);
 
-	timelimit = pool_ctx->idle_time * SI_KILO;
-		
 	POOL_MUTEX_LOCK;
 	pool_ctx->count_thread++;
-	clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);		/* idle check reference time */
+
+	if (pool_ctx->watchdog_time) {
+		/* add the watchdog info for this thread */
+		dogp = pool_ctx->wdlist;
+		pool_ctx->wdlist = &thread_ctx.watchdog;
+		pool_ctx->wdlist->next = dogp;
+		clock_gettime(CLOCK_TYPE, &thread_ctx.watchdog.last_seen);
+		thread_ctx.watchdog.tid = pthread_self();
+	}
+
+	/* idle check reference time */
+	clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);
 	POOL_MUTEX_UNLOCK;
 
-	logstr(GLOG_DEBUG, "threadpool '%s' thread #%d starting",
-		pool_ctx->info->name, pool_ctx->count_thread);
+	logstr(GLOG_DEBUG, "threadpool '%s' thread #%d starting%s", pool_ctx->info->name,
+			pool_ctx->count_thread, pool_ctx->watchdog_time ? " watchdog enabled" : "");
 
 	for (;;) {
 		/* check if there are too many idling threads */
 		POOL_MUTEX_LOCK;
 		clock_gettime(CLOCK_TYPE, &now);
 		waited = ms_diff(&now, &pool_ctx->last_idle_check);
-		if (waited > timelimit) {
+
+		if (pool_ctx->watchdog_time) {
+			/* check the watchdog status */
+			dogp = pool_ctx->wdlist;
+			while (dogp) {
+				lastseenms = ms_diff(&now, &dogp->last_seen);
+				if (lastseenms > pool_ctx->watchdog_time) {
+					/* a stuck thread */
+					logstr(GLOG_WARNING, "thread #%x of pool '%s' stuck, last seen %d ms ago.",
+						(uint32_t)dogp->tid, pool_ctx->info->name, lastseenms);
+				}
+				dogp = dogp->next;
+			}
+		}
+
+		if (waited > pool_ctx->idle_time) {
 			/* update the reference time */
 			clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);
+
 			if  (pool_ctx->count_thread > 8 && pool_ctx->ewma_idle > pool_ctx->count_thread / 2) {
+				/* prepare for shutdown */
 				pool_ctx->count_thread--;
 				/*
 				 * update the moving average by decrementing it
 			         * brutal, but efficient for the purpose
 				 */
 				pool_ctx->ewma_idle--;
+				/*
+				 * remove thread from the watchdoglist
+				 * do not Free(), the block is reserved from the stack 
+				 */
+				dogp = pool_ctx->wdlist;
+				if (pool_ctx->watchdog_time && dogp->tid == pthread_self()) {
+					/* first node */
+					pool_ctx->wdlist = pool_ctx->wdlist->next;
+				} else { 
+					while (dogp->next) {
+						if (dogp->next->tid == pthread_self()) {
+							dogp->next = dogp->next->next;
+							break;
+						}
+					dogp = dogp->next;
+					}
+				}
 				POOL_MUTEX_UNLOCK;
 				logstr(GLOG_INFO, "threadpool '%s' thread shutting down",
 					pool_ctx->info->name);
@@ -92,11 +136,13 @@ thread_pool(void *arg)
 		POOL_MUTEX_UNLOCK;
 
 		/* wait for new jobs */
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, timelimit);
+		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, pool_ctx->idle_time);
 
 		process = true;
 
 		POOL_MUTEX_LOCK;
+		if (pool_ctx->watchdog_time) 
+			clock_gettime(CLOCK_TYPE, &thread_ctx.watchdog.last_seen);
 		pool_ctx->count_idle--;
 		POOL_MUTEX_UNLOCK;
 
@@ -169,9 +215,12 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool_ctx->count_idle = 0;
 	pool_ctx->ewma_idle = 0;
 	pool_ctx->max_thread = limits ? limits->max_thread : 0; 
-	pool_ctx->idle_time = limits ? limits->idle_time : 60;		/* how often to check, in seconds */
+	pool_ctx->idle_time = limits ? limits->idle_time : 60000 ;			  /* how often to check, in milliseconds */
+	pool_ctx->watchdog_time = limits && limits->watchdog ? limits->idle_time * 2 : 0; /* watchdog timer, 0 is disabled */
+	pool_ctx->wdlist = Malloc(sizeof(*pool_ctx->wdlist));				  /* watchdog list */
+	memset(pool_ctx->wdlist, 0, sizeof(*pool_ctx->wdlist));
 
-	/* start controller thread */
+	/* start the first thread */
 	Pthread_create(NULL, &thread_pool, pool_ctx);
 	return pool;
 }

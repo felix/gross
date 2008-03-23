@@ -17,9 +17,8 @@
  */
 
 /*
- * This check does various checks with client_ip reverse name:
- * - if there is a reverse for client_ip
- * - if it looks like a generic pooled host name
+ * This is a check for debug purposes. It will randomly return
+ * different results.
  */
 
 #include "common.h"

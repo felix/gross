@@ -50,14 +50,22 @@ typedef struct edict_s {
         mseconds_t timelimit;
 } edict_t;
 
+typedef struct watchdog_s {
+	struct timespec last_seen;
+	pthread_t tid;
+	struct watchdog_s *next;   /* linked list */
+} watchdog_t;
+
 typedef struct {
 	void *state;
 	int (*cleanup)();
+	watchdog_t watchdog;
 } thread_ctx_t;
 
 typedef struct {
 	int max_thread;
 	int idle_time;
+	bool watchdog;
 } pool_limits_t;
 
 typedef struct pool_ctx_s {
@@ -70,6 +78,8 @@ typedef struct pool_ctx_s {
 	struct timespec last_idle_check; 
 	int max_thread;		/* maximum threads in the pool*/
 	int idle_time; 		/* how many seconds to wait new jobs */
+	watchdog_t *wdlist; 	/* watchdog list */
+	int watchdog_time;	/* watchdog timer, 0 is disabled */
 } pool_ctx_t;
 
 /* message queue wrap for edicts */

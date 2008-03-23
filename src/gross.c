@@ -550,7 +550,8 @@ main(int argc, char *argv[])
 
 	/* default limits, these should be configurable */
 	limits.max_thread = 100;
-	limits.idle_time = 60;
+	limits.idle_time = ctx->config.query_timelimit;
+	limits.watchdog = true;
 
 	/* start the check pools */
 #ifdef DNSBL
