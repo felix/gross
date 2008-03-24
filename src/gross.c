@@ -562,7 +562,6 @@ main(int argc, char *argv[])
 		dns_check_info = Malloc(sizeof(dns_check_info_t));
 		dns_check_info->definitive = false;
 		dns_check_info->type = TYPE_DNSBL;
-		dns_check_info->block_threshold = 0;
 		dns_check_info->name = "dnsbl";
 		dns_check_info->dnsbase = ctx->dnsbl;
 		dnsbl_init(dns_check_info, &limits);
@@ -579,7 +578,6 @@ main(int argc, char *argv[])
 		dns_check_info = Malloc(sizeof(dns_check_info_t));
 		dns_check_info->definitive = false;
 		dns_check_info->type = TYPE_RHSBL;
-		dns_check_info->block_threshold = 0;
 		dns_check_info->name = "rhsbl";
 		dns_check_info->dnsbase = ctx->rhsbl;
 		dnsbl_init(dns_check_info, &limits);

@@ -25,7 +25,6 @@ typedef enum { TYPE_DNSBL, TYPE_RHSBL, TYPE_DNSWL } dns_check_type_t;
 typedef struct {
 	const char *name;
 	bool definitive;
-	int block_threshold;
 	dns_check_type_t type;
 	dnsbl_t *dnsbase;
 } dns_check_info_t;

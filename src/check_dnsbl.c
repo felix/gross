@@ -224,7 +224,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	grey_tuple_t *request;
 	dns_check_info_t *check_info;
 
-	logstr(GLOG_DEBUG, "dnsblc called");
+	logstr(GLOG_DEBUG, "dnsblc called: timelimit %d", edict->timelimit);
 
 	/* fetch check_info */
 	assert(info);
@@ -322,7 +322,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		do {
 			clock_gettime(CLOCK_TYPE, &now);
 			timeused = ms_diff(&now, &start);
-			if (timeused > edict->timelimit)
+			if (timeused >= edict->timelimit)
 				break;
 
 			mstotimespec(edict->timelimit - timeused, &timeleft);
@@ -344,7 +344,11 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			ares_process(channel, &readers, &writers);
 		} while (! (done || edict->obsolete));
 
-		if (timeused > edict->timelimit) {
+		clock_gettime(CLOCK_TYPE, &now);
+		timeused = ms_diff(&now, &start);
+
+		if (timeused >= edict->timelimit) {
+			logstr(GLOG_INSANE, "dnsbl timeout");
 			/* the final timeout value */
 			timeout = 1;
 		}

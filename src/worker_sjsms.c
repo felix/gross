@@ -199,15 +199,21 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	/* default response is 'FAIL' */
 	strncpy(response, "F", MAXLINELEN);
 
-	/* build the tmout_action_t list */
-	ta1.timeout = 1000;             /* 1 second */
-	ta1.action = &calm_client;
-	ta1.arg = client_info;
-	ta1.next = &ta2;
+	if (ctx->config.query_timelimit > 1000) {
+		/* build the tmout_action_t list */
+		ta1.timeout = 1000;             /* 1 second */
+		ta1.action = &calm_client;
+		ta1.arg = client_info;
+		ta1.next = &ta2;
 
-	ta2.timeout = ctx->config.query_timelimit;
-	ta2.action = NULL;
-	ta2.next = NULL;
+		ta2.timeout = ctx->config.query_timelimit;
+		ta2.action = NULL;
+		ta2.next = NULL;
+	} else {
+		ta1.timeout = ctx->config.query_timelimit;
+		ta1.action = NULL;
+		ta1.next = NULL;
+	}
 
 	/* clean the input */
 	msg = (sjsms_msg_t *)Malloc(client_info->msglen);
