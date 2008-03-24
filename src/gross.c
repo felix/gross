@@ -301,6 +301,10 @@ configure_grossd(configlist_t *config)
 #endif /* DNSBL */
 
 	ctx->config.query_timelimit = atoi(CONF("query_timelimit"));
+#ifdef __APPLE__
+	if (ctx->config.query_timelimit < 1000)
+		daemon_shutdown(1, "query_timelimit must be >= 1000 on Mac OS X");
+#endif /* __APPLE__ */
 
 	/* protocols */
 	cp = config;
