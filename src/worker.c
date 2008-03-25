@@ -327,7 +327,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 					 * 2b. susp_weight > grey_threshold
 					 */
 					if (judgment == J_PASS
-						|| (0 == definitives_running && susp_weight > block_threshold))
+						|| (0 == definitives_running && susp_weight >= block_threshold))
 						definitive = true;
 				} 
 			} else if (ta->action) {
@@ -352,12 +352,12 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			retvalue = STATUS_BLOCK;
 			break;
 		case J_SUSPICIOUS:
-			if (block_threshold > 0 && susp_weight > block_threshold) {
+			if (block_threshold > 0 && susp_weight >= block_threshold) {
 				logstr(GLOG_INFO, "block: %s (susp_weight=%d)", realtuple, susp_weight);
 				retvalue = STATUS_BLOCK;
 				reasonstr = strdup(ctx->config.block_reason);
 			} else {
-				logstr(GLOG_INFO, "greylist: %s", realtuple);
+				logstr(GLOG_INFO, "greylist: %s (susp_weight=%d)", realtuple, susp_weight);
 				retvalue = STATUS_GREY;
 			}
 			break;
