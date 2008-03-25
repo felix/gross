@@ -77,7 +77,7 @@ randomc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	}
 
 	send_result(edict, result);
-	logstr(GLOG_DEBUG, "blocker returning");
+	logstr(GLOG_DEBUG, "random returning");
 	request_unlink(request);
 	
 	return 0;

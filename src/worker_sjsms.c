@@ -281,6 +281,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		switch (status.status) {
 		case STATUS_BLOCK:
 		  block_delay_update((double)delay);
+		  break;
 		case STATUS_MATCH:
 		  match_delay_update((double)delay);
 		  break;
