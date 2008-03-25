@@ -62,9 +62,11 @@ typedef struct {
 	watchdog_t watchdog;
 } thread_ctx_t;
 
+#define IDLETIME (mseconds_t)1000 	/* max loop wait time */
+
 typedef struct {
 	int max_thread;
-	int idle_time;
+	mseconds_t watchdog_time;
 	bool watchdog;
 } pool_limits_t;
 

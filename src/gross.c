@@ -439,6 +439,15 @@ mrproper(int signo)
   raise(signo);
 }
 
+/*
+ * noop	
+ */
+void
+noop(int signo)
+{
+	return;
+}
+
 void
 usage(void)
 {
@@ -474,6 +483,7 @@ main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, &mrproper);
 	signal(SIGINT, &mrproper);
+	signal(SIGUSR1, &noop);
 
 	ctx = initialize_context();
 
@@ -557,8 +567,8 @@ main(int argc, char *argv[])
 
 	/* default limits, these should be configurable */
 	limits.max_thread = 100;
-	limits.idle_time = ctx->config.query_timelimit;
 	limits.watchdog = true;
+	limits.watchdog_time = ctx->config.query_timelimit * 2;
 
 	/* start the check pools */
 #ifdef DNSBL
