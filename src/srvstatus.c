@@ -135,7 +135,7 @@ srvstatus(void *arg)
 		tmpfd = accept(statfd, (struct sockaddr *)&(ctx->config.status_host), &clen);
 
 		if (tmpfd < 0) {
-			perror("Syncfd accept");
+			gerror("Syncfd accept");
 			continue;
 		}
 

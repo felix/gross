@@ -124,15 +124,15 @@ configure_grossd(configlist_t *config)
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
 	if (ret == -1 && errno == EACCES) 
-		daemon_perror("sem_unlink");
+		daemon_fatal("sem_unlink");
 	ctx->sync_guard = sem_open("sem_sync", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
 	if (ctx->sync_guard == (sem_t *)SEM_FAILED)
-		daemon_perror("sem_open");
+		daemon_fatal("sem_open");
 #else
 	ctx->sync_guard = Malloc(sizeof(sem_t));
 	ret = sem_init(ctx->sync_guard, 0, 1); /* Process local (0), initial count 1. */
 	if (ret != 0)
-		daemon_perror("sem_init");
+		daemon_fatal("sem_init");
 #endif /* USE_SEM_OPEN */	    
 
 	pthread_mutex_init(&ctx->bloom_guard, NULL);
@@ -141,7 +141,7 @@ configure_grossd(configlist_t *config)
 
 	ctx->config.gross_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("host"));
-	if (!host) daemon_perror("'host' configuration option invalid:");
+	if (!host) daemon_fatal("'host' configuration option invalid:");
 	inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]), &(ctx->config.gross_host.sin_addr));
 	logstr(GLOG_DEBUG, "Listening host address %s", inet_ntoa( *(struct in_addr*)host->h_addr_list[0]));
 
@@ -393,10 +393,10 @@ configure_grossd(configlist_t *config)
 	if (ctx->config.checks & CHECK_BLOCKER) {
 		ctx->config.blocker.server.sin_family = AF_INET;
 		if (NULL == CONF("blocker_host"))
-			daemon_perror("'blocker' configured, but 'blocker_host' not");
+			daemon_fatal("'blocker' configured, but 'blocker_host' not");
 		host = gethostbyname(CONF("blocker_host"));
 		if (!host)
-			daemon_perror("'blocker' configuration option invalid:");
+			daemon_fatal("'blocker' configuration option invalid:");
 
 		inet_pton(AF_INET, inet_ntoa(*(struct in_addr*)host->h_addr_list[0]),
 			&(ctx->config.blocker.server.sin_addr));
@@ -549,7 +549,7 @@ main(int argc, char *argv[])
 	delay->tv_nsec = 0;
 	ctx->update_q = get_delay_queue(delay);
 	if (ctx->update_q < 0)
-		daemon_perror("get_delay_queue");
+		daemon_fatal("get_delay_queue");
 
 	/* start the bloom manager thread */
 	bloommgr_init();
@@ -618,7 +618,7 @@ main(int argc, char *argv[])
 			rotatecmd.mtype = ROTATE;
 			ret = instant_msg(ctx->update_q, &rotatecmd, 0, 0);
 			if (ret < 0)
-				perror("rotate put_msg");
+				gerror("rotate instant_msg");
 		}
 
 		if (time(NULL) > ctx->stats.begin + ctx->config.stat_interval) {

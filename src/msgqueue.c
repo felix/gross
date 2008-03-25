@@ -114,11 +114,11 @@ get_delay_queue(const struct timespec *ts)
 	/* for put_msg() */
 	putqid = get_queue();
 	if (putqid < 0)
-		daemon_perror("get_queue");
+		daemon_fatal("get_queue");
 	/* for get_msg() */
 	getqid = get_queue();
 	if (getqid < 0)
-		daemon_perror("get_queue");
+		daemon_fatal("get_queue");
 
 	impose_delay = Malloc(sizeof(int));
 

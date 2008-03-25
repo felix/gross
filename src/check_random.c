@@ -92,7 +92,7 @@ random_init(pool_limits_t *limits)
         logstr(GLOG_INFO, "initializing random check thread pool");
 	pool = create_thread_pool("random", &randomc, limits, NULL);
         if (pool == NULL)
-                daemon_perror("create_thread_pool");
+                daemon_fatal("create_thread_pool");
 
 	register_check(pool, true);
 }

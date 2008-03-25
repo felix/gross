@@ -62,7 +62,7 @@ client_postfix(int argc, char **argv)
         }
 
 	if (connect(fd, (struct sockaddr *)&gserv, sizeof(gserv))) {
-		perror("connect");
+		gerror("connect");
 		return 2;
 	}
 	  
@@ -86,7 +86,7 @@ client_postfix(int argc, char **argv)
 		do {
 			linelen = readline(fd, line, MAXLINELEN);
 			if (linelen < 0) {
-				perror("readline");
+				gerror("readline");
 				return 2;
 			}
 	    

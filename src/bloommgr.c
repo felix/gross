@@ -70,7 +70,7 @@ bloommgr(void *arg)
 	for (;;) {
 	  size = get_msg(ctx->update_q, &message, MSGSZ, 0);
 	  if (size < 0) {
-	    perror("get_msg bloommgr");
+	    gerror("get_msg bloommgr");
 	    continue;
 	  }
 	  switch (message.mtype) {
@@ -99,7 +99,7 @@ bloommgr(void *arg)
 	    sync_aggregate(ctx->filter);
 	    ret = sem_post(ctx->sync_guard);
 	    if ( ret ) 
-	      daemon_perror("pthread_mutex_unlock");
+	      daemon_fatal("pthread_mutex_unlock");
 	    break;
 	  default:
 	    logstr(GLOG_ERROR, "Unknown message type in update queue");

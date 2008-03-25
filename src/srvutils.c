@@ -112,7 +112,7 @@ daemon_shutdown(int return_code, const char *fmt, ...)
 }
 
 void
-daemon_perror(const char *reason)
+daemon_fatal(const char *reason)
 {
 	char *combo;
 	char *errstr;
@@ -217,15 +217,15 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 			/* statefile does not exist and creation requested */
 			statefile = fopen(ctx->config.statefile, "w");
 			if (statefile == NULL) {
-				daemon_perror("stat(): statefile creation failed");
+				daemon_fatal("stat(): statefile creation failed");
 			}
 			for (i = 0; i < lumpsize; i++) {
-				if (fputc(0, statefile)) daemon_perror("fputc()");
+				if (fputc(0, statefile)) daemon_fatal("fputc()");
 			}
 			fclose(statefile);
 		} else if (ret != 0) {
 			/* statefile does not exist or is not accessible */
-			daemon_perror("stat(): statefile opening failed");
+			daemon_fatal("stat(): statefile opening failed");
                 }
 
 		fd = open(ctx->config.statefile, O_RDWR);
@@ -316,7 +316,6 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
         if (use_mmap) {
                 ret = msync((void *)ctx->mmap_info, lumpsize, MS_SYNC);
                 if (ret < 0) {
-                        perror("msync");
                         daemon_shutdown(1, "msync woes");
                 }
         }
@@ -380,7 +379,7 @@ Malloc(size_t size)
         chunk = malloc(size);
 
         if (! chunk)
-                daemon_perror("malloc");
+                daemon_fatal("malloc");
 
         return chunk;
 }
@@ -399,14 +398,14 @@ Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg)
 
 	ret = pthread_attr_init(&tattr);
 	if (ret)
-		daemon_perror("pthread_attr_init");
+		daemon_fatal("pthread_attr_init");
 	ret = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
 	if (ret)
-		daemon_perror("pthread_attr_setdetachstate");
+		daemon_fatal("pthread_attr_setdetachstate");
 
 	ret = pthread_create(tid, &tattr, routine, arg);
 	if (ret)
-		daemon_perror("pthread_create");
+		daemon_fatal("pthread_create");
 
 	if (tinfo)
 		tinfo->thread = tid;

@@ -97,7 +97,7 @@ int logmsg(log_message_t *mbuf);
 int statstr(int level, const char *fmt, ...);
 
 void daemon_shutdown(int return_code, const char *fmt, ...);
-void daemon_perror(const char *reason);
+void daemon_fatal(const char *reason);
 int connected(peer_t* peer);
 bloom_ring_queue_t *build_bloom_ring(unsigned int num, bitindex_t num_bits);
 void daemonize(void);

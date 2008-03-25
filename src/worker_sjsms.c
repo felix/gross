@@ -337,23 +337,19 @@ sjsms_server(void *arg)
         thread_pool_t *sjsms_pool;
 
         grossfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        if (grossfd < 0) {
-                /* ERROR */
-                perror("socket");
-                return NULL;
-        }
+        if (grossfd < 0)
+                daemon_fatal("socket");
 
         ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host),
                         sizeof(struct sockaddr_in));
-        if (ret < 0) {
-                daemon_perror("bind");
-        }
+        if (ret < 0)
+                daemon_fatal("bind");
 
         /* initialize the thread pool */
         logstr(GLOG_INFO, "initializing sjsms worker thread pool");
         sjsms_pool = create_thread_pool("sjsms", &sjsms_connection, NULL, NULL);
         if (sjsms_pool == NULL)
-                daemon_perror("create_thread_pool");
+                daemon_fatal("create_thread_pool");
 
         /* server loop */
         for ( ; ; ) {
@@ -369,7 +365,7 @@ sjsms_server(void *arg)
                 if (msglen < 0) {
                         if (errno == EINTR)
                                 continue;
-                        daemon_perror("recvfrom");
+                        daemon_fatal("recvfrom");
                         free_client_info(client_info);
                         return NULL;
                 } else {

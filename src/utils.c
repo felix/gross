@@ -121,7 +121,7 @@ writet(int fd, const char *line, const char *terminator)
 	linelen = strlen(line) + strlen(terminator) + 1;
 	str = malloc(linelen);
 	if (! str) {
-		perror("malloc");
+		gerror("malloc");
 		return -1;
 	}
 	snprintf(str, linelen, "%s%s", line, terminator);

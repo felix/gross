@@ -384,9 +384,8 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 		update.mtype = UPDATE;
 		memcpy(update.mtext, &digest, sizeof(sha_256_t));
 		ret = put_msg(ctx->update_q, &update, sizeof(sha_256_t), 0);
-		if (ret < 0) {
-			perror("update put_msg");
-		}	
+		if (ret < 0)
+			gerror("update put_msg");
 
 		/* update peer */
 		if ( connected( &(ctx->config.peer) ) ) {

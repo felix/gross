@@ -122,7 +122,7 @@ spf_init(pool_limits_t *limits)
         logstr(GLOG_INFO, "initializing spf checker thread pool");
 	pool = create_thread_pool("spf", &spfc, limits);
         if (pool == NULL)
-                daemon_perror("create_thread_pool");
+                daemon_fatal("create_thread_pool");
 
 	/* This is a definitive check */
 	register_check(pool, true);

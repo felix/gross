@@ -211,7 +211,7 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool_mx = (pthread_mutex_t *)Malloc(sizeof(pthread_mutex_t));
 	ret = pthread_mutex_init(pool_mx, NULL);
 	if (ret)
-		daemon_perror("pthread_mutex_init");
+		daemon_fatal("pthread_mutex_init");
 
 	pool_ctx = (pool_ctx_t *)Malloc(sizeof(pool_ctx_t));
 
@@ -312,5 +312,5 @@ send_result(edict_t *edict, void *result)
 	
 	ret = put_msg(edict->resultmq, &message, sizeof(message), 0);
 	if (ret < 0)
-		perror("send_result");
+		gerror("send_result");
 }

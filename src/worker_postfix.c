@@ -81,7 +81,6 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 			ret = respond(client_info->connfd, response);
 			if ( -1 == ret ) {
 				logstr(GLOG_ERROR, "respond() failed in handle_connection");
-				perror("handle_connection");
 			}
 
 			clock_gettime(CLOCK_TYPE, &end);
@@ -116,7 +115,6 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 			request_unlink(request);
 			break;
 		} else if (ret == PARSE_SYS_ERROR) {
-			perror("parse_postfix");
 			request_unlink(request);
 			break;
 		} else if (ret == PARSE_CLOSED) {
@@ -221,34 +219,26 @@ postfix_server(void *arg)
 
         /* create socket for incoming requests */
         grossfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (grossfd < 0) {
-                /* ERROR */
-                perror("socket");
-                return NULL;
-        }
+        if (grossfd < 0) 
+		daemon_fatal("postfix_server: socket");
         opt = 1;
         ret = setsockopt(grossfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        if (ret < 0) {
-                perror("setsockopt (SO_REUSEADDR)");
-                return NULL;
-        }
+        if (ret < 0) 
+                daemon_fatal("setsockopt (SO_REUSEADDR)");
 
         ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host), sizeof(struct sockaddr_in));
-        if (ret < 0) {
-                daemon_perror("bind");
-        }
+        if (ret < 0) 
+                daemon_fatal("bind");
 
         ret = listen(grossfd, MAXCONNQ);
-        if (ret < 0) {
-                perror("listen");
-                return NULL;
-        }
+        if (ret < 0)
+                daemon_fatal("listen");
 
         /* initialize the thread pool */
         logstr(GLOG_INFO, "initializing postfix thread pool");
         postfix_pool = create_thread_pool("postfix", &postfix_connection, NULL, NULL);
         if (postfix_pool == NULL)
-                daemon_perror("create_thread_pool");
+                daemon_fatal("create_thread_pool");
 
         /* server loop */
         for ( ; ; ) {
@@ -262,9 +252,8 @@ postfix_server(void *arg)
                 logstr(GLOG_INSANE, "waiting for connections");
                 client_info->connfd = accept(grossfd, (struct sockaddr *)client_info->caddr, &clen);
                 if (client_info->connfd < 0) {
-                        if (errno != EINTR) {
-                                daemon_perror("accept()");
-                        }
+                        if (errno != EINTR)
+                                daemon_fatal("accept()");
                 } else {
                         logstr(GLOG_INSANE, "new connection");
                         /* a client is connected, handle the

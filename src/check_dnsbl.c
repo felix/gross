@@ -163,7 +163,7 @@ reverse_inet_addr(char *ipstr)
 	ret = inet_pton(AF_INET, ipstr, &inaddr);
 	switch (ret) {
 	case -1:
-		perror("reverse_inet_addr inet_pton");
+		gerror("reverse_inet_addr: inet_pton");
 		return -1;
 		break;
 	case 0:
@@ -191,7 +191,7 @@ reverse_inet_addr(char *ipstr)
 	 */
 	ptr = inet_ntop(AF_INET, &tmp, tmpstr, INET_ADDRSTRLEN);
 	if (!ptr) {
-		perror("inet_ntop");
+		gerror("inet_ntop");
 		return -1;
 	}
 	assert(strlen(tmpstr) == iplen);
@@ -235,7 +235,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	if (NULL == thread_ctx->state) {
 		channel = Malloc(sizeof(channel));
 		if (ares_init(&channel) != ARES_SUCCESS) {
-			perror("ares_init");
+			gerror("ares_init");
 			goto FINISH;
 		}
 		thread_ctx->state = channel;
@@ -381,7 +381,7 @@ dnsbl_init(dns_check_info_t *check_info, pool_limits_t *limits)
 	logstr(GLOG_INFO, "initializing dns checker thread pool '%s'", check_info->name);
 	pool = create_thread_pool(check_info->name, &dnsblc, limits, (void *) check_info);
 	if (pool == NULL)
-		daemon_perror("create_thread_pool");
+		daemon_fatal("create_thread_pool");
 
 	register_check(pool, check_info->definitive);
 }

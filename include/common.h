@@ -256,6 +256,12 @@ typedef struct {
 typedef unsigned long useconds_t;
 #endif /* HAVE_USECONDS_T */
 
+#ifdef GLOG_ERROR
+# define gerror(a) logstr(GLOG_ERROR, "%s: %s", a, strerror(errno))
+#else
+# define gerror(a) perror(a)
+#endif
+
 extern int cleanup_in_progress;
 
 #endif

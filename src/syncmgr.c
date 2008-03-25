@@ -422,20 +422,20 @@ synchronize(peer_t* peer, int syncfd) {
   ret = setsockopt(peer->peerfd_out, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
   if ( ret )
-	daemon_perror("setsockopt");
+	daemon_fatal("setsockopt");
   
   /* Try connect to peer */
   if ( connect(peer->peerfd_out, (struct sockaddr*)&(peer->peer_addr), clen) != 0 ) {
     /* Miserable failure */
     if ( NULL == inet_ntop(AF_INET, &(peer->peer_addr.sin_addr), ipstr, INET_ADDRSTRLEN) )
-	daemon_perror("inet_ntop");
+	daemon_fatal("inet_ntop");
 
     logstr(GLOG_INFO, "Connect to peer failed, host %s, port %d", ipstr, ntohs(peer->peer_addr.sin_port));
 
     ret = sem_post(ctx->sync_guard);
 
     if ( ret )
-	daemon_perror("pthread_mutex_unlock");
+	daemon_fatal("pthread_mutex_unlock");
 
   } else {
     /* Glorious success */
@@ -449,7 +449,7 @@ synchronize(peer_t* peer, int syncfd) {
   
   /* Start listening to incoming sync-requests */
   if ( NULL == inet_ntop(AF_INET, &(ctx->config.sync_host.sin_addr), ipstr, INET_ADDRSTRLEN) )
-	daemon_perror("inet_ntop");
+	daemon_fatal("inet_ntop");
 
   while(TRUE) {
     logstr(GLOG_INFO, "Waiting sync connection on host %s port %d", ipstr, ntohs(ctx->config.sync_host.sin_port));
@@ -459,7 +459,7 @@ synchronize(peer_t* peer, int syncfd) {
     
     if (peer->peerfd_in < 0) {
       if (errno != EINTR) {
-	perror("Peer sync in accept()");
+	gerror("Peer sync in accept()");
 	return 0;
       }
     }

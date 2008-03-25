@@ -347,7 +347,7 @@ read_config(const char *filename)
 				if (paramcount <= maxparams(*name) && paramcount >= minparams(*name)) {
 					record_config_item(&config, *name, *value, *params);
 					if (ret < 0)
-						daemon_perror("record_config_item");
+						daemon_fatal("record_config_item");
 				} else {
 					daemon_shutdown(1, "Invalid parameter count for configuration parameter: %s", *name);
 				}
@@ -368,7 +368,7 @@ read_config(const char *filename)
 
 	/* check if a real error occurred */
 	if (rlstatus == ERROR)
-		daemon_perror("readline");
+		daemon_fatal("readline");
 	
 	return config;
 }
