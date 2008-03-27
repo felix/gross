@@ -35,6 +35,7 @@ cleanup_dnsblc(void *state)
 
 	channel = (ares_channel) state;
 	ares_destroy(channel);
+	state = NULL;
 	return 0;
 }
 
