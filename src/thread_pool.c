@@ -87,6 +87,8 @@ thread_pool(void *arg)
 			/* update the reference time */
 			clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);
 
+			logstr(GLOG_DEBUG, "pool_ctx (1): %d", pool_ctx);
+
 			if (pool_ctx->watchdog_time) {
 				/* check the watchdog status */
 				dogp = pool_ctx->wdlist;
@@ -110,21 +112,25 @@ thread_pool(void *arg)
 			         * brutal, but efficient for the purpose
 				 */
 				pool_ctx->ewma_idle--;
-				/*
-				 * remove thread from the watchdoglist
-				 * do not Free(), the block is reserved from the stack 
-				 */
-				dogp = pool_ctx->wdlist;
-				if (pool_ctx->watchdog_time && dogp->tid == pthread_self()) {
-					/* first node */
-					pool_ctx->wdlist = pool_ctx->wdlist->next;
-				} else { 
-					while (dogp->next) {
-						if (dogp->next->tid == pthread_self()) {
-							dogp->next = dogp->next->next;
-							break;
+				if (pool_ctx->watchdog_time) {
+					/*
+					 * remove thread from the watchdoglist
+					 * do not Free(), the block is reserved from the stack 
+					 */
+					logstr(GLOG_DEBUG, "pool_ctx (2): %d", pool_ctx);
+
+					dogp = pool_ctx->wdlist;
+					if (dogp->tid == pthread_self()) {
+						/* first node */
+						pool_ctx->wdlist = pool_ctx->wdlist->next;
+					} else { 
+						while (dogp->next) {
+							if (dogp->next->tid == pthread_self()) {
+								dogp->next = dogp->next->next;
+								break;
+							}
+						dogp = dogp->next;
 						}
-					dogp = dogp->next;
 					}
 				}
 				POOL_MUTEX_UNLOCK;
