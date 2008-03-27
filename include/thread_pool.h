@@ -18,6 +18,8 @@
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
+#include <signal.h>
+
 typedef int mseconds_t;
 
 typedef struct thread_pool_s {
