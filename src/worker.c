@@ -191,6 +191,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	int checkcount;
 	int susp_weight = 0;
 	int block_threshold;
+	int grey_threshold;
 	bool free_ta = false;
 	judgment_t judgment;
 	bool definitive;
@@ -203,6 +204,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	final->status = STATUS_FAIL;
 
 	block_threshold = ctx->config.block_threshold;
+	grey_threshold = ctx->config.grey_threshold;
 
 	/* apply grey_mask for client_address */
 	chkipstr = grey_mask(request->client_address);
@@ -356,9 +358,12 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 				logstr(GLOG_INFO, "block: %s (susp_weight=%d)", realtuple, susp_weight);
 				retvalue = STATUS_BLOCK;
 				reasonstr = strdup(ctx->config.block_reason);
-			} else {
+			} else if (grey_threshold > 0 && susp_weight >= grey_threshold) {
 				logstr(GLOG_INFO, "greylist: %s (susp_weight=%d)", realtuple, susp_weight);
 				retvalue = STATUS_GREY;
+			} else {
+				logstr(GLOG_INFO, "trust: %s (susp_weight=%d)", realtuple, susp_weight);
+				retvalue = STATUS_TRUST;
 			}
 			break;
 		case J_UNDEFINED:

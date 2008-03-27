@@ -1,8 +1,8 @@
 Version svn
 
 * changed the port defaults to be more compatible with
-  the community, grossd now defaults to ports 5225 (grossd),
-  5226 (sync), and 5222 (status queries)
+  the community, grossd now defaults to ports 5525 (grossd),
+  5524 (sync), and 5522 (status queries)
 * preliminary support for MILTER protocol, check config file
 * support for definitive checks: it's now possible to write 
   checks that cause grossd to block or pass (whitelisting)

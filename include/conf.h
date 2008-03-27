@@ -20,9 +20,9 @@
 
 #define DEFAULT_CONFIG	"update",		"grey", 	\
 			"host",			"127.0.0.1",	\
-			"port",			"5225",		\
-			"sync_port",		"5226",		\
-			"status_port",		"5222",		\
+			"port",			"5525",		\
+			"sync_port",		"5524",		\
+			"status_port",		"5522",		\
 			"rotate_interval", 	"3600",		\
 			"filter_bits",		"22",		\
 			"number_buffers",	"8",            \
@@ -39,6 +39,9 @@
 			"grey_delay",		"10",           \
 			"syslog_facility",	"mail",		\
 			"blocker_port",		"4466",		\
+			"blocker_weight",	"1",		\
+			"block_threshold",	"0",		\
+			"grey_threshold",	"1",		\
 			"block_reason",		"Bad reputation", \
 			"query_timelimit",	"5000"
 
@@ -80,8 +83,10 @@
 			"status",			\
 			"blocker_host",			\
 			"blocker_port",			\
+			"blocker_weight",		\
 			"query_timelimit",		\
 			"block_threshold",		\
+			"grey_threshold",		\
 			"block_reason",			\
 			"milter_listen"
 

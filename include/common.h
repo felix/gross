@@ -185,6 +185,7 @@ typedef struct {
 	sjsms_config_t sjsms;
 	blocker_config_t blocker;
 	mseconds_t query_timelimit;
+	int grey_threshold;
 	int block_threshold;
 	char *block_reason;
 #ifdef MILTER

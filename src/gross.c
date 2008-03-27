@@ -407,6 +407,11 @@ configure_grossd(configlist_t *config)
 			htons(atoi(CONF("blocker_port")));
 	}
 	
+	if (CONF("grey_threshold"))
+		ctx->config.grey_threshold = atoi(CONF("grey_threshold"));
+	else
+		ctx->config.grey_threshold = 1;
+
 	if (CONF("block_threshold"))
 		ctx->config.block_threshold = atoi(CONF("block_threshold"));
 	else
