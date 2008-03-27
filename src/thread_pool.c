@@ -87,8 +87,6 @@ thread_pool(void *arg)
 			/* update the reference time */
 			clock_gettime(CLOCK_TYPE, &pool_ctx->last_idle_check);
 
-			logstr(GLOG_DEBUG, "pool_ctx (1): %d", pool_ctx);
-
 			if (pool_ctx->watchdog_time) {
 				/* check the watchdog status */
 				dogp = pool_ctx->wdlist;
@@ -117,8 +115,6 @@ thread_pool(void *arg)
 					 * remove thread from the watchdoglist
 					 * do not Free(), the block is reserved from the stack 
 					 */
-					logstr(GLOG_DEBUG, "pool_ctx (2): %d", pool_ctx);
-
 					dogp = pool_ctx->wdlist;
 					if (dogp->tid == pthread_self()) {
 						/* first node */

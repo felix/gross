@@ -324,6 +324,8 @@ configure_grossd(configlist_t *config)
 		cp = cp->next;
 	}
 
+	ctx->config.blocker.weight = atoi(CONF("blocker_weight"));
+
 	/* checks */
 	cp = config;
 	while(cp) {
