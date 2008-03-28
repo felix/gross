@@ -88,7 +88,7 @@
  */
 #define MSGSZ           1024
 #define MAXLINELEN      MSGSZ
-#define GROSSPORT	5225	/* default port for server */
+#define GROSSPORT	5525	/* default port for server */
 
 #define STARTUP_SYNC ((uint32_t)0x00)
 #define OPER_SYNC ((uint32_t)0x01)
