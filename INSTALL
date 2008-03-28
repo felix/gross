@@ -28,10 +28,10 @@ file via -f command line option.
 sync_listen is the server ip, and sync_peer stands for the replication
 partners ip address.
 
-Grossd query server defaults to port 5225/tcp with proto=postfix,
-port 5225/udp with proto=sjsms and replication service
-(if configured) to port 5226/tcp. Grossd listens for status queries
-on port 5222/tcp.
+Grossd query server defaults to port 5525/tcp with proto=postfix,
+port 5525/udp with proto=sjsms and replication service
+(if configured) to port 5526/tcp. Grossd listens for status queries
+on port 5522/tcp.
 
 Detailed information about each option is included within the 
 example configuration file.
