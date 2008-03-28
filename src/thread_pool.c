@@ -96,7 +96,7 @@ thread_pool(void *arg)
 						/* a stuck thread */
 						logstr(GLOG_WARNING, "thread #%x of pool '%s' stuck, last seen %d ms ago.",
 							(uint32_t)dogp->tid, pool_ctx->info->name, lastseenms);
-						pthread_kill(dogp->tid, SIGUSR1);
+						pthread_kill(dogp->tid, SIGALRM);
 					}
 					dogp = dogp->next;
 				}

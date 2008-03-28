@@ -154,6 +154,7 @@ typedef struct {
 
 typedef struct {
 	struct sockaddr_in server;
+	int weight;
 } blocker_config_t;
 
 #ifdef MILTER

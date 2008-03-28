@@ -452,6 +452,7 @@ mrproper(int signo)
 void
 noop(int signo)
 {
+	signal(SIGALRM, &noop);
 	return;
 }
 
@@ -486,11 +487,10 @@ main(int argc, char *argv[])
 
 	/* mind the signals */
 	signal(SIGHUP, SIG_IGN);
-	signal(SIGALRM, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, &mrproper);
 	signal(SIGINT, &mrproper);
-	signal(SIGUSR1, &noop);
+	signal(SIGALRM, &noop);
 
 	ctx = initialize_context();
 

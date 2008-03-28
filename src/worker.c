@@ -415,7 +415,6 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 int
 process_parameter(grey_tuple_t *tuple, const char *str)
 {
-        int ret = 0;
 	char *match;
 
         /* matching switch */
