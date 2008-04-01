@@ -233,20 +233,20 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 }
 
 /*
- * submit_job	- add a job to the work queue
+ * submit_job	- add a job request to the work queue
  */
 int
-submit_job(thread_pool_t *pool, edict_t *job)
+submit_job(thread_pool_t *pool, edict_t *edict)
 {
 	edict_message_t message;
 
 	message.mtype = 0;
-	message.edict = job;
+	message.edict = edict;
 
 	/* increment reference counter */
-	pthread_mutex_lock(&job->reference.mx);
-	job->reference.count++;
-	pthread_mutex_unlock(&job->reference.mx);
+	pthread_mutex_lock(&edict->reference.mx);
+	edict->reference.count++;
+	pthread_mutex_unlock(&edict->reference.mx);
 
 	return put_msg(pool->work_queue_id, &message, sizeof(message.edict), 0);
 }
