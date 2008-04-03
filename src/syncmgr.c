@@ -498,7 +498,7 @@ syncmgr(void *arg)
 
   syncfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (syncfd < 0) {
-    logstr(GLOG_CRIT, "Cannot listen to sync port. Got errno: %d", errno);
+    logstr(GLOG_CRIT, "syncmgr: socket: %s", strerror(errno));
     pthread_exit(NULL);
   }
 

@@ -180,10 +180,8 @@ delay(void *arg) {
 			}
 		}
 		msg = get_msg_raw(queue_info->inq, 0);
-		logstr(GLOG_INSANE, "got a message from inq");
-
 		assert(msg->next == NULL);
-		logstr(GLOG_INSANE, "passing message to outq", sleeptime.tv_sec);
+		logstr(GLOG_INSANE, "passing message from inq to outq");
 		put_msg_raw(queue_info->outq, msg);
 	}
 }
