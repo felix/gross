@@ -429,30 +429,12 @@ configure_grossd(configlist_t *config)
 #endif /* MILTER */
 }
 
-/* 
- * mrproper	- tidy upon exit
- */
-void
-mrproper(int signo)
-{
-  static int cleanup_in_progress = 0;
-
-  if (cleanup_in_progress)
-    raise(signo);
-
-  cleanup_in_progress = 1;
-  signal(SIGTERM, SIG_DFL);
-  signal(SIGINT, SIG_DFL);
-  raise(signo);
-}
-
 /*
- * noop	
+ * noop	 - signal handler to interrupt blockin I/O operations
  */
 void
 noop(int signo)
 {
-	signal(SIGALRM, &noop);
 	return;
 }
 
@@ -468,6 +450,24 @@ usage(void)
 	printf("       -r	disable replication\n");
 	printf("       -V	version information\n");
 	exit(1);
+}
+
+void
+setup_signal_handlers(void)
+{
+	struct sigaction setup_action;
+	sigset_t block_mask;
+	
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+
+	/* this is used by thread_pool to interrupt blocking I/O operations */
+	sigemptyset (&block_mask);
+	sigaddset (&block_mask, SIGALRM);
+	setup_action.sa_handler = noop;
+	setup_action.sa_mask = block_mask;
+	setup_action.sa_flags = 0;
+	sigaction (SIGALRM, &setup_action, NULL);
 }
 
 int
@@ -486,11 +486,7 @@ main(int argc, char *argv[])
 	dns_check_info_t *dns_check_info;
 
 	/* mind the signals */
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGTERM, &mrproper);
-	signal(SIGINT, &mrproper);
-	signal(SIGALRM, &noop);
+	setup_signal_handlers();
 
 	ctx = initialize_context();
 
