@@ -96,7 +96,20 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 	if (ret != SPF_RESULT_PASS) {
 		SPF_request_query_rcptto(spf_request, &spf_response_2mx, request->recipient);
 		ret = SPF_response_result(spf_response_2mx);
-		if (ret == SPF_RESULT_PASS) {
+		switch (ret) {
+		case SPF_RESULT_FAIL:
+			result->judgment = J_BLOCK;
+			logstr(GLOG_DEBUG, "SPF policy violation (FAIL) for: %s from %s",
+				request->sender, request->client_address);
+			result->reason = strdup("SPF policy violation");
+			break;
+		case SPF_RESULT_SOFTFAIL:
+			result->judgment = J_SUSPICIOUS;
+			logstr(GLOG_DEBUG, "SPF policy violation (SOFTFAIL) for: %s from %s",
+				request->sender, request->client_address);
+			break;
+		case default:
+			break;
 		}
 	}
 
