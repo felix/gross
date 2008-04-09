@@ -139,6 +139,8 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 		smfi_setreply(milter_ctx, "550", "5.7.1", status.reason ? status.reason : "rejected by policy");
 		retvalue = SMFIS_REJECT;
 		break;
+	default:
+		break;
 	}
 
 	if (status.reason)
