@@ -106,6 +106,26 @@ then
     )
 fi
 
+AC_MSG_CHECKING([whether to build check_spf])
+AC_ARG_ENABLE(spf,
+    AC_HELP_STRING([--enable-spf], [Enable spf check]),
+    [AC_MSG_RESULT([yes]) ; spf="yes"],
+    [AC_MSG_RESULT([no]) ; spf="no"]
+)
+
+if test "$spf" == "yes"
+then
+    AC_CHECK_HEADERS(spf2/spf_request.h)
+
+    AC_CHECK_HEADERS(foo.h,
+	SPFSOURCES='check_spf.o'
+    )
+    AC_SUBST([SPFSOURCES])
+    AC_CHECK_LIB(spf2, SPF_request_new, ,
+	AC_MSG_ERROR([libspf2 library needed for spf check])
+    )
+fi
+
 AC_CHECK_TYPES(useconds_t)
 
 dnl AC_HEADER_STDC
