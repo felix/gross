@@ -1,4 +1,9 @@
-Version svn
+Vesrion 0.9.1
+
+Issues fixed:
+#55: --disable-dnsbl broken on 0.9
+
+Version 0.9
 
 * changed the port defaults to be more compatible with
   the community, grossd now defaults to ports 5525 (grossd),

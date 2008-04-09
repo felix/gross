@@ -483,7 +483,9 @@ main(int argc, char *argv[])
 	int c;
 	struct timespec *delay;
 	pool_limits_t limits;
+#ifdef DNSBL
 	dns_check_info_t *dns_check_info;
+#endif
 
 	/* mind the signals */
 	setup_signal_handlers();
