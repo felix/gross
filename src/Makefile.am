@@ -21,4 +21,4 @@ grosscheck_la_LDFLAGS = -module -avoid-version @STATIC_GLIBC_FLAG@
 
 check_PROGRAMS = sha256
 bloom_SOURCES = sha256.c bloom-test.c bloom.c srvutils.c utils.c
-sha256_SOURCES = sha256-test.c sha256.c srvutils.c utils.c
+sha256_SOURCES = sha256-test.c sha256.c srvutils.c utils.c bloom.c
