@@ -1,4 +1,12 @@
-Vesrion 0.9.1
+Version 0.9-svn
+
+* documented configuration options query_timelimit and
+  block_reason. See doc/examples/grossd.conf
+
+#56: Grossd skips all the checks if block_threshold not set
+#57: sjsms: query_timelimit is one second off
+
+Version 0.9.1
 
 Issues fixed:
 #55: --disable-dnsbl broken on 0.9

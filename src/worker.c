@@ -329,7 +329,9 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 					 * 2b. susp_weight > grey_threshold
 					 */
 					if (judgment == J_PASS
-						|| (0 == definitives_running && susp_weight >= block_threshold))
+						|| (0 == definitives_running
+							&& block_threshold != 0
+							&& susp_weight >= block_threshold))
 						definitive = true;
 				} 
 			} else if (ta->action) {
