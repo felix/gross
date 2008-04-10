@@ -22,10 +22,9 @@
  * All the functions are re-entrant and thread safe unless stated otherwise.
  */
 
-#include "common.h"
+#include "common.h" 
 #include "counter.h"
-#include "srvutils.h"
-#include "utils.h"
+#include "srvutils.h" 
 
 #define GLOBAL_COUNTER_LOCK { assert(pthread_mutex_lock(&global_counter_lk) == 0); }
 #define GLOBAL_COUNTER_UNLOCK { pthread_mutex_unlock(&global_counter_lk); }
@@ -117,11 +116,30 @@ counter_create(void)
         return i;
 }
 
-long long int
+uint64_t
+counter_read(int cid)
+{
+	counter_t *counter;
+	uint64_t value;
+	int ret;
+
+	counter = counterbyid(cid);
+	if (! counter)
+		return 0;
+
+	ret = pthread_mutex_lock(&counter->mx);
+	assert(ret == 0);
+	value = counter->value;
+	pthread_mutex_unlock(&counter->mx);
+
+	return value;
+}
+
+uint64_t
 counter_increment(int cid)
 {
 	counter_t *counter;
-	long long int value;
+	uint64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
@@ -137,11 +155,11 @@ counter_increment(int cid)
 	return value;
 }
 
-long long int
+uint64_t
 counter_decrement(int cid)
 {
 	counter_t *counter;
-	long long int value;
+	uint64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
@@ -157,11 +175,11 @@ counter_decrement(int cid)
 	return value;
 }
 
-long long int
+uint64_t
 counter_restart(int cid)
 {
 	counter_t *counter;
-	long long int value;
+	uint64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
@@ -177,11 +195,11 @@ counter_restart(int cid)
 	return value;
 }
 
-long long int
-counter_set(int cid, long long int newvalue)
+uint64_t
+counter_set(int cid, uint64_t newvalue)
 {
 	counter_t *counter;
-	long long int value;
+	uint64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
