@@ -1,6 +1,11 @@
 Version 0.8-svn
 
 Issues fixed:
+#54: Grossd dies without error msg in non-localhost setup (with linux)
+
+Version 0.8.2
+
+Issues fixed:
 #39: blocker queries cause segmentation fault
 - updating mappings example in INSTALL
 - logging less verbose (one line per query)

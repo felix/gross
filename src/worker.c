@@ -105,6 +105,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	struct timespec start, now;
 	mseconds_t timeused;
 	tmout_action_t *tap;
+	tmout_action_t *ta_default_reserved = NULL;
 	int i;
 	int checks_running;
 	struct in_addr inaddr;
@@ -186,6 +187,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 			ta->timeout = ctx->config.query_timelimit;
 			ta->action = NULL;
 			ta->next = NULL;
+			ta_default_reserved = ta;
 		}
 
 		/* Write the edict */
@@ -243,7 +245,7 @@ test_tuple(grey_tuple_t *request, tmout_action_t *ta) {
 	}
 
 	/* we cannot free(ta) if we got it as parameter */
-	if (free_ta) free(ta);
+	if (free_ta) free(ta_default_reserved);
 
 	if (((retvalue == STATUS_GREY) || (retvalue == STATUS_MATCH)) 
 		|| (ctx->config.flags & FLG_UPDATE_ALWAYS)) {
