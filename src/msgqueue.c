@@ -726,7 +726,7 @@ walk_queue(int msgid, int (* callback)(void *))
 	if (mq->head) {
 		msg = mq->head;
 		while (msg) {
-			logstr(GLOG_ERROR, "walk_queue: calling callback function");
+			logstr(GLOG_DEBUG, "walk_queue: calling callback function");
 			ret = callback(msg->msgp);
 			if (ret < 0) {
 				logstr(GLOG_ERROR, "walk_queue: callback returned FAILURE");
@@ -740,7 +740,7 @@ walk_queue(int msgid, int (* callback)(void *))
 		if (mq->delaypair->head) {
 			msg = mq->head;
 			while (msg) {
-				logstr(GLOG_ERROR, "walk_queue: calling callback function");
+				logstr(GLOG_DEBUG, "walk_queue: calling callback function");
 				ret = callback(msg->msgp);
 				if (ret < 0) {
 					logstr(GLOG_ERROR, "walk_queue: callback returned FAILURE");

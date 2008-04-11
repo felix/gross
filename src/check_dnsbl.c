@@ -310,7 +310,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			callback_arg->check_info = check_info;
 			ares_gethostbyname(channel, query, PF_INET, &addrinfo_callback, callback_arg);
 		} else {
-			logstr(GLOG_INFO, "skipping dnsbl %s due to timeouts.", dnsbl->name);
+			logstr(GLOG_DEBUG, "skipping dnsbl %s due to timeouts.", dnsbl->name);
 		}
 		Free(query);
 		dnsbl = dnsbl->next;

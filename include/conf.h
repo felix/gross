@@ -43,7 +43,8 @@
 			"block_threshold",	"0",		\
 			"grey_threshold",	"1",		\
 			"block_reason",		"Bad reputation", \
-			"query_timelimit",	"5000"
+			"query_timelimit",	"5000",		\
+			"pool_maxthreads",	"100"
 
 #define MULTIVALUES	"dnsbl",	\
 			"rhsbl",	\
@@ -88,7 +89,8 @@
 			"block_threshold",		\
 			"grey_threshold",		\
 			"block_reason",			\
-			"milter_listen"
+			"milter_listen",		\
+			"pool_maxthreads"		\
 
 #define DEPRECATED_NAMES 	"syncport",		\
 				"synchost",		\

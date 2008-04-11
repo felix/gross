@@ -1,7 +1,11 @@
 Version 0.9-svn
 
-* documented configuration options query_timelimit and
+- documented configuration options query_timelimit and
   block_reason. See doc/examples/grossd.conf
+- new option: pool_maxthreads, you may need to change this
+  if you get more than 100 queries per second and/or have
+  slow dns servers
+- some log messages got sent with wrong priorities
 
 #56: Grossd skips all the checks if block_threshold not set
 #57: sjsms: query_timelimit is one second off

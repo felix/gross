@@ -169,7 +169,6 @@ typedef struct {
 	struct sockaddr_in status_host;
 	peer_t peer;
 	int max_connq;
-	int max_threads;
 	time_t rotate_interval;
 	time_t stat_interval;
 	bitindex_t filter_size;
@@ -188,6 +187,7 @@ typedef struct {
 	mseconds_t query_timelimit;
 	int grey_threshold;
 	int block_threshold;
+	int pool_maxthreads;
 	char *block_reason;
 #ifdef MILTER
 	milter_config_t milter;

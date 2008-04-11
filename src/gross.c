@@ -156,7 +156,6 @@ configure_grossd(configlist_t *config)
 	ctx->config.gross_host.sin_port =
 		htons(atoi(CONF("port")));
 	ctx->config.max_connq = 50;
-	ctx->config.max_threads = 10;
 	ctx->config.peer.connected = 0;
 
 	ctx->config.greylist_delay = atoi(CONF("grey_delay"));
@@ -299,6 +298,7 @@ configure_grossd(configlist_t *config)
 
 
 #endif /* DNSBL */
+	ctx->config.pool_maxthreads = atoi(CONF("pool_maxthreads"));
 
 	ctx->config.query_timelimit = atoi(CONF("query_timelimit"));
 #ifdef __APPLE__
@@ -571,7 +571,7 @@ main(int argc, char *argv[])
 	 */
 
 	/* default limits, these should be configurable */
-	limits.max_thread = 100;
+	limits.max_thread = ctx->config.pool_maxthreads;
 	limits.watchdog = true;
 	limits.watchdog_time = ctx->config.query_timelimit * 2;
 

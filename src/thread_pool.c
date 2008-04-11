@@ -130,7 +130,7 @@ thread_pool(void *arg)
 					}
 				}
 				POOL_MUTEX_UNLOCK;
-				logstr(GLOG_INFO, "threadpool '%s' thread shutting down",
+				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down",
 					pool_ctx->info->name);
 				/* run a cleanup routine if defined */
 				if (thread_ctx.cleanup)
@@ -166,7 +166,7 @@ thread_pool(void *arg)
 			if (pool_ctx->count_idle < 1) {
 				/* We were the last idling thread, start another */
 				if (pool_ctx->count_thread <= pool_ctx->max_thread || 0 == pool_ctx->max_thread) {
-					logstr(GLOG_INFO, "threadpool '%s' starting another thread",
+					logstr(GLOG_DEBUG, "threadpool '%s' starting another thread",
 						pool_ctx->info->name);
 					Pthread_create(NULL, &thread_pool, pool_ctx);
 				} else {
