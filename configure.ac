@@ -1,4 +1,4 @@
-AC_INIT([gross],[svn])
+AC_INIT([gross],[0.9-svn])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
@@ -103,26 +103,6 @@ then
     AC_SUBST([MILTERSOURCES])
     AC_CHECK_LIB(milter, smfi_main, ,
 	AC_MSG_ERROR([libmilter library needed for milter support])
-    )
-fi
-
-AC_MSG_CHECKING([whether to build check_spf])
-AC_ARG_ENABLE(spf,
-    AC_HELP_STRING([--enable-spf], [Enable spf check]),
-    [AC_MSG_RESULT([yes]) ; spf="yes"],
-    [AC_MSG_RESULT([no]) ; spf="no"]
-)
-
-if test "$spf" == "yes"
-then
-    AC_CHECK_HEADERS(spf2/spf_request.h)
-
-    AC_CHECK_HEADERS(foo.h,
-	SPFSOURCES='check_spf.o'
-    )
-    AC_SUBST([SPFSOURCES])
-    AC_CHECK_LIB(spf2, SPF_request_new, ,
-	AC_MSG_ERROR([libspf2 library needed for spf check])
     )
 fi
 
