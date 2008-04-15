@@ -18,6 +18,7 @@
     <single_instance />
 
     <!-- ensure that named is running -->
+    <!!-- uncomment if you want to require named to be running before grossd
     <dependency 
             name='nameservice'
             grouping='require_all'
@@ -25,9 +26,11 @@
             type='service'>
                 <service_fmri value='svc:/milestone/name-services' />
     </dependency>
+    -->
 
     <!-- ensure that pmx is running
          comment this dependency if not using sophos blocker -->
+    <!!-- uncomment if you want to require pmx to be running before grossd
     <dependency 
             name='pmx'
             grouping='require_all'
@@ -35,6 +38,7 @@
             type='service'>
                 <service_fmri value='svc:/application/pmx' />
     </dependency>
+    -->
 
     <!-- start method -->
     <exec_method 
