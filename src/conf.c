@@ -349,7 +349,7 @@ read_config(const char *filename)
 					if (ret < 0)
 						daemon_fatal("record_config_item");
 				} else {
-					daemon_shutdown(1, "Invalid parameter count for configuration parameter: %s", *name);
+					daemon_shutdown(EXIT_CONFIG, "Invalid parameter count for configuration parameter: %s", *name);
 				}
 			} else {
 				i = 0;
@@ -359,9 +359,9 @@ read_config(const char *filename)
 					i++;
 				}
 				if (deprecated[i])
-					daemon_shutdown(1, "Deprecated configuration parameter: %s", *name);
+					daemon_shutdown(EXIT_CONFIG, "Deprecated configuration parameter: %s", *name);
 				else
-					daemon_shutdown(1, "Unknown configuration parameter: %s", *name);
+					daemon_shutdown(EXIT_CONFIG, "Unknown configuration parameter: %s", *name);
 			}
 		}
 	} while (rlstatus == DATA);

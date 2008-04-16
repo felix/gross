@@ -25,6 +25,12 @@
 
 #define DATESTRLEN 26
 
+#define EXIT_NOERROR 		0
+#define EXIT_USAGE 		1
+#define EXIT_FATAL		2
+#define EXIT_PIDFILE_EXISTS 	3
+#define EXIT_CONFIG		4
+
 enum logmsgtype_t {
 	LOG_TYPE	   = 0x10000,
 	GLOG_EMERG         = LOG_TYPE | LOG_EMERG,

@@ -185,14 +185,14 @@ configure_grossd(configlist_t *config)
 	} else if ((updatestr == NULL) || (strncmp(updatestr, "grey", 5) == 0))
 		logstr(GLOG_INFO, "updatestyle: GREY");
 	else {
-		daemon_shutdown(1, "Invalid updatestyle: %s", updatestr);
+		daemon_shutdown(EXIT_CONFIG, "Invalid updatestyle: %s", updatestr);
 	}
 
 	/* we must reset errno because strtol returns 0 if it fails */
 	errno = 0;
 	ctx->config.grey_mask = strtol(CONF("grey_mask"), (char **)NULL, 10);
 	if (errno || ctx->config.grey_mask > 32 || ctx->config.grey_mask < 0)
-		daemon_shutdown(1, "Invalid grey_mask: %s", CONF("grey_mask"));
+		daemon_shutdown(EXIT_CONFIG, "Invalid grey_mask: %s", CONF("grey_mask"));
 
 	ctx->config.status_host.sin_family = AF_INET;
 	host = gethostbyname( CONF("status_host") ? CONF("status_host") : CONF("host") );
@@ -212,28 +212,43 @@ configure_grossd(configlist_t *config)
 		ctx->config.statefile = NULL;
 
 	if ((ctx->config.filter_size<5) || (ctx->config.filter_size>32)) {
-	  daemon_shutdown(1, "filter_bits should be in range [4,32]");
+	  daemon_shutdown(EXIT_CONFIG, "filter_bits should be in range [4,32]");
 	}
 
 	if (!CONF("sjsms_response_grey"))
-		daemon_shutdown(1, "No sjsms_response_grey set!");
+		daemon_shutdown(EXIT_CONFIG, "No sjsms_response_grey set!");
 	else
 		ctx->config.sjsms.responsegrey = strdup(CONF("sjsms_response_grey"));
 	if (!CONF("sjsms_response_trust"))
-		daemon_shutdown(1, "No sjsms_response_trust set!");
+		daemon_shutdown(EXIT_CONFIG, "No sjsms_response_trust set!");
 	else
 		ctx->config.sjsms.responsetrust = strdup(CONF("sjsms_response_trust"));
 	if (!CONF("sjsms_response_block"))
-		daemon_shutdown(1, "No sjsms_response_block set!");
+		daemon_shutdown(EXIT_CONFIG, "No sjsms_response_block set!");
 	else
 		ctx->config.sjsms.responseblock = strdup(CONF("sjsms_response_block"));
 	if (!CONF("sjsms_response_match"))
-		daemon_shutdown(1, "No sjsms_response_match set!");
+		daemon_shutdown(EXIT_CONFIG, "No sjsms_response_match set!");
 	else
 		ctx->config.sjsms.responsematch = strdup(CONF("sjsms_response_match"));
 
 	if (CONF("stat_interval"))
 	  ctx->config.stat_interval = atoi(CONF("stat_interval"));
+
+	/* pidfile */
+	cp = config;
+	while (cp) {
+		if (strcmp(cp->name, "pidfile") == 0) { 
+			ctx->config.pidfile = strdup(cp->value);
+			ctx->config.flags |= FLG_CREATE_PIDFILE;
+			if (cp->params)
+				if (strcmp(cp->params->value, "check") == 0)
+					ctx->config.flags |= FLG_CHECK_PIDFILE;
+				else
+					daemon_shutdown(EXIT_CONFIG, "invalid parameter for 'pidfile': %s", cp->params->value);
+		}
+		cp = cp->next;
+	}
 
 	ctx->config.statlevel = STATS_NONE;
 	cp = config;
@@ -290,12 +305,14 @@ configure_grossd(configlist_t *config)
 	cp = config;
 	while (cp) {
 		if (strcmp(cp->name, "rhsbl") == 0) {
-			add_dnsbl(&ctx->rhsbl, cp->value, 1);
+			if (cp->params) 
+		    		add_dnsbl(&ctx->rhsbl, cp->value, atoi(cp->params->value));
+			else 
+				add_dnsbl(&ctx->rhsbl, cp->value, 1);
 			stat_add_dnsbl(cp->value);
 		}
 		cp = cp->next;
 	}
-
 
 #endif /* DNSBL */
 	ctx->config.pool_maxthreads = atoi(CONF("pool_maxthreads"));
@@ -303,7 +320,7 @@ configure_grossd(configlist_t *config)
 	ctx->config.query_timelimit = atoi(CONF("query_timelimit"));
 #ifdef __APPLE__
 	if (ctx->config.query_timelimit < 1000)
-		daemon_shutdown(1, "query_timelimit must be >= 1000 on Mac OS X");
+		daemon_shutdown(EXIT_CONFIG, "query_timelimit must be >= 1000 on Mac OS X");
 #endif /* __APPLE__ */
 
 	/* protocols */
@@ -319,7 +336,7 @@ configure_grossd(configlist_t *config)
 				ctx->config.protocols |= PROTO_MILTER;
 #endif /* MILTER */
 			else
-				daemon_shutdown(1, "unknown protocol: %s", cp->value);
+				daemon_shutdown(EXIT_CONFIG, "unknown protocol: %s", cp->value);
 		}
 		cp = cp->next;
 	}
@@ -362,7 +379,7 @@ configure_grossd(configlist_t *config)
 				ctx->config.loglevel = GLOG_WARNING;
 			else if (strcmp(cp->value, "error") == 0)
 				ctx->config.loglevel = GLOG_ERROR;
-			else daemon_shutdown(1, "Unknown log_level: %s", cp->value);
+			else daemon_shutdown(EXIT_CONFIG, "Unknown log_level: %s", cp->value);
 		} else if (strcmp(cp->name, "syslog_facility") == 0) {
 			if (strcmp(cp->value, "mail") == 0)
 				ctx->config.syslogfacility = LOG_MAIL;
@@ -382,7 +399,7 @@ configure_grossd(configlist_t *config)
                                 ctx->config.syslogfacility = LOG_LOCAL6; 
 			else if (strcmp(cp->value, "local7") == 0)
                                 ctx->config.syslogfacility = LOG_LOCAL7; 
-			else daemon_shutdown(1, "Unknown syslog_facility: %s", cp->value);
+			else daemon_shutdown(EXIT_CONFIG, "Unknown syslog_facility: %s", cp->value);
 		}
 		cp = cp->next;
 	}
@@ -438,18 +455,31 @@ noop(int signo)
 	return;
 }
 
+/*
+ * mrproper - clean up upon exit
+ */
+void
+mrproper(int signo)
+{
+	if ((ctx->config.flags & FLG_CREATE_PIDFILE) && ctx->config.pidfile)
+		unlink(ctx->config.pidfile);
+	raise(signo);
+}
+
 void
 usage(void)
 {
 	printf("Usage: grossd [-dCDnrV] [-f configfile]\n");
 	printf("       -d	Run grossd as a foreground process.\n");
 	printf("       -C	create statefile\n");
-	printf("       -D	Enable debug logging.\n");
+	printf("       -D	Enable debug logging (insane verbosity with -DD)\n");
 	printf("       -f	override default configfile\n");
 	printf("       -n	dry run: always send TRUST\n");
+	printf("       -p file  write the process id in a pidfile\n");
+	printf("       -P file  same as -p, but pid file must not exist\n");
 	printf("       -r	disable replication\n");
 	printf("       -V	version information\n");
-	exit(1);
+	exit(EXIT_USAGE);
 }
 
 void
@@ -462,12 +492,19 @@ setup_signal_handlers(void)
 	signal(SIGPIPE, SIG_IGN);
 
 	/* this is used by thread_pool to interrupt blocking I/O operations */
-	sigemptyset (&block_mask);
-	sigaddset (&block_mask, SIGALRM);
+	sigemptyset(&block_mask);
+	sigaddset(&block_mask, SIGALRM);
 	setup_action.sa_handler = noop;
 	setup_action.sa_mask = block_mask;
 	setup_action.sa_flags = 0;
 	sigaction (SIGALRM, &setup_action, NULL);
+
+	/* clean up */
+	setup_action.sa_handler = mrproper;
+	setup_action.sa_mask = 0;
+	setup_action.sa_flags = SA_RESETHAND;
+	sigaction (SIGINT, &setup_action, NULL);
+	sigaction (SIGTERM, &setup_action, NULL);
 }
 
 int
@@ -478,6 +515,8 @@ main(int argc, char *argv[])
 	time_t toleration;
 	configlist_t *config;
 	char *configfile = CONFIGFILE;
+	FILE *pf;
+	struct stat statinfo;
 	extern char *optarg;
 	extern int optind, optopt;
 	int c;
@@ -493,10 +532,10 @@ main(int argc, char *argv[])
 	ctx = initialize_context();
 
 	if ( ! ctx )
-		daemon_shutdown(1, "Couldn't initialize context");
+		daemon_shutdown(EXIT_FATAL, "Couldn't initialize context");
 
 	/* command line arguments */
-	while ((c = getopt(argc, argv, ":drf:VCDn")) != -1) {
+	while ((c = getopt(argc, argv, ":drf:VCDnp:P:")) != -1) {
 		switch (c) {
 		case 'd':
 			ctx->config.flags |= FLG_NODAEMON;
@@ -517,7 +556,7 @@ main(int argc, char *argv[])
 			break;
 		case 'V':
                         printf("grossd - Greylisting of Suspicious Sources. Version %s.\n", VERSION);
-			exit(0);
+			exit(EXIT_NOERROR);
                         break;
 		case 'C':
                         ctx->config.flags |= FLG_CREATE_STATEFILE;
@@ -527,6 +566,15 @@ main(int argc, char *argv[])
 				ctx->config.loglevel = GLOG_INSANE;
 			else
 				ctx->config.loglevel = GLOG_DEBUG;
+			break;
+		case 'p':
+			ctx->config.pidfile = optarg;
+			ctx->config.flags |= FLG_CREATE_PIDFILE;
+			break;
+		case 'P':
+			ctx->config.pidfile = optarg;
+			ctx->config.flags |= FLG_CHECK_PIDFILE;
+			ctx->config.flags |= FLG_CREATE_PIDFILE;
 			break;
 		case '?':
 			fprintf(stderr,
@@ -541,6 +589,28 @@ main(int argc, char *argv[])
 	
 	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
 		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
+	}
+
+	if ((ctx->config.flags & FLG_CREATE_PIDFILE) == FLG_CREATE_PIDFILE) {
+		assert(ctx->config.pidfile);
+		ret = stat(ctx->config.pidfile, &statinfo);
+		if ((ctx->config.flags & FLG_CHECK_PIDFILE) == 0 || ( ret < 0 && errno == ENOENT )) {
+			logstr(GLOG_INFO, "creating pidfile %s", ctx->config.pidfile);
+			pf = fopen(ctx->config.pidfile, "w");
+			if (pf != NULL) {
+				ret = fprintf(pf, "%d", getpid());
+					if (ret < 0)
+						daemon_fatal("writing pidfile");
+			} else {
+				daemon_fatal("opening pidfile: fdopen");
+			}
+			fclose(pf);
+		} else {
+			if (ret < 0)
+				daemon_fatal("stat");
+			else
+				daemon_shutdown(EXIT_PIDFILE_EXISTS, "pidfile already exists");
+		}
 	}
 
 	/* daemonize must be run before any pthread_create */

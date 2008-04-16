@@ -100,6 +100,8 @@
 #define FLG_CREATE_STATEFILE (int)0x08
 #define FLG_DRYRUN (int)0x10
 #define FLG_SYSLOG (int)0x20
+#define FLG_CHECK_PIDFILE (int)0x40
+#define FLG_CREATE_PIDFILE (int)0x80
 
 #define CHECK_DNSBL (int)0x01
 #define CHECK_BLOCKER (int)0x02
@@ -189,6 +191,7 @@ typedef struct {
 	int block_threshold;
 	int pool_maxthreads;
 	char *block_reason;
+	char *pidfile;
 #ifdef MILTER
 	milter_config_t milter;
 #endif /* MILTER */

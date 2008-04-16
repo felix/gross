@@ -90,7 +90,8 @@
 			"grey_threshold",		\
 			"block_reason",			\
 			"milter_listen",		\
-			"pool_maxthreads"		\
+			"pidfile",			\
+			"pool_maxthreads"
 
 #define DEPRECATED_NAMES 	"syncport",		\
 				"synchost",		\
@@ -105,7 +106,8 @@
  * "keyword", MIN, MAX. -1 as maximum means unlimited
  */
 #define PARAMS	"dnsbl",	"0",	"1",	\
-		"rhsbl",	"0",	"1"
+		"rhsbl",	"0",	"1",	\
+		"pidfile",	"0",	"1"
 
 typedef struct params_s {
 	const char *value;

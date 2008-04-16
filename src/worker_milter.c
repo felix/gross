@@ -177,7 +177,7 @@ milter_init()
 	
 	ret = smfi_setconn(ctx->config.milter.listen);
 	if (MI_FAILURE == ret)
-		daemon_shutdown(1, "smfi_setconn failed");
+		daemon_shutdown(EXIT_FATAL, "smfi_setconn failed");
 	
 	if (strncasecmp(ctx->config.milter.listen, "unix:", 5) == 0)
 		unlink(ctx->config.milter.listen + 5);
@@ -186,7 +186,7 @@ milter_init()
 
 	ret = smfi_register(grossfilter);
 	if (MI_FAILURE == ret)
-		daemon_shutdown(1, "smfi_register failed");
+		daemon_shutdown(EXIT_FATAL, "smfi_register failed");
 
 	smfi_main();
 }

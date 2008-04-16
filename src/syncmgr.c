@@ -220,9 +220,7 @@ recv_syncs(void *arg)
   int ret;
   peer_t* peer = &(ctx->config.peer);
 
-  if ( !peer ) {
-    daemon_shutdown(1, "Null peer pointer.");
-  }
+  assert(peer);
 
   /* logstr(GLOG_INFO, "Startup syncer started: %s", peer->peer_name); */
 
@@ -349,16 +347,17 @@ recv_config_sync(peer_t* peer)
   if ( ERROR == ret ) {
       /* error */
       peer->connected = 0;
-      daemon_shutdown(1, "recv_config_sync: read returned error");
+      daemon_fatal("recv_config_sync: read");
     } else if ( EMPTY == ret ) {
       /* connection closed */
       peer->connected = 0;
-      daemon_shutdown(1, "recv_config_sync: connection closed by client");
+      /* FIXME: should this really shutdown the whole daemon? */
+      daemon_shutdown(EXIT_FATAL, "recv_config_sync: connection closed by client");
     } 
 
   msg = sctoh(&msg);
   if ( (msg.filter_size != ctx->config.filter_size) || (msg.num_bufs != ctx->config.num_bufs) ) {
-    daemon_shutdown(1, "Configs differ!\nMy:   filter_size %d number_buffers %d\nPeer: filter_size %d number_buffers %d\n",
+    daemon_shutdown(EXIT_CONFIG, "Configs differ!\nMy:   filter_size %d number_buffers %d\nPeer: filter_size %d number_buffers %d\n",
 		    ctx->config.filter_size, ctx->config.num_bufs, msg.filter_size, msg.num_bufs);
   }
 

@@ -129,7 +129,7 @@ daemon_fatal(const char *reason)
 	assert(combo); /* no Malloc() here because of possible recursion loop */
 	snprintf(combo, combolen, "%s %s\n", reason, errstr);
 
-	daemon_shutdown(errno, combo);
+	daemon_shutdown(EXIT_FATAL, combo);
 }
 
 int
@@ -207,12 +207,12 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
                 ret = stat(ctx->config.statefile, &statbuf);
                 if (ret == 0 && (ctx->config.flags & FLG_CREATE_STATEFILE)) {
 			/* if statefile exists, but creation requested */
-			daemon_shutdown(1, "statefile already exists");
+			daemon_shutdown(EXIT_FATAL, "statefile already exists");
 		} else if (ret == 0 && (statbuf.st_size != lumpsize)) {
 			/* if statefile exists, but is wrong size */
 			printf("statefile size (%d) differs from the calculated size (%d)\n",
 				((int)statbuf.st_size), lumpsize);
-			daemon_shutdown(1, "statefile size differs from the calculated size");
+			daemon_shutdown(EXIT_FATAL, "statefile size differs from the calculated size");
                 } else if (ret != 0 && (ctx->config.flags & FLG_CREATE_STATEFILE)) {
 			/* statefile does not exist and creation requested */
 			statefile = fopen(ctx->config.statefile, "w");
@@ -316,7 +316,7 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
         if (use_mmap) {
                 ret = msync((void *)ctx->mmap_info, lumpsize, MS_SYNC);
                 if (ret < 0) {
-                        daemon_shutdown(1, "msync woes");
+                        daemon_fatal("msync");
                 }
         }
 
@@ -348,13 +348,13 @@ daemonize(void)
 	pid_t pid;
 
 	if ((pid = fork()) != 0)
-		exit(0);		/* parent terminates */
+		exit(EXIT_NOERROR);	/* parent terminates */
 	
 	/* 1st child continues */
 	setsid();			/* become session leader */
 	
 	if ((pid = fork()) != 0)
-		exit(0);		/* 1st child terminates */
+		exit(EXIT_NOERROR);	/* 1st child terminates */
 
 	/* 2nd child continues */
 	close(0);
