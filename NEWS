@@ -1,5 +1,22 @@
 Version 0.9-svn
 
+* Implemented pidfile creation and checking. New config option
+  'pidfile' controls the behaviour. Setting the option will make
+  grossd to write the process pid into the file specified by the
+  full path. An optional parameter 'check' can be set to keep
+  grossd from starting if the pidfile already exists.
+
+  pidfile = /full/path[;check]
+
+  Another way to control this is by command line options -p and -P.
+  Both of the options will enable pidfile creation, and -P will
+  check the existence of the file.
+
+Issues fixed:
+#58: grossd should write a pid file after daemonizing (RFE)
+
+Version 0.9.2
+
 - documented configuration options query_timelimit and
   block_reason. See doc/examples/grossd.conf
 - new option: pool_maxthreads, you may need to change this
