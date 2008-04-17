@@ -1,9 +1,26 @@
 Version 0.9-svn
 
-* behaviour change: grossd now exits after creating the
+* A few important bug fixes to milter server
+* New logfile format! An example log line: 
+
+  Thu Apr 17 14:50:05 2008 #8505600: a=greylist d=3 w=5 c=127.0.0.2
+  s=sender r=recipient h=N/A m=cbl.abuseat.org+1 m=bl.spamcop.net+2
+  m=combined.njabl.org+1 m=dnsbl.sorbs.net+1
+
+  where
+  a = action
+  d = delay
+  w = total weight
+  c = client ip
+  s = sender
+  r = recipient
+  h = helo/ehlo
+  m = matched check with possible weight
+
+- behaviour change: grossd now exits after creating the
   statefile when invoked with -C command line option. This
   makes life easier for package maintainers in the future.
-* Implemented pidfile creation and checking. New config option
+- Implemented pidfile creation and checking. New config option
   'pidfile' controls the behaviour. Setting the option will make
   grossd to write the process pid into the file specified by the
   full path. An optional parameter 'check' can be set to keep
