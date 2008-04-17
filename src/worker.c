@@ -302,27 +302,36 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 				if (ret > 0) {
 					/* We've got a response */
 					result = (chkresult_t *)message.result;
-					logstr(GLOG_INSANE, "Received a check result, judgment = %d, weight = %d",
-						result->judgment, result->weight);
-					/* was this a final result from the check? */
-					if (! result->wait)
+					if (NULL == result) {
+						/*
+						 * FIXME: we do not know if the failed check was definitive
+						 * so we end up waiting until all checks return
+						 */
+						logstr(GLOG_DEBUG, "NULL check result received (pool exhausted)");
 						checks_running--;
-					/* update the judgment */
-					judgment = MAX(judgment, result->judgment);
-					susp_weight += result->weight;
+					} else {
+						logstr(GLOG_INSANE, "Received a check result, judgment = %d, weight = %d",
+							result->judgment, result->weight);
+						/* was this a final result from the check? */
+						if (! result->wait)
+							checks_running--;
+						/* update the judgment */
+						judgment = MAX(judgment, result->judgment);
+						susp_weight += result->weight;
 
-					/* update querylog entry */
-					if (result->judgment != J_UNDEFINED)
-						record_match(querylog_entry, result);
+						/* update querylog entry */
+						if (result->judgment != J_UNDEFINED)
+							record_match(querylog_entry, result);
 
-					/* was this a definitive result? */
-					if (result->definitive)
-						definitives_running--;
-					if (result->reason) {
-						reasonstr = strdup(result->reason);
-						Free(result->reason);
+						/* was this a definitive result? */
+						if (result->definitive)
+							definitives_running--;
+						if (result->reason) {
+							reasonstr = strdup(result->reason);
+							Free(result->reason);
+						}
+						Free(result);
 					}
-					Free(result);
 					/*
 					 * Do we have a definitive result so far?
 					 * That is,

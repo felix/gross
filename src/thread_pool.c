@@ -179,8 +179,12 @@ thread_pool(void *arg)
 			POOL_MUTEX_UNLOCK;
 
 			/* run the routine with args */
-			if (process)
+			if (process) {
 				pool_ctx->routine(pool_ctx->info, &thread_ctx, edict);
+			} else if (edict->resultmq >= 0) {
+				/* failed, and we can inform the caller */
+				send_result(edict, NULL);
+			}
 
 			/* we are done */
 			edict_unlink(edict);
@@ -264,9 +268,11 @@ edict_get(bool forget)
 	bzero(edict, sizeof(edict_t));
 
 	/* reserve a message queue, if results are wanted */
-	if (false == forget) {
+	if (false == forget)
 		edict->resultmq = get_queue();
-	}
+	else 
+		edict->resultmq = -1;
+
 	pthread_mutex_init(&edict->reference.mx, NULL);
 	edict->reference.count = 1;
 

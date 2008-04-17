@@ -376,6 +376,8 @@ FINISH:
 	logstr(GLOG_DEBUG, "dnsblc returning");
 	request_unlink(request);
 
+	sleep (5);
+
 	return 0;
 }
 
