@@ -152,5 +152,5 @@ srvstatus(void *arg)
 void
 srvstatus_init()
 {
-	Pthread_create(NULL, &srvstatus, NULL);
+	create_thread(NULL, DETACH, &srvstatus, NULL);
 }

@@ -24,6 +24,7 @@
 #include "common.h"
 #include "msgqueue.h"
 #include "srvutils.h"
+#include "worker.h"
 #include "utils.h"
 #include "thread_pool.h"
 
@@ -168,7 +169,7 @@ thread_pool(void *arg)
 				if (pool_ctx->count_thread <= pool_ctx->max_thread || 0 == pool_ctx->max_thread) {
 					logstr(GLOG_DEBUG, "threadpool '%s' starting another thread",
 						pool_ctx->info->name);
-					Pthread_create(NULL, &thread_pool, pool_ctx);
+					create_thread(NULL, DETACH, &thread_pool, pool_ctx);
 				} else {
 					logstr(GLOG_ERROR, "threadpool '%s': maximum thread count (%d) reached",
 						pool_ctx->info->name, pool_ctx->max_thread);
@@ -228,7 +229,7 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool_ctx->wdlist = NULL;
 
 	/* start the first thread */
-	Pthread_create(NULL, &thread_pool, pool_ctx);
+	create_thread(NULL, DETACH, &thread_pool, pool_ctx);
 	return pool;
 }
 

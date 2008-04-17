@@ -31,6 +31,7 @@
 /* these are implemented in worker_*.c */
 void postfix_server_init();
 void sjsms_server_init();
+void milter_server_init();
 
 /* internals */
 void update_counters(int status);
@@ -171,7 +172,6 @@ update_counters(int status)
 int
 test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	char maskedtuple[MSGSZ];
-	char realtuple[MSGSZ];
 	char *chkipstr = NULL;
 	sha_256_t digest;
 	update_message_t update;
@@ -196,6 +196,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	judgment_t judgment;
 	bool definitive;
 	char *reasonstr = NULL;
+	querylog_entry_t *querylog_entry;
 
 	/* record the processing start time */
 	clock_gettime(CLOCK_TYPE, &start);
@@ -220,11 +221,12 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 			request->recipient);
 	digest = sha256_string(maskedtuple);
 
-	/* for logging */
-	snprintf(realtuple, MSGSZ, "%s %s %s",
-			request->client_address,
-			request->sender,
-			request->recipient);
+	querylog_entry = &final->querylog_entry;
+
+	querylog_entry->sender = request->sender;
+	querylog_entry->recipient = request->recipient;
+	querylog_entry->helo = request->helo_name;
+	querylog_entry->client_ip = request->client_address;
 
 	logstr(GLOG_INSANE, "checking ip=%s, net=%s",
 		request->client_address, chkipstr);
@@ -239,11 +241,9 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 
 	/* check status */
 	if ( is_in_ring_queue(ctx->filter, digest) ) {
-		logstr(GLOG_INFO, "match: %s", realtuple);
 		retvalue = STATUS_MATCH;
 	} else if (0 == checkcount) {
 		/* traditional greylister */
-		logstr(GLOG_INFO, "greylist: %s", realtuple);
 		retvalue = STATUS_GREY;
 	} else {
 		/* build default entry, if timeout not given */
@@ -309,9 +309,11 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 						checks_running--;
 					/* update the judgment */
 					judgment = MAX(judgment, result->judgment);
-					/* weights only count for J_SUSPICOUS restuls */
-					if (J_SUSPICIOUS == result->judgment)
-						susp_weight += result->weight;
+					susp_weight += result->weight;
+
+					/* update querylog entry */
+					if (result->judgment != J_UNDEFINED)
+						record_match(querylog_entry, result);
 
 					/* was this a definitive result? */
 					if (result->definitive)
@@ -348,39 +350,35 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 		/* Let's sum up the results */
 		switch(judgment) {
 		case J_PASS:
-			logstr(GLOG_INFO, "pass: %s", realtuple);
 			retvalue = STATUS_TRUST;
 			break;
 		case J_BLOCK:
-			logstr(GLOG_INFO, "block: %s", realtuple);
 			retvalue = STATUS_BLOCK;
 			break;
 		case J_SUSPICIOUS:
 			if (block_threshold > 0 && susp_weight >= block_threshold) {
-				logstr(GLOG_INFO, "block: %s (susp_weight=%d)", realtuple, susp_weight);
 				retvalue = STATUS_BLOCK;
 				reasonstr = strdup(ctx->config.block_reason);
 			} else if (grey_threshold > 0 && susp_weight >= grey_threshold) {
-				logstr(GLOG_INFO, "greylist: %s (susp_weight=%d)", realtuple, susp_weight);
 				retvalue = STATUS_GREY;
 			} else {
-				logstr(GLOG_INFO, "trust: %s (susp_weight=%d)", realtuple, susp_weight);
 				retvalue = STATUS_TRUST;
 			}
 			break;
 		case J_UNDEFINED:
-			logstr(GLOG_INFO, "trust: %s", realtuple);
 			retvalue = STATUS_TRUST;
 			break;
 		default:
 			/* this should never happen */
-			logstr(GLOG_ERROR, "error: %s", realtuple);
 			retvalue = STATUS_TRUST;
 			break;
 		}
 
 		edict_unlink(edict);
 	}
+
+	/* update the querylog entry */
+	querylog_entry->action = retvalue;
 
 	/* we cannot free(ta) if we got it as parameter */
 	if (free_ta) Free(ta_default_reserved);
@@ -475,6 +473,164 @@ try_match(const char *matcher, const char *matchee)
                 return NULL;
 }
 
+final_status_t *
+init_status(const char *proto)
+{
+        final_status_t *status;
+
+	status = Malloc(sizeof(final_status_t));
+	memset(status, 0, sizeof(final_status_t));
+
+	status->querylog_entry.proto = proto;
+	clock_gettime(CLOCK_TYPE, &status->starttime);
+
+	return status;
+}
+
+/*
+ * record_match         - add checkresult info to the query log entry
+ */
+void
+record_match(querylog_entry_t *q, chkresult_t *r)
+{
+        check_match_t *m, *n;
+
+	m = Malloc(sizeof(check_match_t));
+	memset(m, 0, sizeof(check_match_t));
+        if (r->checkname)
+   /*             m->name = strdup(r->checkname); */
+		m->name = r->checkname; 
+        else
+                m->name = strdup("<anonymous>");
+        m->weight = r->weight;
+        m->next = NULL;
+
+	q->totalweight += m->weight;
+	
+        /*
+         * insert entry to the end of the linked list
+         * to preserve order
+         */
+        n = q->match;
+        if (n) {
+                while (n->next) 
+                        n = n->next;
+		n->next = m;
+	} else {
+		q->match = m;
+	}
+}
+
+void
+update_delay_stats(querylog_entry_t *q)
+{
+	switch (q->action) {
+	case STATUS_BLOCK:
+		block_delay_update((double)q->delay);
+		break;
+	case STATUS_MATCH:
+		match_delay_update((double)q->delay);
+		break;
+	case STATUS_GREY:
+		greylist_delay_update((double)q->delay);
+		break;
+	case STATUS_TRUST:
+		trust_delay_update((double)q->delay);
+		break;
+	default:
+		/* FIX: count errors */
+		;
+	}
+}
+
+void
+finalize(final_status_t *status)
+{
+	struct timespec now;
+	check_match_t *m, *n;
+	querylog_entry_t *q;
+
+	q = &status->querylog_entry;
+	
+	clock_gettime(CLOCK_TYPE, &now);
+	q->delay = ms_diff(&now, &status->starttime);
+
+	update_delay_stats(q);
+
+	querylogwrite(q);
+
+	n = q->match;
+	m = n;
+	while (n) {
+		n = m->next;
+		Free(m);
+		m = n;
+	}
+
+	if (status->reason)
+		Free(status->reason)
+	Free(status);
+}
+
+void
+querylogwrite(querylog_entry_t *q)
+{
+	char line[MAXLINELEN];
+	char buffer[MAXLINELEN];
+	char *actionstr;
+	check_match_t *m;
+
+	switch (q->action) {
+	case STATUS_GREY:
+		actionstr = "greylist";
+		break;
+	case STATUS_MATCH:
+		actionstr = "match";
+		break;
+	case STATUS_TRUST:
+		actionstr = "trust";
+		break;
+	case STATUS_UNKNOWN:
+		actionstr = "unknown";
+		break;
+	case STATUS_FAIL:
+		actionstr = "fail";
+		break;
+	case STATUS_BLOCK:
+		actionstr = "block";
+		break;
+	default:
+		daemon_shutdown(EXIT_FATAL, "querylogwrite: unknown statuscode %d", q->action);
+		break;
+	}
+
+	if (NULL == q->proto)
+		q->proto = "N/A";
+	if (NULL == q->client_ip)
+		q->client_ip = "N/A";
+	if (NULL == q->sender)
+		q->sender = "N/A";
+	if (NULL == q->recipient)
+		q->recipient = "N/A";
+	if (NULL == q->helo)
+		q->helo = "N/A";
+
+	snprintf(line, MAXLINELEN - 1, "a=%s d=%d w=%d c=%s s=%s r=%s h=%s", actionstr, q->delay, q->totalweight,  q->client_ip, q->sender, q->recipient, q->helo);
+
+	m = q->match;
+	while (m) {
+		snprintf(buffer, MAXLINELEN - 1, " m=%s", m->name);
+		strncat(line, buffer, MAXLINELEN - 1);
+		if (m->weight) {
+			snprintf(buffer, MAXLINELEN - 1, "%+d", m->weight);
+			strncat(line, buffer, MAXLINELEN - 1);
+		}
+		m = m->next;
+	}
+	
+	logstr(GLOG_INFO, line);
+}
+
 void
 worker_init()
 {
@@ -486,6 +642,6 @@ worker_init()
 		sjsms_server_init();
 #ifdef MILTER
 	if (ctx->config.protocols & PROTO_MILTER)
-		milter_init();
+		milter_server_init();
 #endif
 }

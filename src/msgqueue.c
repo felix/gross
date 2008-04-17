@@ -136,7 +136,7 @@ get_delay_queue(const struct timespec *ts)
 	queue_info->inq->delaypair = queue_info->outq;
 	queue_info->outq->delaypair = queue_info->inq;
 
-	Pthread_create(NULL, &delay, (void *)queue_info);
+	create_thread(NULL, DETACH, &delay, (void *)queue_info);
 
 	return putqid;
 }

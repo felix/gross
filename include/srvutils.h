@@ -31,6 +31,8 @@
 #define EXIT_PIDFILE_EXISTS 	3
 #define EXIT_CONFIG		4
 
+#define DETACH			1
+
 enum logmsgtype_t {
 	LOG_TYPE	   = 0x10000,
 	GLOG_EMERG         = LOG_TYPE | LOG_EMERG,
@@ -86,14 +88,6 @@ typedef struct {
 	void 	*result;
 } poolresult_message_t;
 
-typedef struct {
-	bool definitive;
-	bool wait;
-	int weight;
-	judgment_t judgment;
-	char *reason;
-} chkresult_t;
-
 /* global context */
 extern gross_ctx_t *ctx;
 
@@ -108,8 +102,11 @@ int connected(peer_t* peer);
 bloom_ring_queue_t *build_bloom_ring(unsigned int num, bitindex_t num_bits);
 void daemonize(void);
 void *Malloc(size_t size);
-void *Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg);
+void *create_thread(thread_info_t *tinfo, int detach, void *(*routine)(void *), void *arg);
 void register_check(thread_pool_t *pool, bool definitive);
 char *ipstr(struct sockaddr_in *saddr);
+void create_statefile(void);
+void check_pidfile(void);
+void create_pidfile(void);
 
 #endif

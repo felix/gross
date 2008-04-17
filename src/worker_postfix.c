@@ -39,7 +39,7 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 	struct timespec start, end;
 	int delay;
 	client_info_t *client_info;
-	final_status_t status = { '\0' };
+	final_status_t *status;
 
 	client_info = edict->job;
 	assert(client_info);
@@ -50,26 +50,27 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 		request = request_new();
 		ret = parse_postfix(client_info, request);
 		if (ret == PARSE_OK) {
+			status = init_status("postfix");
 			/* We are go */
 			clock_gettime(CLOCK_TYPE, &start);
-			ret = test_tuple(&status, request, NULL);
+			ret = test_tuple(status, request, NULL);
 
 			if (ret < 0) {
 				/* error */
 				snprintf(response, MAXLINELEN, "action=dunno");
 			} else {
-				switch (status.status) {
+				switch (status->status) {
 				case STATUS_TRUST:
 				case STATUS_MATCH:
 					snprintf(response, MAXLINELEN, "action=dunno");
 					break;
 				case STATUS_BLOCK:
 					snprintf(response, MAXLINELEN, "action=reject %s",
-						status.reason ? status.reason : "Rejected");
+						status->reason ? status->reason : "Rejected");
 					break;
 				case STATUS_GREY:
 					snprintf(response, MAXLINELEN, "action=defer_if_permit %s",
-						status.reason ? status.reason : "Please try again later");
+						status->reason ? status->reason : "Please try again later");
 					break;
 				default:
 					snprintf(response, MAXLINELEN, "action=dunno");
@@ -87,25 +88,7 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 			delay = ms_diff(&end, &start);
 			logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
 			
-			switch (status.status) {
-			case STATUS_BLOCK:
-			  block_delay_update((double)delay);
-			  break;
-			case STATUS_MATCH:
-			  match_delay_update((double)delay);
-			  break;
-			case STATUS_GREY:
-			  greylist_delay_update((double)delay);
-			  break;
-			case STATUS_TRUST:
-			  trust_delay_update((double)delay);
-			  break;
-			default:
-			  /* FIX: count errors */
-			  ;
-			}
-
-		
+			finalize(status);
 			request_unlink(request);
 			/* check if the client requested a single query mode */
 			if (client_info->single_query)
@@ -126,9 +109,6 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
         close(client_info->connfd);
 	free_client_info(client_info);
 	logstr(GLOG_DEBUG, "postfix_connection returning");
-
-	if (status.reason)
-		Free(status.reason);
 
 	return ret;
 }
@@ -273,6 +253,6 @@ void
 postfix_server_init()
 {
 	logstr(GLOG_INFO, "starting postfix policy server");
-	Pthread_create(&ctx->process_parts.postfix_server, &postfix_server, NULL);
+	create_thread(&ctx->process_parts.postfix_server, DETACH, &postfix_server, NULL);
 }
 

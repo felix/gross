@@ -93,7 +93,7 @@ bloommgr(void *arg)
 	  case ROTATE:
 	    logstr(GLOG_INFO, "received rotate command");
 	    /* debug_print_ring_queue(ctx->filter, TRUE); */
-	    Pthread_create(NULL, &rotate, NULL);
+	    create_thread(NULL, DETACH, &rotate, NULL);
 	    break;
 	  case SYNC_AGGREGATE:
 	    sync_aggregate(ctx->filter);
@@ -116,6 +116,6 @@ bloommgr(void *arg)
 void
 bloommgr_init()
 {
-        sem_wait(ctx->sync_guard);
-	Pthread_create(&ctx->process_parts.bloommgr, &bloommgr, NULL);
+	sem_wait(ctx->sync_guard);
+	create_thread(&ctx->process_parts.bloommgr, DETACH, &bloommgr, NULL);
 }

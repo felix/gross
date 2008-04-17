@@ -19,6 +19,7 @@
 #define WORKER_H
 
 #include "thread_pool.h"
+#include "srvutils.h"
 
 #define MAXCONNQ 5
 
@@ -27,8 +28,37 @@ typedef enum { STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_F
 #define LEGALREASONCHARACTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890 .-_@";
 
 typedef struct {
+        bool definitive;
+        bool wait;
+        int weight;
+        judgment_t judgment;
+        char *reason;
+        const char *checkname;
+} chkresult_t;
+
+typedef struct check_match_s {
+        const char *name;
+        int weight;
+        struct check_match_s *next;     /* linked list */
+} check_match_t;
+
+typedef struct {
+        int action;
+        int delay;
+	int totalweight;
+        const char *proto;
+        const char *client_ip;
+        const char *sender;
+        const char *recipient;
+        const char *helo;
+        check_match_t *match;
+} querylog_entry_t;
+
+typedef struct {
         char *reason;
         grey_status_t status;
+	querylog_entry_t querylog_entry;
+	struct timespec starttime;
 } final_status_t;
 
 typedef struct {
@@ -57,5 +87,11 @@ grey_tuple_t *request_new();
 int process_parameter(grey_tuple_t *tuple, const char *str);
 char *try_match(const char *matcher, const char *matchee);
 int check_request(grey_tuple_t *tuple);
+void record_match(querylog_entry_t *q, chkresult_t *r);
+final_status_t *init_status(const char *proto);
+void querylogwrite(querylog_entry_t *q);
+void finalize(final_status_t *status);
+void querylogwrite(querylog_entry_t *q);
+void update_delay_stats(querylog_entry_t *q);
 
 #endif /* #ifndef WORKER_H */

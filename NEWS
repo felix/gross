@@ -1,5 +1,8 @@
 Version 0.9-svn
 
+* behaviour change: grossd now exits after creating the
+  statefile when invoked with -C command line option. This
+  makes life easier for package maintainers in the future.
 * Implemented pidfile creation and checking. New config option
   'pidfile' controls the behaviour. Setting the option will make
   grossd to write the process pid into the file specified by the

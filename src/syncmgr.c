@@ -367,7 +367,7 @@ recv_config_sync(peer_t* peer)
 void 
 start_syncer(void *arg)
 {
-	Pthread_create(NULL, &recv_syncs, NULL);
+	create_thread(NULL, DETACH, &recv_syncs, NULL);
 }
 
 
@@ -528,5 +528,5 @@ syncmgr(void *arg)
 void
 syncmgr_init() {
 	sem_wait(ctx->sync_guard);
-        Pthread_create(&ctx->process_parts.syncmgr, &syncmgr, NULL);
+        create_thread(&ctx->process_parts.syncmgr, DETACH, &syncmgr, NULL);
 }

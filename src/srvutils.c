@@ -30,7 +30,6 @@ gross_ctx_t *ctx;
 int log_put(const char *msg);
 size_t date_fmt(char *msg, size_t len);
 
-#if 1
 int
 logstr(int level, const char *fmt, ...) {
 	char logfmt[MSGSZ] = { '\0' };
@@ -48,7 +47,7 @@ logstr(int level, const char *fmt, ...) {
 	vsnprintf(mbuf, MSGSZ, logfmt, vap);
 	va_end(vap);
 
-	if (ctx->config.flags & FLG_NODAEMON)
+	if (false == ctx->syslog_open)
 		return log_put(mbuf); 
 
 	if (level > GLOG_DEBUG) level = GLOG_DEBUG;
@@ -59,10 +58,6 @@ logstr(int level, const char *fmt, ...) {
 	
 	return 0;
 }
-#else
-int
-logstr(int level, const char *fmt, ...) { return 0; }
-#endif
 
 int statstr(int level, const char *fmt, ...)
 {
@@ -100,14 +95,23 @@ daemon_shutdown(int return_code, const char *fmt, ...)
         char out[MSGSZ];
         va_list vap;
 
-        /* prepend the reason string */
-        snprintf(logfmt, MSGSZ, "Grossd shutdown with exit code %d: %s", return_code, fmt);
+	if (fmt) {
+		/* prepend the reason string */
+		snprintf(logfmt, MSGSZ, "Grossd shutdown with exit code %d: %s", return_code, fmt);
 
-        va_start(vap, fmt);
-        vsnprintf(out, MSGSZ, logfmt, vap);
-        va_end(vap);
+		va_start(vap, fmt);
+		vsnprintf(out, MSGSZ, logfmt, vap);
+		va_end(vap);
 
-        printf("%s\n", out);
+		fprintf(stderr, "%s\n", out);
+
+		if (ctx->syslog_open)
+			logstr(GLOG_ERROR, "%s", out);
+
+	}
+
+	if (EXIT_NOERROR == return_code && (ctx->config.flags & FLG_CREATE_PIDFILE) && ctx->config.pidfile)
+		unlink(ctx->config.pidfile);
         exit(return_code);
 }
 
@@ -171,6 +175,45 @@ walk_mmap_info(void)
         return TRUE;
 }
 
+/*
+ * create_statefile     - return only when creation succeeds */
+void
+create_statefile(void)
+{
+        int ret;
+	int lumpsize;
+	int i;
+        struct stat statbuf;
+        FILE *statefile;
+	unsigned int num = ctx->config.num_bufs;
+	bitindex_t num_bits = ctx->config.filter_size;
+
+        /* calculate the statefile size */
+        lumpsize = sizeof(bloom_ring_queue_t) +         /* filter group metadata */
+                sizeof(bloom_filter_group_t) +          /* filter group data */
+                num * sizeof(bloom_filter_t *) +        /* pointers to filters */
+                (num + 1) * sizeof(bloom_filter_t) +    /* filter metadata */
+                (num + 1) * ( 1 << num_bits ) / BITS_PER_CHAR +  /* filter data */
+                sizeof(mmapped_brq_t);      /* mmap_info */
+
+        ret = stat(ctx->config.statefile, &statbuf);
+        if (ret == 0) {
+                daemon_shutdown(EXIT_FATAL, "statefile already exists");
+        } else if (ENOENT == errno) {
+                /* statefile does not exist */
+                statefile = fopen(ctx->config.statefile, "w");
+                if (statefile == NULL) {
+                        daemon_fatal("stat(): statefile creation failed");
+                }
+                for (i = 0; i < lumpsize; i++) 
+                        if (fputc(0, statefile)) daemon_fatal("fputc()");
+                fclose(statefile);
+		daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...", ctx->config.statefile);
+        } else {
+                daemon_fatal("statefile opening failed: stat:");
+        }       
+}
+
 bloom_ring_queue_t *
 build_bloom_ring(unsigned int num, bitindex_t num_bits)
 {
@@ -181,7 +224,6 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
         struct stat statbuf;
         char *magic = "mmbrq2\n";
         int use_mmap = FALSE;
-	FILE *statefile;
 
         assert(num_bits > 3);
 
@@ -205,27 +247,14 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
                 lumpsize += sizeof(mmapped_brq_t);
 
                 ret = stat(ctx->config.statefile, &statbuf);
-                if (ret == 0 && (ctx->config.flags & FLG_CREATE_STATEFILE)) {
-			/* if statefile exists, but creation requested */
-			daemon_shutdown(EXIT_FATAL, "statefile already exists");
-		} else if (ret == 0 && (statbuf.st_size != lumpsize)) {
-			/* if statefile exists, but is wrong size */
+		if (ret < 0) {
+			/* statefile does not exist or is not accessible */
+			daemon_fatal("stat(): statefile opening failed");
+		} else if (statbuf.st_size != lumpsize) {
+			/* statefile exists, but is wrong size */
 			printf("statefile size (%d) differs from the calculated size (%d)\n",
 				((int)statbuf.st_size), lumpsize);
 			daemon_shutdown(EXIT_FATAL, "statefile size differs from the calculated size");
-                } else if (ret != 0 && (ctx->config.flags & FLG_CREATE_STATEFILE)) {
-			/* statefile does not exist and creation requested */
-			statefile = fopen(ctx->config.statefile, "w");
-			if (statefile == NULL) {
-				daemon_fatal("stat(): statefile creation failed");
-			}
-			for (i = 0; i < lumpsize; i++) {
-				if (fputc(0, statefile)) daemon_fatal("fputc()");
-			}
-			fclose(statefile);
-		} else if (ret != 0) {
-			/* statefile does not exist or is not accessible */
-			daemon_fatal("stat(): statefile opening failed");
                 }
 
 		fd = open(ctx->config.statefile, O_RDWR);
@@ -339,6 +368,47 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 }
 
 /*
+ * create_pidfile	- write the process id into the pidfile 
+ */
+void
+create_pidfile(void)
+{
+	FILE *pf;
+	int ret;
+
+	assert(ctx->config.pidfile);
+	logstr(GLOG_INFO, "creating pidfile %s", ctx->config.pidfile);
+	pf = fopen(ctx->config.pidfile, "w");
+	if (pf != NULL) {
+		ret = fprintf(pf, "%d", getpid());
+		if (ret < 0)
+			daemon_fatal("writing pidfile");
+	} else {
+		daemon_fatal("opening pidfile: fdopen");
+	}
+	fclose(pf);
+}
+
+/*
+ * check_pidfile	- returns if pidfile does not exist
+ */
+void
+check_pidfile(void)
+{
+	int ret;
+	struct stat statinfo;
+
+	ret = stat(ctx->config.pidfile, &statinfo);
+	if (ret < 0)
+		if (ENOENT != errno)
+			daemon_fatal("stat");
+		else
+			return;
+	else
+		daemon_shutdown(EXIT_PIDFILE_EXISTS, "pidfile already exists");
+}
+
+/*
  * daemonize	- daemonize the process
  */
 void
@@ -385,10 +455,10 @@ Malloc(size_t size)
 }
 
 /*
- * Pthread_create	- Wrapper, bails out if not successful.
+ * create_thread	- Wrapper, bails out if not successful.
  */
 void *
-Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg)
+create_thread(thread_info_t *tinfo, int detach, void *(*routine)(void *), void *arg)
 {
 	pthread_t *tid;
         pthread_attr_t tattr;
@@ -399,14 +469,15 @@ Pthread_create(thread_info_t *tinfo, void *(*routine)(void *), void *arg)
 	ret = pthread_attr_init(&tattr);
 	if (ret)
 		daemon_fatal("pthread_attr_init");
-	ret = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+	if (DETACH == detach) 
+		ret = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
 	if (ret)
 		daemon_fatal("pthread_attr_setdetachstate");
 
 	ret = pthread_create(tid, &tattr, routine, arg);
 	if (ret)
 		daemon_fatal("pthread_create");
-
+	
 	if (tinfo)
 		tinfo->thread = tid;
 	else

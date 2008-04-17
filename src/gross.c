@@ -241,11 +241,12 @@ configure_grossd(configlist_t *config)
 		if (strcmp(cp->name, "pidfile") == 0) { 
 			ctx->config.pidfile = strdup(cp->value);
 			ctx->config.flags |= FLG_CREATE_PIDFILE;
-			if (cp->params)
+			if (cp->params) {
 				if (strcmp(cp->params->value, "check") == 0)
 					ctx->config.flags |= FLG_CHECK_PIDFILE;
 				else
 					daemon_shutdown(EXIT_CONFIG, "invalid parameter for 'pidfile': %s", cp->params->value);
+			}
 		}
 		cp = cp->next;
 	}
@@ -463,6 +464,7 @@ mrproper(int signo)
 {
 	if ((ctx->config.flags & FLG_CREATE_PIDFILE) && ctx->config.pidfile)
 		unlink(ctx->config.pidfile);
+
 	raise(signo);
 }
 
@@ -485,26 +487,24 @@ usage(void)
 void
 setup_signal_handlers(void)
 {
-	struct sigaction setup_action;
-	sigset_t block_mask;
+	struct sigaction act;
 	
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 
 	/* this is used by thread_pool to interrupt blocking I/O operations */
-	sigemptyset(&block_mask);
-	sigaddset(&block_mask, SIGALRM);
-	setup_action.sa_handler = noop;
-	setup_action.sa_mask = block_mask;
-	setup_action.sa_flags = 0;
-	sigaction (SIGALRM, &setup_action, NULL);
+	sigemptyset(&act.sa_mask);
+	sigaddset(&act.sa_mask, SIGALRM);
+	act.sa_handler = &noop;
+	act.sa_flags = 0;
+	sigaction (SIGALRM, &act, NULL);
 
 	/* clean up */
-	setup_action.sa_handler = mrproper;
-	setup_action.sa_mask = 0;
-	setup_action.sa_flags = SA_RESETHAND;
-	sigaction (SIGINT, &setup_action, NULL);
-	sigaction (SIGTERM, &setup_action, NULL);
+	sigemptyset(&act.sa_mask);
+	act.sa_handler = &mrproper;
+	act.sa_flags = SA_RESETHAND;
+	sigaction (SIGINT, &act, NULL);
+	sigaction (SIGTERM, &act, NULL);
 }
 
 int
@@ -515,19 +515,15 @@ main(int argc, char *argv[])
 	time_t toleration;
 	configlist_t *config;
 	char *configfile = CONFIGFILE;
-	FILE *pf;
-	struct stat statinfo;
 	extern char *optarg;
 	extern int optind, optopt;
 	int c;
 	struct timespec *delay;
 	pool_limits_t limits;
+        sigset_t mask, oldmask;
 #ifdef DNSBL
 	dns_check_info_t *dns_check_info;
 #endif
-
-	/* mind the signals */
-	setup_signal_handlers();
 
 	ctx = initialize_context();
 
@@ -556,7 +552,7 @@ main(int argc, char *argv[])
 			break;
 		case 'V':
                         printf("grossd - Greylisting of Suspicious Sources. Version %s.\n", VERSION);
-			exit(EXIT_NOERROR);
+			daemon_shutdown(EXIT_NOERROR, NULL);
                         break;
 		case 'C':
                         ctx->config.flags |= FLG_CREATE_STATEFILE;
@@ -589,34 +585,30 @@ main(int argc, char *argv[])
 	
 	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
 		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
+		ctx->syslog_open = true;
 	}
 
-	if ((ctx->config.flags & FLG_CREATE_PIDFILE) == FLG_CREATE_PIDFILE) {
-		assert(ctx->config.pidfile);
-		ret = stat(ctx->config.pidfile, &statinfo);
-		if ((ctx->config.flags & FLG_CHECK_PIDFILE) == 0 || ( ret < 0 && errno == ENOENT )) {
-			logstr(GLOG_INFO, "creating pidfile %s", ctx->config.pidfile);
-			pf = fopen(ctx->config.pidfile, "w");
-			if (pf != NULL) {
-				ret = fprintf(pf, "%d", getpid());
-					if (ret < 0)
-						daemon_fatal("writing pidfile");
-			} else {
-				daemon_fatal("opening pidfile: fdopen");
-			}
-			fclose(pf);
-		} else {
-			if (ret < 0)
-				daemon_fatal("stat");
-			else
-				daemon_shutdown(EXIT_PIDFILE_EXISTS, "pidfile already exists");
-		}
-	}
+	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE)
+		create_statefile();
+
+	if (ctx->config.flags & FLG_CHECK_PIDFILE) 
+		check_pidfile();
 
 	/* daemonize must be run before any pthread_create */
 	if ((ctx->config.flags & FLG_NODAEMON) == 0) 
 		daemonize();
 
+	if (ctx->config.flags & FLG_CREATE_PIDFILE)
+		create_pidfile();
+
+	/* mind the signals */
+	setup_signal_handlers();
+
+	/* Mask all allowed signals */
+        sigfillset(&mask);
+        ret = pthread_sigmask(SIG_BLOCK, &mask, &oldmask);
+        if (ret)
+                daemon_fatal("pthread_sigmask");
 
 	/* initialize the update queue */
 	delay = Malloc(sizeof(struct timespec));
@@ -686,6 +678,11 @@ main(int argc, char *argv[])
 	/*
 	 * run some periodic maintenance tasks
 	 */
+	/* reset the old mask */
+        ret = pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
+        if (ret)
+                daemon_fatal("pthread_sigmask");
+
 	toleration = time(NULL);
 	for ( ; ; ) {
 		if ((time(NULL) - *ctx->last_rotate) > ctx->config.rotate_interval) {

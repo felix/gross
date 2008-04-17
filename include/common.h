@@ -226,6 +226,7 @@ typedef struct {
 	thread_info_t syncmgr;
 	thread_info_t postfix_server;
 	thread_info_t sjsms_server;
+	thread_info_t milter_server;
 } thread_collection_t;
 
 #define MAXCHECKS 128
@@ -255,6 +256,7 @@ typedef struct {
         thread_collection_t process_parts;
         stats_t stats;
 	check_t *checklist[MAXCHECKS];
+	bool syslog_open;
 } gross_ctx_t;
 
 #ifndef HAVE_USECONDS_T

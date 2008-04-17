@@ -29,11 +29,14 @@ typedef struct {
 	dnsbl_t *dnsbase;
 } dns_check_info_t;
 
+typedef const char * constchar_t;
+
 typedef struct {
 	dnsbl_t *dnsbl;
 	bool *done;
 	int *timeout;
 	const char *querystr;
+	constchar_t *dnslname;
 	edict_t *edict;
 	dns_check_info_t *check_info;
 } callback_arg_t;

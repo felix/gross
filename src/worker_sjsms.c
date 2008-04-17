@@ -179,13 +179,11 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	sjsms_msg_t *msg;
 	grey_tuple_t *tuple;
 	char response[MAXLINELEN];
-	final_status_t status = { '\0' };
+	final_status_t *status;
 	int ret;
 	tmout_action_t ta1, ta2;
 	char *mapstr;
 	char *str;
-	struct timespec start, end;
-	int delay;
 	client_info_t *client_info;
 	char *querystr = NULL;
 
@@ -224,7 +222,6 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	switch (msg->msgtype) {
 	case MSGTYPE_QUERY:
 	case MSGTYPE_QUERY_V2:
-		clock_gettime(CLOCK_TYPE, &start);
 		if (MSGTYPE_QUERY == msg->msgtype) {
 			recvquery(msg, &request);
 			tuple = unfold(&request);
@@ -240,23 +237,25 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 			goto OUT;
 		}
 
+		status = init_status("sjsms");
+
 		/* We are go */
-		ret = test_tuple(&status, tuple, &ta1);
+		ret = test_tuple(status, tuple, &ta1);
 
 		if (ret < 0) {
 			snprintf(response, MAXLINELEN, "F");
 		} else {
-			switch (status.status) {
+			switch (status->status) {
 			case STATUS_MATCH:
 				snprintf(response, MAXLINELEN, "M %s", ctx->config.sjsms.responsematch);
 				break;
 			case STATUS_GREY:
-				mapstr = assemble_mapresult(ctx->config.sjsms.responsegrey, status.reason);
+				mapstr = assemble_mapresult(ctx->config.sjsms.responsegrey, status->reason);
 				snprintf(response, MAXLINELEN, "G %s", mapstr);
 				Free(mapstr);
 				break;
 			case STATUS_BLOCK:
-				mapstr = assemble_mapresult(ctx->config.sjsms.responseblock, status.reason);
+				mapstr = assemble_mapresult(ctx->config.sjsms.responseblock, status->reason);
 				snprintf(response, MAXLINELEN, "B %s", mapstr);
 				Free(mapstr);
 				break;
@@ -273,29 +272,8 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		len = sizeof(struct sockaddr_in);
 		sendto(client_info->connfd, response, strlen(response),
 			0, (struct sockaddr *)client_info->caddr, len);
-		clock_gettime(CLOCK_TYPE, &end);
 
-		delay = ms_diff(&end, &start);
-		logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
-
-		switch (status.status) {
-		case STATUS_BLOCK:
-		  block_delay_update((double)delay);
-		  break;
-		case STATUS_MATCH:
-		  match_delay_update((double)delay);
-		  break;
-		case STATUS_GREY:
-		  greylist_delay_update((double)delay);
-		  break;
-		case STATUS_TRUST:
-		  trust_delay_update((double)delay);
-		  break;
-		default:
-		  /* FIX: count errors */
-		  ;
-		}
-
+		finalize(status);
 		request_unlink(tuple);
 		break;
 	case MSGTYPE_LOGMSG:
@@ -311,13 +289,11 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		break;
 	}
 OUT:
+
 	Free(msg);
 
 	free_client_info(client_info);
 	logstr(GLOG_DEBUG, "sjsms_connection returning");
-
-        if (status.reason)
-                Free(status.reason);
 
 	return 1;
 }
@@ -391,5 +367,5 @@ void
 sjsms_server_init()
 {
 	logstr(GLOG_INFO, "starting sjsms policy server");
-	Pthread_create(&ctx->process_parts.sjsms_server, &sjsms_server, NULL);
+	create_thread(&ctx->process_parts.sjsms_server, DETACH, &sjsms_server, NULL);
 }
