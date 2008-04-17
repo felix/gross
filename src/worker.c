@@ -309,6 +309,11 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 						 */
 						logstr(GLOG_DEBUG, "NULL check result received (pool exhausted)");
 						checks_running--;
+						/*
+						 * Because the request never reached its destination
+						 * we have to unlink it here
+						 */
+						 request_unlink(request);
 					} else {
 						logstr(GLOG_INSANE, "Received a check result, judgment = %d, weight = %d",
 							result->judgment, result->weight);

@@ -36,8 +36,6 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 	grey_tuple_t *request;
 	char response[MAXLINELEN] = { '\0' };
 	int ret;
-	struct timespec start, end;
-	int delay;
 	client_info_t *client_info;
 	final_status_t *status;
 
@@ -52,7 +50,6 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 		if (ret == PARSE_OK) {
 			status = init_status("postfix");
 			/* We are go */
-			clock_gettime(CLOCK_TYPE, &start);
 			ret = test_tuple(status, request, NULL);
 
 			if (ret < 0) {
@@ -84,10 +81,6 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 				logstr(GLOG_ERROR, "respond() failed in handle_connection");
 			}
 
-			clock_gettime(CLOCK_TYPE, &end);
-			delay = ms_diff(&end, &start);
-			logstr(GLOG_DEBUG, "processing delay: %d ms", delay);
-			
 			finalize(status);
 			request_unlink(request);
 			/* check if the client requested a single query mode */
