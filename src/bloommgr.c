@@ -87,7 +87,7 @@ bloommgr(void *arg)
 	    break;
 	  case ABSOLUTE_UPDATE:
 	    memcpy(&ss, message.mtext, sizeof(ss));
-	    logstr(GLOG_INSANE, "Absolute update, buffer %d, index %d", ss.buffer, ss.index);
+	    /* logstr(GLOG_INSANE, "Absolute update, buffer %d, index %d", ss.buffer, ss.index); */
 	    WITH_BLOOM_GUARD(insert_absolute_bloom_ring_queue(ctx->filter, ss.filter, FILTER_SIZE, ss.index, ss.buffer););
 	    break;
 	  case ROTATE:

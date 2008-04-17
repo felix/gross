@@ -61,6 +61,7 @@ randomc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
 	result->judgment = J_UNDEFINED;
+	result->checkname = "random";
 
 	r = rand();
 	if ((r % 7) == 0) {

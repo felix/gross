@@ -20,8 +20,6 @@
 
 #include "proto_sjsms.h"
 
-#define WITH_HELO 0
-
 /* prototypes of internals */
 int send_sjsms_msg(int fd, struct sockaddr_in *grserv, sjsms_msg_t *message);
 
@@ -34,51 +32,6 @@ buildquerystr(const char *sender, const char *rcpt, const char *caddr, const cha
 		sender, rcpt, caddr, helo ? "\nhelo_name=" : "", helo ? helo : "");
 
 	return strdup(buffer);
-}
-
-int
-fold(grey_req_t *req, const char *sender,
-        const char *rcpt, const char *caddr, const char *helo)
-{
-        uint16_t sender_len, rcpt_len, caddr_len, helo_len;
-
-        sender_len = strlen(sender);
-        rcpt_len = strlen(rcpt);
-        caddr_len = strlen(caddr);
-	helo_len = strlen(helo);
-
-	req->sender = 0;
-	memcpy(req->message + req->sender, sender, sender_len);
-	*(req->message + req->sender + sender_len) = '\0';
-
-	req->recipient = req->sender + sender_len + 1;
-	memcpy(req->message + req->recipient, rcpt , rcpt_len);
-	*(req->message + req->recipient + rcpt_len) = '\0';
-
-	req->client_address = req->recipient + rcpt_len + 1;
-	memcpy(req->message + req->client_address, caddr , caddr_len);
-	*(req->message + req->client_address + caddr_len) = '\0';
-
-#if WITH_HELO
-        req->helo_name = req->client_address + caddr_len + 1;
-        memcpy(req->message + req->helo_name, helo, helo_len);
-        *(req->message + req->helo_name + helo_len) = '\0';
-
-        req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1 + helo_len + 1;
-#else
-        req->msglen = sender_len + 1 + rcpt_len + 1 + caddr_len + 1;
-#endif
-
-#define HTONS_SWAP(X) { X = htons(X); }
-	HTONS_SWAP(req->sender);
-	HTONS_SWAP(req->recipient);
-	HTONS_SWAP(req->client_address);
-#if WITH_HELO
-	HTONS_SWAP(req->helo_name);
-#endif
-	HTONS_SWAP(req->msglen);
-
-        return 1;
 }
 
 int

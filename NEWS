@@ -1,10 +1,13 @@
-Version 0.9-svn
+Version 0.9.3
 
-* A few important bug fixes to milter server
+* HELOified all the rest of the code. There are still no checks
+  that use helo info, but now grossd logs it and also gclient 
+  can send it to the server. Check INSTALL details about 
+  configuring SJSMS to send helo string over to grossd.
 * New logfile format! An example log line: 
 
   Thu Apr 17 14:50:05 2008 #8505600: a=greylist d=3 w=5 c=127.0.0.2
-  s=sender r=recipient h=N/A m=cbl.abuseat.org+1 m=bl.spamcop.net+2
+  s=sender r=recipient h=utu.fi m=cbl.abuseat.org+1 m=bl.spamcop.net+2
   m=combined.njabl.org+1 m=dnsbl.sorbs.net+1
 
   where
@@ -17,6 +20,7 @@ Version 0.9-svn
   h = helo/ehlo
   m = matched check with possible weight
 
+- A few important bug fixes to milter server
 - behaviour change: grossd now exits after creating the
   statefile when invoked with -C command line option. This
   makes life easier for package maintainers in the future.
