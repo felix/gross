@@ -210,7 +210,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta) {
 	/* apply grey_mask for client_address */
 	chkipstr = grey_mask(request->client_address);
 	if (NULL == chkipstr) {
-		logstr(GLOG_ERROR, "applying grey_mask failed: %s", ipstr);
+		logstr(GLOG_ERROR, "applying grey_mask failed: %s", request->client_address);
 		return -1;
 	}
 

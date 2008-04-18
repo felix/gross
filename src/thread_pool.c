@@ -28,6 +28,8 @@
 #include "utils.h"
 #include "thread_pool.h"
 
+#include "signal.h"
+
 /* internals */
 static void *thread_pool(void *arg);
 
@@ -83,6 +85,7 @@ thread_pool(void *arg)
 
 		clock_gettime(CLOCK_TYPE, &now);
 		waited = ms_diff(&now, &pool_ctx->last_idle_check);
+		logstr(GLOG_DEBUG, "now %d", now.tv_sec);
 
 		if (waited > IDLETIME) {
 			/* update the reference time */
@@ -92,11 +95,12 @@ thread_pool(void *arg)
 				/* check the watchdog status */
 				dogp = pool_ctx->wdlist;
 				while (dogp) {
+				  logstr(GLOG_DEBUG, "WD last seen %d", dogp->last_seen.tv_sec); 
 					lastseenms = ms_diff(&now, &dogp->last_seen);
 					if (lastseenms > pool_ctx->watchdog_time) {
 						/* a stuck thread */
-						logstr(GLOG_WARNING, "thread #%x of pool '%s' stuck, last seen %d ms ago.",
-							(uint32_t)dogp->tid, pool_ctx->info->name, lastseenms);
+						logstr(GLOG_WARNING, "thread #%x of pool '%s' stuck, last seen %d ms ago (%d).",
+						       (uint32_t)dogp->tid, pool_ctx->info->name, lastseenms, dogp->last_seen.tv_sec );
 						pthread_kill(dogp->tid, SIGALRM);
 					}
 					dogp = dogp->next;
