@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2007
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2007, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -28,9 +28,9 @@ cleanup_spfc(void *state)
 {
 	SPF_server_t *spf_server;
 
-	spf_server = (SPF_server_t *)state;
-        if (spf_server)
-                SPF_server_free(spf_server);
+	spf_server = (SPF_server_t *) state;
+	if (spf_server)
+		SPF_server_free(spf_server);
 	return 0;
 }
 
@@ -40,10 +40,10 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 	struct timespec ts, start, now, timeleft;
 	chkresult_t *result;
 	grey_tuple_t *request;
-        SPF_server_t *spf_server = NULL;
-        SPF_request_t *spf_request = NULL;
-        SPF_response_t *spf_response = NULL;
-        SPF_response_t *spf_response_2mx = NULL;
+	SPF_server_t *spf_server = NULL;
+	SPF_request_t *spf_request = NULL;
+	SPF_response_t *spf_response = NULL;
+	SPF_response_t *spf_response_2mx = NULL;
 
 	logstr(GLOG_DEBUG, "spfc called");
 
@@ -52,7 +52,7 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
-        result->judgment = J_UNDEFINED;
+	result->judgment = J_UNDEFINED;
 
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
@@ -65,12 +65,12 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 		thread_ctx->state = spf_server;
 		thread_ctx->cleanup = &cleanup_spfc;
 	} else {
-		spf_server = (SPF_server_t *)thread_ctx->state;
+		spf_server = (SPF_server_t *) thread_ctx->state;
 	}
 
 	/* Now we are ready to query */
 	spf_request = SPF_request_new(spf_server);
-	
+
 	ret = SPF_request_set_ipv4_str(spf_request, request->client_ip);
 	if (ret) {
 		logstr(GLOG_ERROR, "invalid IP address %s", request->client_ip);
@@ -90,7 +90,7 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 		goto ERROR;
 	}
 
-        SPF_request_query_mailfrom(spf_request, &spf_response);
+	SPF_request_query_mailfrom(spf_request, &spf_response);
 
 	ret = SPF_response_result(spf_response);
 	if (ret != SPF_RESULT_PASS) {
@@ -113,13 +113,13 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 		}
 	}
 
-ERROR:
-        if (spf_request)
-                SPF_request_free(spf_request);
-FINISH:
+      ERROR:
+	if (spf_request)
+		SPF_request_free(spf_request);
+      FINISH:
 
 	send_result(edict, result);
-	
+
 	logstr(GLOG_DEBUG, "spfc returning");
 	request_unlink(request);
 
@@ -132,10 +132,10 @@ spf_init(pool_limits_t *limits)
 	thread_pool_t *pool;
 
 	/* initialize the thread pool */
-        logstr(GLOG_INFO, "initializing spf checker thread pool");
+	logstr(GLOG_INFO, "initializing spf checker thread pool");
 	pool = create_thread_pool("spf", &spfc, limits);
-        if (pool == NULL)
-                daemon_fatal("create_thread_pool");
+	if (pool == NULL)
+		daemon_fatal("create_thread_pool");
 
 	/* This is a definitive check */
 	register_check(pool, true);

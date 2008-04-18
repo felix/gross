@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006,2007
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2007, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -31,7 +31,8 @@ int log_put(const char *msg);
 size_t date_fmt(char *msg, size_t len);
 
 int
-logstr(int level, const char *fmt, ...) {
+logstr(int level, const char *fmt, ...)
+{
 	char logfmt[MSGSZ] = { '\0' };
 	char mbuf[MSGSZ] = { '\0' };
 	va_list vap;
@@ -41,30 +42,32 @@ logstr(int level, const char *fmt, ...) {
 	}
 
 	/* prepend thread id */
-	snprintf(logfmt, MSGSZ, "#%x: %s", (uint32_t)pthread_self(), fmt);
+	snprintf(logfmt, MSGSZ, "#%x: %s", (uint32_t) pthread_self(), fmt);
 
 	va_start(vap, fmt);
 	vsnprintf(mbuf, MSGSZ, logfmt, vap);
 	va_end(vap);
 
 	if (false == ctx->syslog_open)
-		return log_put(mbuf); 
+		return log_put(mbuf);
 
-	if (level > GLOG_DEBUG) level = GLOG_DEBUG;
+	if (level > GLOG_DEBUG)
+		level = GLOG_DEBUG;
 
 	level ^= LOG_TYPE;
 
 	syslog(level, "%s", mbuf);
-	
+
 	return 0;
 }
 
-int statstr(int level, const char *fmt, ...)
+int
+statstr(int level, const char *fmt, ...)
 {
 	char mbuf[MSGSZ] = { 0x00 };
 	va_list vap;
 
-	if ((level & ctx->config.statlevel) == STATS_NONE){
+	if ((level & ctx->config.statlevel) == STATS_NONE) {
 		return 0;
 	}
 
@@ -77,23 +80,23 @@ int statstr(int level, const char *fmt, ...)
 	va_end(vap);
 
 	if (ctx->config.flags & FLG_NODAEMON)
-		return log_put(mbuf); 
+		return log_put(mbuf);
 
 	level = GLOG_NOTICE;
 
 	level ^= LOG_TYPE;
 
 	syslog(level, "%s", mbuf);
-	
+
 	return 0;
 }
 
 void
 daemon_shutdown(int return_code, const char *fmt, ...)
 {
-        char logfmt[MSGSZ];
-        char out[MSGSZ];
-        va_list vap;
+	char logfmt[MSGSZ];
+	char out[MSGSZ];
+	va_list vap;
 
 	if (fmt) {
 		/* prepend the reason string */
@@ -112,7 +115,7 @@ daemon_shutdown(int return_code, const char *fmt, ...)
 
 	if (EXIT_NOERROR == return_code && (ctx->config.flags & FLG_CREATE_PIDFILE) && ctx->config.pidfile)
 		unlink(ctx->config.pidfile);
-        exit(return_code);
+	exit(return_code);
 }
 
 void
@@ -130,22 +133,22 @@ daemon_fatal(const char *reason)
 	combolen = strlen(reason) + 1 + strlen(errstr) + 1;
 	combo = malloc(combolen);
 
-	assert(combo); /* no Malloc() here because of possible recursion loop */
+	assert(combo);		/* no Malloc() here because of possible recursion loop */
 	snprintf(combo, combolen, "%s %s\n", reason, errstr);
 
 	daemon_shutdown(EXIT_FATAL, combo);
 }
 
 int
-connected(peer_t* peer)
+connected(peer_t *peer)
 {
 	return peer->connected;
 }
 
 void *
-new_address(void* val1, size_t val2)
+new_address(void *val1, size_t val2)
 {
-	return (void *) (((size_t)val1) + val2);
+	return (void *)(((size_t) val1) + val2);
 }
 
 /*
@@ -156,23 +159,23 @@ new_address(void* val1, size_t val2)
 int
 walk_mmap_info(void)
 {
-        int i;
-        size_t offset = (((size_t) &(ctx->mmap_info->brq[1])) - ((size_t)ctx->mmap_info->brq->group));
+	int i;
+	size_t offset = (((size_t) & (ctx->mmap_info->brq[1])) - ((size_t) ctx->mmap_info->brq->group));
 
-        logstr(GLOG_DEBUG, "fixing bloom ring queue memory pointers, offset=%x", offset);
+	logstr(GLOG_DEBUG, "fixing bloom ring queue memory pointers, offset=%x", offset);
 
 #define CHANGE_ADDRESS(X,Y) { X = new_address(X,Y); }
-        CHANGE_ADDRESS(ctx->mmap_info->brq->group, offset);
-        CHANGE_ADDRESS(ctx->mmap_info->brq->aggregate, offset);
-        CHANGE_ADDRESS(ctx->mmap_info->brq->aggregate->filter, offset);
-        CHANGE_ADDRESS(ctx->mmap_info->brq->group->filter_group, offset);
+	CHANGE_ADDRESS(ctx->mmap_info->brq->group, offset);
+	CHANGE_ADDRESS(ctx->mmap_info->brq->aggregate, offset);
+	CHANGE_ADDRESS(ctx->mmap_info->brq->aggregate->filter, offset);
+	CHANGE_ADDRESS(ctx->mmap_info->brq->group->filter_group, offset);
 
-        for ( i=0 ; i<ctx->mmap_info->brq->group->group_size ; i++ ) {
-                CHANGE_ADDRESS(ctx->mmap_info->brq->group->filter_group[i], offset);
-                CHANGE_ADDRESS(ctx->mmap_info->brq->group->filter_group[i]->filter, offset);
-        }
+	for (i = 0; i < ctx->mmap_info->brq->group->group_size; i++) {
+		CHANGE_ADDRESS(ctx->mmap_info->brq->group->filter_group[i], offset);
+		CHANGE_ADDRESS(ctx->mmap_info->brq->group->filter_group[i]->filter, offset);
+	}
 
-        return TRUE;
+	return TRUE;
 }
 
 /*
@@ -180,191 +183,189 @@ walk_mmap_info(void)
 void
 create_statefile(void)
 {
-        int ret;
+	int ret;
 	int lumpsize;
 	int i;
-        struct stat statbuf;
-        FILE *statefile;
+	struct stat statbuf;
+	FILE *statefile;
 	unsigned int num = ctx->config.num_bufs;
 	bitindex_t num_bits = ctx->config.filter_size;
 
-        /* calculate the statefile size */
-        lumpsize = sizeof(bloom_ring_queue_t) +         /* filter group metadata */
-                sizeof(bloom_filter_group_t) +          /* filter group data */
-                num * sizeof(bloom_filter_t *) +        /* pointers to filters */
-                (num + 1) * sizeof(bloom_filter_t) +    /* filter metadata */
-                (num + 1) * ( 1 << num_bits ) / BITS_PER_CHAR +  /* filter data */
-                sizeof(mmapped_brq_t);      /* mmap_info */
+	/* calculate the statefile size */
+	lumpsize = sizeof(bloom_ring_queue_t) +	/* filter group metadata */
+	    sizeof(bloom_filter_group_t) +	/* filter group data */
+	    num * sizeof(bloom_filter_t *) +	/* pointers to filters */
+	    (num + 1) * sizeof(bloom_filter_t) +	/* filter metadata */
+	    (num + 1) * (1 << num_bits) / BITS_PER_CHAR +	/* filter data */
+	    sizeof(mmapped_brq_t);	/* mmap_info */
 
-        ret = stat(ctx->config.statefile, &statbuf);
-        if (ret == 0) {
-                daemon_shutdown(EXIT_FATAL, "statefile already exists");
-        } else if (ENOENT == errno) {
-                /* statefile does not exist */
-                statefile = fopen(ctx->config.statefile, "w");
-                if (statefile == NULL) {
-                        daemon_fatal("stat(): statefile creation failed");
-                }
-                for (i = 0; i < lumpsize; i++) 
-                        if (fputc(0, statefile)) daemon_fatal("fputc()");
-                fclose(statefile);
+	ret = stat(ctx->config.statefile, &statbuf);
+	if (ret == 0) {
+		daemon_shutdown(EXIT_FATAL, "statefile already exists");
+	} else if (ENOENT == errno) {
+		/* statefile does not exist */
+		statefile = fopen(ctx->config.statefile, "w");
+		if (statefile == NULL) {
+			daemon_fatal("stat(): statefile creation failed");
+		}
+		for (i = 0; i < lumpsize; i++)
+			if (fputc(0, statefile))
+				daemon_fatal("fputc()");
+		fclose(statefile);
 		daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...", ctx->config.statefile);
-        } else {
-                daemon_fatal("statefile opening failed: stat:");
-        }       
+	} else {
+		daemon_fatal("statefile opening failed: stat:");
+	}
 }
 
 bloom_ring_queue_t *
 build_bloom_ring(unsigned int num, bitindex_t num_bits)
 {
-        bloom_ring_queue_t *brq;
-        char *ptr;
-        int i, ret;
-        int fd, lumpsize;
-        struct stat statbuf;
-        char *magic = "mmbrq2\n";
-        int use_mmap = FALSE;
+	bloom_ring_queue_t *brq;
+	char *ptr;
+	int i, ret;
+	int fd, lumpsize;
+	struct stat statbuf;
+	char *magic = "mmbrq2\n";
+	int use_mmap = FALSE;
 
-        assert(num_bits > 3);
+	assert(num_bits > 3);
 
 	/*
 	 * lumpsize is the size of the needed contiguous memory block
 	 * for the state information. We want to allocate just one 
 	 * mmap()'ed file for all the state info
 	 */
-        lumpsize = sizeof(bloom_ring_queue_t) +         /* filter group metadata */
-                sizeof(bloom_filter_group_t) +          /* filter group data */
-                num * sizeof(bloom_filter_t *) +        /* pointers to filters */
-                (num + 1) * sizeof(bloom_filter_t) +    /* filter metadata */
-                (num + 1) * ( 1 << num_bits ) / BITS_PER_CHAR; /* filter data */
+	lumpsize = sizeof(bloom_ring_queue_t) +	/* filter group metadata */
+	    sizeof(bloom_filter_group_t) +	/* filter group data */
+	    num * sizeof(bloom_filter_t *) +	/* pointers to filters */
+	    (num + 1) * sizeof(bloom_filter_t) +	/* filter metadata */
+	    (num + 1) * (1 << num_bits) / BITS_PER_CHAR;	/* filter data */
 
-        if (ctx->config.statefile) {
-                use_mmap = TRUE;
-        }
+	if (ctx->config.statefile) {
+		use_mmap = TRUE;
+	}
 
-        if (use_mmap) {
-                /* prepare for mmapping */
-                lumpsize += sizeof(mmapped_brq_t);
+	if (use_mmap) {
+		/* prepare for mmapping */
+		lumpsize += sizeof(mmapped_brq_t);
 
-                ret = stat(ctx->config.statefile, &statbuf);
+		ret = stat(ctx->config.statefile, &statbuf);
 		if (ret < 0) {
 			/* statefile does not exist or is not accessible */
 			daemon_fatal("stat(): statefile opening failed");
 		} else if (statbuf.st_size != lumpsize) {
 			/* statefile exists, but is wrong size */
 			printf("statefile size (%d) differs from the calculated size (%d)\n",
-				((int)statbuf.st_size), lumpsize);
+			    ((int)statbuf.st_size), lumpsize);
 			daemon_shutdown(EXIT_FATAL, "statefile size differs from the calculated size");
-                }
+		}
 
 		fd = open(ctx->config.statefile, O_RDWR);
 
-                ptr = (char *)mmap((void*)0, lumpsize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-                assert(ptr);
-                ctx->mmap_info = (mmapped_brq_t *)ptr;
+		ptr = (char *)mmap((void *)0, lumpsize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		assert(ptr);
+		ctx->mmap_info = (mmapped_brq_t *)ptr;
 
-                ctx->last_rotate = &(ctx->mmap_info->last_rotate);
+		ctx->last_rotate = &(ctx->mmap_info->last_rotate);
 
-                if (strncmp(ctx->mmap_info->magic, magic, strlen(magic)) == 0) {
-                        logstr(GLOG_DEBUG, "Found the correct state file magic string.");
-                        ctx->mmap_info->brq = (bloom_ring_queue_t *) &(ctx->mmap_info[1]);
-                        walk_mmap_info();
-                        return ctx->mmap_info->brq;
-                }
-                logstr(GLOG_DEBUG, "Unable to find the state file magic string. Initializing.");
-                strncpy(ctx->mmap_info->magic, magic, 8);
-                ctx->mmap_info->last_rotate = time(NULL);
+		if (strncmp(ctx->mmap_info->magic, magic, strlen(magic)) == 0) {
+			logstr(GLOG_DEBUG, "Found the correct state file magic string.");
+			ctx->mmap_info->brq = (bloom_ring_queue_t *)&(ctx->mmap_info[1]);
+			walk_mmap_info();
+			return ctx->mmap_info->brq;
+		}
+		logstr(GLOG_DEBUG, "Unable to find the state file magic string. Initializing.");
+		strncpy(ctx->mmap_info->magic, magic, 8);
+		ctx->mmap_info->last_rotate = time(NULL);
 
-                ptr += sizeof(mmapped_brq_t); /* skip over the mmap_info */
-        } else {
-                ptr = Malloc(lumpsize);
-        }
+		ptr += sizeof(mmapped_brq_t);	/* skip over the mmap_info */
+	} else {
+		ptr = Malloc(lumpsize);
+	}
 
-        /* filter group metadata */
-        brq = (bloom_ring_queue_t *)ptr;
+	/* filter group metadata */
+	brq = (bloom_ring_queue_t *)ptr;
 
 #ifdef G_MMAP_DEBUG
 	printf("brq: %p\n", ptr);
 	printf("end: %p\n", (ptr + lumpsize));
 #endif
 
-        if (use_mmap)
-                ctx->mmap_info->brq = brq;
+	if (use_mmap)
+		ctx->mmap_info->brq = brq;
 
-        brq->current_index = 0;
+	brq->current_index = 0;
 
-        /* filter group data */
-        ptr += sizeof(bloom_ring_queue_t);
-        brq->group = (bloom_filter_group_t *)ptr;       /* see malloc */
-        brq->group->group_size = num;
+	/* filter group data */
+	ptr += sizeof(bloom_ring_queue_t);
+	brq->group = (bloom_filter_group_t *)ptr;	/* see malloc */
+	brq->group->group_size = num;
 
-        /* pointers of pointers to filters */
-        ptr += sizeof(bloom_filter_group_t);
-        brq->group->filter_group = (bloom_filter_t **)ptr;
+	/* pointers of pointers to filters */
+	ptr += sizeof(bloom_filter_group_t);
+	brq->group->filter_group = (bloom_filter_t **)ptr;
 
-        /* filter metadata */
-        ptr += num * sizeof(bloom_filter_t *); 
-        brq->aggregate = (bloom_filter_t *)ptr;
-        brq->aggregate->bitsize = 1 << num_bits;
-        brq->aggregate->mask = ((bitindex_t) - 1) >> (BITARRAY_BASE_SIZE - num_bits);
-        brq->aggregate->size = brq->aggregate->bitsize / BITARRAY_BASE_SIZE;
+	/* filter metadata */
+	ptr += num * sizeof(bloom_filter_t *);
+	brq->aggregate = (bloom_filter_t *)ptr;
+	brq->aggregate->bitsize = 1 << num_bits;
+	brq->aggregate->mask = ((bitindex_t)-1) >> (BITARRAY_BASE_SIZE - num_bits);
+	brq->aggregate->size = brq->aggregate->bitsize / BITARRAY_BASE_SIZE;
 
-        for (i = 0; i < brq->group->group_size; i++) {
-                brq->group->filter_group[i] = (bloom_filter_t *)(ptr + sizeof(bloom_filter_t) * (i + 1));
-                brq->group->filter_group[i]->bitsize = 1 << num_bits;
-                brq->group->filter_group[i]->mask =
-                        ((bitindex_t) -1) >> (BITARRAY_BASE_SIZE - num_bits);
-                brq->group->filter_group[i]->size =
-                        brq->group->filter_group[i]->bitsize / BITARRAY_BASE_SIZE;
-        }
+	for (i = 0; i < brq->group->group_size; i++) {
+		brq->group->filter_group[i] = (bloom_filter_t *)(ptr + sizeof(bloom_filter_t) * (i + 1));
+		brq->group->filter_group[i]->bitsize = 1 << num_bits;
+		brq->group->filter_group[i]->mask = ((bitindex_t)-1) >> (BITARRAY_BASE_SIZE - num_bits);
+		brq->group->filter_group[i]->size = brq->group->filter_group[i]->bitsize / BITARRAY_BASE_SIZE;
+	}
 
-        /* filter data */
-        ptr += (num + 1) * sizeof(bloom_filter_t);
-        brq->aggregate->filter = (bitarray_base_t *)ptr;
+	/* filter data */
+	ptr += (num + 1) * sizeof(bloom_filter_t);
+	brq->aggregate->filter = (bitarray_base_t *)ptr;
 #ifdef G_MMAP_DEBUG
-        printf("brq->aggregate->filter: %x\n", brq->aggregate->filter);
+	printf("brq->aggregate->filter: %x\n", brq->aggregate->filter);
 #endif
-        for (i = 0; i < brq->group->group_size; i++) {
+	for (i = 0; i < brq->group->group_size; i++) {
 #ifdef G_MMAP_DEBUG
-          printf("jump: %d\n", (i+1) * brq->aggregate->size );
+		printf("jump: %d\n", (i + 1) * brq->aggregate->size);
 #endif
-                brq->group->filter_group[i]->filter =
-			(bitarray_base_t *)(ptr + (i + 1) *
-			(sizeof(bitarray_base_t) * brq->group->filter_group[i]->size));
+		brq->group->filter_group[i]->filter =
+		    (bitarray_base_t *)(ptr + (i + 1) *
+		    (sizeof(bitarray_base_t) * brq->group->filter_group[i]->size));
 #ifdef G_MMAP_DEBUG
-                printf("%x\n", brq->group->filter_group[i]->filter);
+		printf("%x\n", brq->group->filter_group[i]->filter);
 #endif
-        }
+	}
 
-        /* zero out the filters */
-        zero_bloom_filter(brq->aggregate);
-        for (i = 0; i < brq->group->group_size; i++)
-                zero_bloom_filter(brq->group->filter_group[i]);
+	/* zero out the filters */
+	zero_bloom_filter(brq->aggregate);
+	for (i = 0; i < brq->group->group_size; i++)
+		zero_bloom_filter(brq->group->filter_group[i]);
 
-        /* sync to make sure everything is working fine if using mmap */
-        if (use_mmap) {
-                ret = msync((void *)ctx->mmap_info, lumpsize, MS_SYNC);
-                if (ret < 0) {
-                        daemon_fatal("msync");
-                }
-        }
-
+	/* sync to make sure everything is working fine if using mmap */
+	if (use_mmap) {
+		ret = msync((void *)ctx->mmap_info, lumpsize, MS_SYNC);
+		if (ret < 0) {
+			daemon_fatal("msync");
+		}
+	}
 #ifdef G_MMAP_DEBUG
-        printf("brq: %x\nbrq->group: %x\n", brq, brq->group);
-        printf("lumpsize: %x\n", lumpsize);
-        for ( i=0 ; i<brq->group->group_size ; i++) {
-          printf("Filter pointer %d: %x\n", i, brq->group->filter_group[i]);
-        }
-        printf("brq->aggregate: %x\n", brq->aggregate);
+	printf("brq: %x\nbrq->group: %x\n", brq, brq->group);
+	printf("lumpsize: %x\n", lumpsize);
+	for (i = 0; i < brq->group->group_size; i++) {
+		printf("Filter pointer %d: %x\n", i, brq->group->filter_group[i]);
+	}
+	printf("brq->aggregate: %x\n", brq->aggregate);
 
-        for ( i=0 ; i<brq->group->group_size ; i++ ) {
-          printf("Filter address %d: %x\n", i, brq->group->filter_group[i]->filter);
-        }
+	for (i = 0; i < brq->group->group_size; i++) {
+		printf("Filter address %d: %x\n", i, brq->group->filter_group[i]->filter);
+	}
 
-        printf("brq->aggregate->filter: %x\n", brq->aggregate->filter);
+	printf("brq->aggregate->filter: %x\n", brq->aggregate->filter);
 #endif
 
-        return brq;
+	return brq;
 }
 
 /*
@@ -419,10 +420,10 @@ daemonize(void)
 
 	if ((pid = fork()) != 0)
 		exit(EXIT_NOERROR);	/* parent terminates */
-	
+
 	/* 1st child continues */
-	setsid();			/* become session leader */
-	
+	setsid();		/* become session leader */
+
 	if ((pid = fork()) != 0)
 		exit(EXIT_NOERROR);	/* 1st child terminates */
 
@@ -443,33 +444,33 @@ daemonize(void)
 void *
 Malloc(size_t size)
 {
-        void *chunk;
+	void *chunk;
 
 	assert(size);
-        chunk = malloc(size);
+	chunk = malloc(size);
 
-        if (! chunk)
-                daemon_fatal("malloc");
+	if (!chunk)
+		daemon_fatal("malloc");
 
-        return chunk;
+	return chunk;
 }
 
 /*
  * create_thread	- Wrapper, bails out if not successful.
  */
 void *
-create_thread(thread_info_t *tinfo, int detach, void *(*routine)(void *), void *arg)
+create_thread(thread_info_t *tinfo, int detach, void *(*routine) (void *), void *arg)
 {
 	pthread_t *tid;
-        pthread_attr_t tattr;
+	pthread_attr_t tattr;
 	int ret;
 
-	tid = (pthread_t *)Malloc(sizeof(pthread_t));
+	tid = (pthread_t *) Malloc(sizeof(pthread_t));
 
 	ret = pthread_attr_init(&tattr);
 	if (ret)
 		daemon_fatal("pthread_attr_init");
-	if (DETACH == detach) 
+	if (DETACH == detach)
 		ret = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
 	if (ret)
 		daemon_fatal("pthread_attr_setdetachstate");
@@ -477,7 +478,7 @@ create_thread(thread_info_t *tinfo, int detach, void *(*routine)(void *), void *
 	ret = pthread_create(tid, &tattr, routine, arg);
 	if (ret)
 		daemon_fatal("pthread_create");
-	
+
 	if (tinfo)
 		tinfo->thread = tid;
 	else
@@ -485,39 +486,40 @@ create_thread(thread_info_t *tinfo, int detach, void *(*routine)(void *), void *
 
 	pthread_attr_destroy(&tattr);
 
-	return (void*)tid;
+	return (void *)tid;
 }
 
 int
 log_put(const char *msg)
 {
-        char *final;
+	char *final;
 
-        final = Malloc(MSGSZ);
-        snprintf(final, MSGSZ-1, "%s", msg);
-        date_fmt(final, MSGSZ);
-        printf("%s", final);
-        Free(final);
+	final = Malloc(MSGSZ);
+	snprintf(final, MSGSZ - 1, "%s", msg);
+	date_fmt(final, MSGSZ);
+	printf("%s", final);
+	Free(final);
 	fflush(stdout);
-        return 0;
+	return 0;
 }
 
 size_t
-date_fmt(char *msg, size_t len) {
-        time_t tt;
-        char timestr[DATESTRLEN];
-        char buf[MSGSZ];
-        size_t ret;
+date_fmt(char *msg, size_t len)
+{
+	time_t tt;
+	char timestr[DATESTRLEN];
+	char buf[MSGSZ];
+	size_t ret;
 
-        tt = time(NULL);
-        ctime_r(&tt, timestr);
-        chomp(timestr);
+	tt = time(NULL);
+	ctime_r(&tt, timestr);
+	chomp(timestr);
 
-        snprintf(buf, MSGSZ-1, "%s %s\n", timestr, msg);
-        strncpy(msg, buf, len - 1);
-        msg[len-1] = '\0';
+	snprintf(buf, MSGSZ - 1, "%s %s\n", timestr, msg);
+	strncpy(msg, buf, len - 1);
+	msg[len - 1] = '\0';
 
-        return ret;
+	return ret;
 }
 
 void
@@ -535,18 +537,17 @@ register_check(thread_pool_t *pool, bool definitive)
 			ctx->checklist[i] = check;
 			break;
 		}
-	if (i == MAXCHECKS) 
+	if (i == MAXCHECKS)
 		logstr(GLOG_ERROR, "unable to register pool %s", pool->name);
 }
 
 char *
 ipstr(struct sockaddr_in *saddr)
-{       
-        char ipstr[INET_ADDRSTRLEN];
+{
+	char ipstr[INET_ADDRSTRLEN];
 
-        if (inet_ntop(AF_INET, &saddr->sin_addr,
-                ipstr, INET_ADDRSTRLEN) == NULL) {
-                strncpy(ipstr, "UNKNOWN\0", INET_ADDRSTRLEN);
-        }
-        return strdup(ipstr);
+	if (inet_ntop(AF_INET, &saddr->sin_addr, ipstr, INET_ADDRSTRLEN) == NULL) {
+		strncpy(ipstr, "UNKNOWN\0", INET_ADDRSTRLEN);
+	}
+	return strdup(ipstr);
 }

@@ -22,9 +22,9 @@
  * All the functions are re-entrant and thread safe unless stated otherwise.
  */
 
-#include "common.h" 
+#include "common.h"
 #include "counter.h"
-#include "srvutils.h" 
+#include "srvutils.h"
 
 #define GLOBAL_COUNTER_LOCK { assert(pthread_mutex_lock(&global_counter_lk) == 0); }
 #define GLOBAL_COUNTER_UNLOCK { pthread_mutex_unlock(&global_counter_lk); }
@@ -37,7 +37,7 @@ counter_t *try_available(void);
 /* array of counters */
 int numcounters = 0;
 int counterspace = 1;
-counter_t **counters; 
+counter_t **counters;
 
 pthread_mutex_t global_counter_lk = PTHREAD_MUTEX_INITIALIZER;
 
@@ -51,7 +51,8 @@ counter_realloc(void)
 	size_t countersize;
 
 	/* counters must be initialized first */
-	if (counterspace == 0) counterspace = 1;
+	if (counterspace == 0)
+		counterspace = 1;
 
 	logstr(GLOG_DEBUG, "doubling the space for counters from %d to %d", counterspace, counterspace * 2);
 
@@ -72,7 +73,7 @@ counterbyid(int cid)
 	counter_t *counter;
 
 	/*
- 	 * we must lock the mutex because counters array might be replaced 
+	 * we must lock the mutex because counters array might be replaced 
 	 */
 	GLOBAL_COUNTER_LOCK;
 
@@ -89,10 +90,10 @@ counterbyid(int cid)
 int
 counter_create(void)
 {
-        int i;
-        counter_t *counter;
+	int i;
+	counter_t *counter;
 
-        GLOBAL_COUNTER_LOCK;
+	GLOBAL_COUNTER_LOCK;
 	/* is this the first call? */
 	if (0 == numcounters)
 		counters = calloc(counterspace, sizeof(counter_t *));
@@ -111,9 +112,9 @@ counter_create(void)
 
 	counters[i] = counter;
 
-        GLOBAL_COUNTER_UNLOCK;
+	GLOBAL_COUNTER_UNLOCK;
 
-        return i;
+	return i;
 }
 
 uint64_t
@@ -124,7 +125,7 @@ counter_read(int cid)
 	int ret;
 
 	counter = counterbyid(cid);
-	if (! counter)
+	if (!counter)
 		return 0;
 
 	ret = pthread_mutex_lock(&counter->mx);
@@ -143,7 +144,7 @@ counter_increment(int cid)
 	int ret;
 
 	counter = counterbyid(cid);
-	if (! counter)
+	if (!counter)
 		return 0;
 
 	ret = pthread_mutex_lock(&counter->mx);
@@ -163,7 +164,7 @@ counter_decrement(int cid)
 	int ret;
 
 	counter = counterbyid(cid);
-	if (! counter)
+	if (!counter)
 		return 0;
 
 	ret = pthread_mutex_lock(&counter->mx);
@@ -183,7 +184,7 @@ counter_restart(int cid)
 	int ret;
 
 	counter = counterbyid(cid);
-	if (! counter)
+	if (!counter)
 		return 0;
 
 	ret = pthread_mutex_lock(&counter->mx);
@@ -203,7 +204,7 @@ counter_set(int cid, uint64_t newvalue)
 	int ret;
 
 	counter = counterbyid(cid);
-	if (! counter)
+	if (!counter)
 		return 0;
 
 	ret = pthread_mutex_lock(&counter->mx);

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006,2007 Eino Tuominen <eino@utu.fi>
+ * Copyright (c) 2006,2007
+ *               Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,14 +18,16 @@
 #ifndef MSGQUEUE_H
 #define MSGQUEUE_H
 
-typedef struct msg_s {
+typedef struct msg_s
+{
 	void *msgp;
 	size_t msgsz;
 	struct msg_s *next;
 	struct timespec timestamp;
 } msg_t;
 
-typedef struct msgqueue_s {
+typedef struct msgqueue_s
+{
 	pthread_cond_t cv;
 	pthread_mutex_t mx;
 	msg_t *head;
@@ -32,12 +35,13 @@ typedef struct msgqueue_s {
 	int msgcount;
 	struct msgqueue_s *delaypair;
 	const struct timespec *delay_ts;
-	int *impose_delay; /* both the queues point to the same int */
+	int *impose_delay;	/* both the queues point to the same int */
 	bool active;
 	int id;
 } msgqueue_t;
 
-typedef struct {
+typedef struct
+{
 	msgqueue_t *inq;
 	msgqueue_t *outq;
 } queue_info_t;
@@ -56,6 +60,6 @@ size_t in_queue_len(int msgid);
 size_t out_queue_len(int msgid);
 int queue_freeze(int msgid);
 int queue_thaw(int msgid);
-int walk_queue(int msgid, int (* callback)(void *));
+int walk_queue(int msgid, int (*callback) (void *));
 
 #endif /* MSGQUEUE_H */

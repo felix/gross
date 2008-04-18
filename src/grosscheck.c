@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006,2007
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2007
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -57,7 +57,7 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	char caddr[SBUFLEN] = { 0x00 };
 	char helo[SBUFLEN] = { 0x00 };
 	char recbuf[MAXLINELEN] = { 0x00 };
-	char *requestcopy = NULL; /* null terminated copy of the request */
+	char *requestcopy = NULL;	/* null terminated copy of the request */
 	int n = -1;
 	int ret = -1;
 	int numservers = 0;
@@ -66,13 +66,14 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	char *end;
 	char *request;
 	bool success = false;
+
 #ifdef ARGDEBUG
 	FILE *foo;
 #endif
 	int fd;
-        struct sockaddr_in gserv1, gserv2, *gserv;
+	struct sockaddr_in gserv1, gserv2, *gserv;
 	struct timeval tv;
-	fd_set readers;	
+	fd_set readers;
 
 	assert(arglen);
 	assert(*arglen >= 0);
@@ -80,16 +81,16 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	assert(res);
 	assert(reslen);
 
-        fd = socket(AF_INET, SOCK_DGRAM, 0);
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	if (fd < 0)
 		return MAP_FAIL;
 
 	/* initialize */
-        memset(&gserv1, 0, sizeof(struct sockaddr_in));
-        gserv1.sin_family = AF_INET;
-        memset(&gserv2, 0, sizeof(struct sockaddr_in));
-        gserv2.sin_family = AF_INET;
+	memset(&gserv1, 0, sizeof(struct sockaddr_in));
+	gserv1.sin_family = AF_INET;
+	memset(&gserv2, 0, sizeof(struct sockaddr_in));
+	gserv2.sin_family = AF_INET;
 
 	/* arg should contain a string <ip>,<sender>,<recipient> */
 	strncpy(buffer, arg, *arglen);
@@ -111,15 +112,16 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 }
 
 	/* primary server ip */
-	end = buffer - 1; /* an ugly kludge, I know */
+	end = buffer - 1;	/* an ugly kludge, I know */
 	GETNEXT;
-        ret = inet_pton(AF_INET, begin, &gserv1.sin_addr);
-	if ( ret < 1 ) GROSSCHECK_ERROR;
+	ret = inet_pton(AF_INET, begin, &gserv1.sin_addr);
+	if (ret < 1)
+		GROSSCHECK_ERROR;
 
 	/* secondary server ip */
 	GETNEXT;
 	ret = inet_pton(AF_INET, begin, &gserv2.sin_addr);
-	if ( ret < 1 ) 
+	if (ret < 1)
 		numservers = 1;
 	else
 		numservers = 2;
@@ -129,10 +131,10 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	gserv1.sin_port = gserv2.sin_port = htons(atoi(begin));
 
 	GETNEXT;
-	strncpy(caddr, begin, SBUFLEN-1);
+	strncpy(caddr, begin, SBUFLEN - 1);
 
 	GETNEXT;
-	strncpy(recipient, begin, SBUFLEN-1);
+	strncpy(recipient, begin, SBUFLEN - 1);
 
 	/* sender */
 	begin = end + 1;
@@ -140,46 +142,47 @@ grosscheck(char *arg, long *arglen, char *res, long *reslen)
 	if (end)
 		*end = '\0';
 	/* no empty sender */
-	if ( *begin == '\0') {
-		strncpy(sender, "<>", SBUFLEN-1);
+	if (*begin == '\0') {
+		strncpy(sender, "<>", SBUFLEN - 1);
 	} else {
-		strncpy(sender, begin, SBUFLEN-1);
+		strncpy(sender, begin, SBUFLEN - 1);
 	}
 
 	/* check if helo is sent from the mapping call */
 	if (end) {
 		begin = end + 1;
 		/* helo */
-		strncpy(helo, begin, SBUFLEN-1);
+		strncpy(helo, begin, SBUFLEN - 1);
 
 		/* no more arguments */
 		end = strchr(begin, MAP_SEPARATOR);
-		if (NULL != end) GROSSCHECK_ERROR;
+		if (NULL != end)
+			GROSSCHECK_ERROR;
 	} else {
 		/* no helo */
-		strncpy(helo, "", SBUFLEN-1);
+		strncpy(helo, "", SBUFLEN - 1);
 	}
 
 	gserv = &gserv1;
 
 	/* Make sure they are null terminated */
-	sender[SBUFLEN-1] = '\0';
-	recipient[SBUFLEN-1] = '\0';
-	caddr[SBUFLEN-1] = '\0';
-	helo[SBUFLEN-1] = '\0';
+	sender[SBUFLEN - 1] = '\0';
+	recipient[SBUFLEN - 1] = '\0';
+	caddr[SBUFLEN - 1] = '\0';
+	helo[SBUFLEN - 1] = '\0';
 	request = buildquerystr(sender, recipient, caddr, strlen(helo) ? helo : NULL);
 
 #ifdef ARGDEBUG
-        if (foo) {
-                fprintf(foo, "querystr:\n%s---\n", request);
-        }
+	if (foo) {
+		fprintf(foo, "querystr:\n%s---\n", request);
+	}
 #endif
 
-QUERY:
+      QUERY:
 	sendquerystr(fd, gserv, request);
 
 	/* initial timeout value */
-	tv.tv_sec = 2;	/* 1 second of server timeout + some extra */
+	tv.tv_sec = 2;		/* 1 second of server timeout + some extra */
 	tv.tv_usec = 0;
 
 	do {
@@ -196,7 +199,7 @@ QUERY:
 			numservers--;
 			if (numservers == 0) {
 				break;
-			} else  {
+			} else {
 				gserv = &gserv2;
 				goto QUERY;
 			}
@@ -207,37 +210,37 @@ QUERY:
 	} while (recbuf[0] == 'P');
 
 	switch (recbuf[0]) {
-		case 'G':
-			if ('\0' == recbuf[1])	
-				rstr = STATUS_GREYLIST;
-			else
-				rstr = &recbuf[2];
-			success = true;
-			break;
-		case 'T':
-			if ('\0' == recbuf[1])	
-				rstr = STATUS_TRUST;
-			else
-				rstr = &recbuf[2];
-			success = true;
-			break;
-		case 'M':
-			if ('\0' == recbuf[1])	
-				rstr = STATUS_MATCH;
-			else
-				rstr = &recbuf[2];
-			success = true;
-			break;
-		case 'B':
-			if ('\0' == recbuf[1])
-				rstr = STATUS_BLOCK;
-			else
-				rstr = &recbuf[2];
-			success = true;
-			break;
-		default:
-			success = false;
-			break;
+	case 'G':
+		if ('\0' == recbuf[1])
+			rstr = STATUS_GREYLIST;
+		else
+			rstr = &recbuf[2];
+		success = true;
+		break;
+	case 'T':
+		if ('\0' == recbuf[1])
+			rstr = STATUS_TRUST;
+		else
+			rstr = &recbuf[2];
+		success = true;
+		break;
+	case 'M':
+		if ('\0' == recbuf[1])
+			rstr = STATUS_MATCH;
+		else
+			rstr = &recbuf[2];
+		success = true;
+		break;
+	case 'B':
+		if ('\0' == recbuf[1])
+			rstr = STATUS_BLOCK;
+		else
+			rstr = &recbuf[2];
+		success = true;
+		break;
+	default:
+		success = false;
+		break;
 	}
 
 	if (success) {
@@ -251,7 +254,7 @@ QUERY:
 			fprintf(foo, "res: %s\n", res);
 			fclose(foo);
 		}
-	#endif
+#endif
 
 	}
 	Free(requestcopy);
@@ -267,16 +270,17 @@ main(int argc, char **argv)
 	char bar[256];
 	long foolen, barlen;
 	char *arg = "127.0.0.1,127.0.0.1,1111,127.0.0.2,foo@foo,bar@bar";
+
 	foolen = strlen(arg);
 
 	assert(foolen < 252);
 
-	if (grosscheck(arg, &foolen, bar, &barlen) ==  MAP_SUCCESS) {
+	if (grosscheck(arg, &foolen, bar, &barlen) == MAP_SUCCESS) {
 		printf("%ld: %s\n", barlen, bar);
 	} else {
 		printf("Unknown or No reponse \n");
 	}
-	
+
 	return 0;
 }
 #endif

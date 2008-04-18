@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006,2007,2008
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2007, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -54,9 +54,10 @@ gross_ctx_t *
 initialize_context()
 {
 	gross_ctx_t *ctx;
+
 /* 	sem_t *sp; */
 /* 	int ret; */
-	
+
 	ctx = Malloc(sizeof(gross_ctx_t));
 	memset(ctx, 0, sizeof(gross_ctx_t));
 
@@ -77,7 +78,7 @@ initialize_context()
 	ctx->config.syslogfacility = 0;
 
 	ctx->filter = NULL;
-	
+
 	memset(&ctx->config.gross_host, 0, sizeof(ctx->config.gross_host));
 	memset(&ctx->config.sync_host, 0, sizeof(ctx->config.sync_host));
 	memset(&ctx->config.peer.peer_addr, 0, sizeof(ctx->config.peer.peer_addr));
@@ -85,7 +86,7 @@ initialize_context()
 
 	ctx->config.peer.peerfd_out = -1;
 	ctx->config.peer.peerfd_in = -1;
-	
+
 	ctx->last_rotate = Malloc(sizeof(time_t));
 
 #ifdef DNSBL
@@ -112,70 +113,70 @@ configure_grossd(configlist_t *config)
 		while (cp) {
 			pp = cp->params;
 			*buffer = '\0';
-			while(pp) {
-				strncat(buffer, " ; ", MAXLINELEN-1);
-				strncat(buffer, pp->value, MAXLINELEN-1);
+			while (pp) {
+				strncat(buffer, " ; ", MAXLINELEN - 1);
+				strncat(buffer, pp->value, MAXLINELEN - 1);
 				pp = pp->next;
 			}
 			logstr(GLOG_DEBUG, "config: %s = %s%s", cp->name, cp->value, buffer);
 			cp = cp->next;
 		}
-
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
-	if (ret == -1 && errno == EACCES) 
+	if (ret == -1 && errno == EACCES)
 		daemon_fatal("sem_unlink");
 	ctx->sync_guard = sem_open("sem_sync", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
-	if (ctx->sync_guard == (sem_t *)SEM_FAILED)
+	if (ctx->sync_guard == (sem_t *) SEM_FAILED)
 		daemon_fatal("sem_open");
 #else
 	ctx->sync_guard = Malloc(sizeof(sem_t));
-	ret = sem_init(ctx->sync_guard, 0, 1); /* Process local (0), initial count 1. */
+	ret = sem_init(ctx->sync_guard, 0, 1);	/* Process local (0), initial count 1. */
 	if (ret != 0)
 		daemon_fatal("sem_init");
-#endif /* USE_SEM_OPEN */	    
+#endif /* USE_SEM_OPEN */
 
 	pthread_mutex_init(&ctx->bloom_guard, NULL);
-	
+
 	pthread_mutex_init(&ctx->config.peer.peer_in_mutex, NULL);
 
 	ctx->config.gross_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("host"));
-	if (!host) daemon_fatal("'host' configuration option invalid:");
-	inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]), &(ctx->config.gross_host.sin_addr));
-	logstr(GLOG_DEBUG, "Listening host address %s", inet_ntoa( *(struct in_addr*)host->h_addr_list[0]));
+	if (!host)
+		daemon_fatal("'host' configuration option invalid:");
+	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	    &(ctx->config.gross_host.sin_addr));
+	logstr(GLOG_DEBUG, "Listening host address %s", inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
 	ctx->config.sync_host.sin_family = AF_INET;
-	host = gethostbyname( CONF("sync_listen") ? CONF("sync_listen") : CONF("host") );
-	inet_pton(AF_INET,inet_ntoa( *(struct in_addr*)host->h_addr_list[0]),
-		  &(ctx->config.sync_host.sin_addr));
-	logstr(GLOG_DEBUG, "Sync listen address %s", inet_ntoa( *(struct in_addr*)host->h_addr_list[0]));
+	host = gethostbyname(CONF("sync_listen") ? CONF("sync_listen") : CONF("host"));
+	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	    &(ctx->config.sync_host.sin_addr));
+	logstr(GLOG_DEBUG, "Sync listen address %s", inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
-	ctx->config.sync_host.sin_port =
-		htons(atoi(CONF("sync_port")));
-	ctx->config.gross_host.sin_port =
-		htons(atoi(CONF("port")));
+	ctx->config.sync_host.sin_port = htons(atoi(CONF("sync_port")));
+	ctx->config.gross_host.sin_port = htons(atoi(CONF("port")));
 	ctx->config.max_connq = 50;
 	ctx->config.peer.connected = 0;
 
 	ctx->config.greylist_delay = atoi(CONF("grey_delay"));
 
 	if (10 != ctx->config.greylist_delay)
-	  logstr(GLOG_DEBUG, "Greylisting delay %d", ctx->config.greylist_delay);
+		logstr(GLOG_DEBUG, "Greylisting delay %d", ctx->config.greylist_delay);
 
 	/* peer port is the same as the local sync_port */
 	ctx->config.peer.peer_addr.sin_port = htons(atoi(CONF("sync_port")));
 
 	if (CONF("sync_peer") == NULL) {
 		logstr(GLOG_INFO, "No peer configured. Replication suppressed.");
-		ctx->config.flags |= FLG_NOREPLICATE;	  
+		ctx->config.flags |= FLG_NOREPLICATE;
 	} else {
 		logstr(GLOG_INFO, "Peer %s configured. Replicating.", CONF("sync_peer"));
 		ctx->config.peer.peer_addr.sin_family = AF_INET;
-		host = gethostbyname( CONF("sync_peer") );
-		inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]),
-			&(ctx->config.peer.peer_addr.sin_addr));
-		logstr(GLOG_DEBUG, "Sync peer address %s", inet_ntoa( *(struct in_addr*)host->h_addr_list[0]));
+		host = gethostbyname(CONF("sync_peer"));
+		inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+		    &(ctx->config.peer.peer_addr.sin_addr));
+		logstr(GLOG_DEBUG, "Sync peer address %s",
+		    inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 	}
 
 	updatestr = CONF("update");
@@ -195,12 +196,11 @@ configure_grossd(configlist_t *config)
 		daemon_shutdown(EXIT_CONFIG, "Invalid grey_mask: %s", CONF("grey_mask"));
 
 	ctx->config.status_host.sin_family = AF_INET;
-	host = gethostbyname( CONF("status_host") ? CONF("status_host") : CONF("host") );
-	inet_pton(AF_INET, inet_ntoa( *(struct in_addr*)host->h_addr_list[0]),
-		  &(ctx->config.status_host.sin_addr));
+	host = gethostbyname(CONF("status_host") ? CONF("status_host") : CONF("host"));
+	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	    &(ctx->config.status_host.sin_addr));
 
-	ctx->config.status_host.sin_port =
-		htons(atoi(CONF("status_port")));
+	ctx->config.status_host.sin_port = htons(atoi(CONF("status_port")));
 
 	ctx->config.rotate_interval = atoi(CONF("rotate_interval"));
 	ctx->config.filter_size = atoi(CONF("filter_bits"));
@@ -211,8 +211,8 @@ configure_grossd(configlist_t *config)
 	else
 		ctx->config.statefile = NULL;
 
-	if ((ctx->config.filter_size<5) || (ctx->config.filter_size>32)) {
-	  daemon_shutdown(EXIT_CONFIG, "filter_bits should be in range [4,32]");
+	if ((ctx->config.filter_size < 5) || (ctx->config.filter_size > 32)) {
+		daemon_shutdown(EXIT_CONFIG, "filter_bits should be in range [4,32]");
 	}
 
 	if (!CONF("sjsms_response_grey"))
@@ -233,19 +233,20 @@ configure_grossd(configlist_t *config)
 		ctx->config.sjsms.responsematch = strdup(CONF("sjsms_response_match"));
 
 	if (CONF("stat_interval"))
-	  ctx->config.stat_interval = atoi(CONF("stat_interval"));
+		ctx->config.stat_interval = atoi(CONF("stat_interval"));
 
 	/* pidfile */
 	cp = config;
 	while (cp) {
-		if (strcmp(cp->name, "pidfile") == 0) { 
+		if (strcmp(cp->name, "pidfile") == 0) {
 			ctx->config.pidfile = strdup(cp->value);
 			ctx->config.flags |= FLG_CREATE_PIDFILE;
 			if (cp->params) {
 				if (strcmp(cp->params->value, "check") == 0)
 					ctx->config.flags |= FLG_CHECK_PIDFILE;
 				else
-					daemon_shutdown(EXIT_CONFIG, "invalid parameter for 'pidfile': %s", cp->params->value);
+					daemon_shutdown(EXIT_CONFIG, "invalid parameter for 'pidfile': %s",
+					    cp->params->value);
 			}
 		}
 		cp = cp->next;
@@ -255,25 +256,28 @@ configure_grossd(configlist_t *config)
 	cp = config;
 
 	while (cp) {
-	  if (strcmp(cp->name, "stat_type") != 0) {
-	    cp = cp->next;
-	    continue;
-	  }
+		if (strcmp(cp->name, "stat_type") != 0) {
+			cp = cp->next;
+			continue;
+		}
 
-	  if (strncmp(cp->value, "full", 5) == 0) {
-	    ctx->config.statlevel = STATS_FULL;
-	    break;
-	  }
-	  
-	  if (strncmp(cp->value, "none", 5) == 0) {
-	    ctx->config.statlevel = STATS_NONE;
-	    break;
-	  }
-	  
-	  if (strncmp(cp->value, "status", 7) == 0) ctx->config.statlevel |= STATS_STATUS;
-	  if (strncmp(cp->value, "since_startup", 14) == 0) ctx->config.statlevel |= STATS_STATUS_BEGIN;
-	  if (strncmp(cp->value, "delay", 6) == 0) ctx->config.statlevel |= STATS_DELAY;
-	  cp = cp->next;
+		if (strncmp(cp->value, "full", 5) == 0) {
+			ctx->config.statlevel = STATS_FULL;
+			break;
+		}
+
+		if (strncmp(cp->value, "none", 5) == 0) {
+			ctx->config.statlevel = STATS_NONE;
+			break;
+		}
+
+		if (strncmp(cp->value, "status", 7) == 0)
+			ctx->config.statlevel |= STATS_STATUS;
+		if (strncmp(cp->value, "since_startup", 14) == 0)
+			ctx->config.statlevel |= STATS_STATUS_BEGIN;
+		if (strncmp(cp->value, "delay", 6) == 0)
+			ctx->config.statlevel |= STATS_DELAY;
+		cp = cp->next;
 	}
 
 	*(ctx->last_rotate) = time(NULL);
@@ -285,9 +289,9 @@ configure_grossd(configlist_t *config)
 	cp = config;
 	while (cp) {
 		if (strcmp(cp->name, "dnsbl") == 0) {
-			if (cp->params) 
-		    		add_dnsbl(&ctx->dnsbl, cp->value, atoi(cp->params->value));
-			else 
+			if (cp->params)
+				add_dnsbl(&ctx->dnsbl, cp->value, atoi(cp->params->value));
+			else
 				add_dnsbl(&ctx->dnsbl, cp->value, 1);
 			stat_add_dnsbl(cp->value);
 		}
@@ -306,9 +310,9 @@ configure_grossd(configlist_t *config)
 	cp = config;
 	while (cp) {
 		if (strcmp(cp->name, "rhsbl") == 0) {
-			if (cp->params) 
-		    		add_dnsbl(&ctx->rhsbl, cp->value, atoi(cp->params->value));
-			else 
+			if (cp->params)
+				add_dnsbl(&ctx->rhsbl, cp->value, atoi(cp->params->value));
+			else
 				add_dnsbl(&ctx->rhsbl, cp->value, 1);
 			stat_add_dnsbl(cp->value);
 		}
@@ -326,14 +330,14 @@ configure_grossd(configlist_t *config)
 
 	/* protocols */
 	cp = config;
-	while(cp) {
+	while (cp) {
 		if (strcmp(cp->name, "protocol") == 0) {
-			if (strcmp(cp->value, "sjsms") == 0) 
+			if (strcmp(cp->value, "sjsms") == 0)
 				ctx->config.protocols |= PROTO_SJSMS;
-			else if (strcmp(cp->value, "postfix") == 0) 
+			else if (strcmp(cp->value, "postfix") == 0)
 				ctx->config.protocols |= PROTO_POSTFIX;
 #ifdef MILTER
-			else if (strcmp(cp->value, "milter") == 0) 
+			else if (strcmp(cp->value, "milter") == 0)
 				ctx->config.protocols |= PROTO_MILTER;
 #endif /* MILTER */
 			else
@@ -346,17 +350,17 @@ configure_grossd(configlist_t *config)
 
 	/* checks */
 	cp = config;
-	while(cp) {
+	while (cp) {
 		if (strcmp(cp->name, "check") == 0) {
-			if (strcmp(cp->value, "dnsbl") == 0) 
+			if (strcmp(cp->value, "dnsbl") == 0)
 				ctx->config.checks |= CHECK_DNSBL;
-			else if (strcmp(cp->value, "dnswl") == 0) 
+			else if (strcmp(cp->value, "dnswl") == 0)
 				ctx->config.checks |= CHECK_DNSWL;
-			else if (strcmp(cp->value, "rhsbl") == 0) 
+			else if (strcmp(cp->value, "rhsbl") == 0)
 				ctx->config.checks |= CHECK_RHSBL;
-			else if (strcmp(cp->value, "blocker") == 0) 
+			else if (strcmp(cp->value, "blocker") == 0)
 				ctx->config.checks |= CHECK_BLOCKER;
-			else if (strcmp(cp->value, "random") == 0) 
+			else if (strcmp(cp->value, "random") == 0)
 				ctx->config.checks |= CHECK_RANDOM;
 		}
 		cp = cp->next;
@@ -366,7 +370,7 @@ configure_grossd(configlist_t *config)
 	cp = config;
 	while (cp) {
 		if (strcmp(cp->name, "log_method") == 0) {
-			if (strcmp(cp->value, "syslog") == 0) 
+			if (strcmp(cp->value, "syslog") == 0)
 				ctx->config.flags |= FLG_SYSLOG;
 		} else if (strcmp(cp->name, "log_level") == 0 && ctx->config.loglevel == 0) {
 			/* only set loglevel if it's still unset */
@@ -380,27 +384,29 @@ configure_grossd(configlist_t *config)
 				ctx->config.loglevel = GLOG_WARNING;
 			else if (strcmp(cp->value, "error") == 0)
 				ctx->config.loglevel = GLOG_ERROR;
-			else daemon_shutdown(EXIT_CONFIG, "Unknown log_level: %s", cp->value);
+			else
+				daemon_shutdown(EXIT_CONFIG, "Unknown log_level: %s", cp->value);
 		} else if (strcmp(cp->name, "syslog_facility") == 0) {
 			if (strcmp(cp->value, "mail") == 0)
 				ctx->config.syslogfacility = LOG_MAIL;
 			else if (strcmp(cp->value, "local0") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL0; 
+				ctx->config.syslogfacility = LOG_LOCAL0;
 			else if (strcmp(cp->value, "local1") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL1; 
+				ctx->config.syslogfacility = LOG_LOCAL1;
 			else if (strcmp(cp->value, "local2") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL2; 
+				ctx->config.syslogfacility = LOG_LOCAL2;
 			else if (strcmp(cp->value, "local3") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL3; 
+				ctx->config.syslogfacility = LOG_LOCAL3;
 			else if (strcmp(cp->value, "local4") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL4; 
+				ctx->config.syslogfacility = LOG_LOCAL4;
 			else if (strcmp(cp->value, "local5") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL5; 
+				ctx->config.syslogfacility = LOG_LOCAL5;
 			else if (strcmp(cp->value, "local6") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL6; 
+				ctx->config.syslogfacility = LOG_LOCAL6;
 			else if (strcmp(cp->value, "local7") == 0)
-                                ctx->config.syslogfacility = LOG_LOCAL7; 
-			else daemon_shutdown(EXIT_CONFIG, "Unknown syslog_facility: %s", cp->value);
+				ctx->config.syslogfacility = LOG_LOCAL7;
+			else
+				daemon_shutdown(EXIT_CONFIG, "Unknown syslog_facility: %s", cp->value);
 		}
 		cp = cp->next;
 	}
@@ -418,15 +424,14 @@ configure_grossd(configlist_t *config)
 		if (!host)
 			daemon_fatal("'blocker' configuration option invalid:");
 
-		inet_pton(AF_INET, inet_ntoa(*(struct in_addr*)host->h_addr_list[0]),
-			&(ctx->config.blocker.server.sin_addr));
+		inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+		    &(ctx->config.blocker.server.sin_addr));
 		logstr(GLOG_DEBUG, "Blocker host address %s",
-			inet_ntoa(*(struct in_addr*)host->h_addr_list[0]));
+		    inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
-		ctx->config.blocker.server.sin_port =
-			htons(atoi(CONF("blocker_port")));
+		ctx->config.blocker.server.sin_port = htons(atoi(CONF("blocker_port")));
 	}
-	
+
 	if (CONF("grey_threshold"))
 		ctx->config.grey_threshold = atoi(CONF("grey_threshold"));
 	else
@@ -488,7 +493,7 @@ void
 setup_signal_handlers(void)
 {
 	struct sigaction act;
-	
+
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 
@@ -497,14 +502,14 @@ setup_signal_handlers(void)
 	sigaddset(&act.sa_mask, SIGALRM);
 	act.sa_handler = &noop;
 	act.sa_flags = 0;
-	sigaction (SIGALRM, &act, NULL);
+	sigaction(SIGALRM, &act, NULL);
 
 	/* clean up */
 	sigemptyset(&act.sa_mask);
 	act.sa_handler = &mrproper;
 	act.sa_flags = SA_RESETHAND;
-	sigaction (SIGINT, &act, NULL);
-	sigaction (SIGTERM, &act, NULL);
+	sigaction(SIGINT, &act, NULL);
+	sigaction(SIGTERM, &act, NULL);
 }
 
 int
@@ -520,14 +525,15 @@ main(int argc, char *argv[])
 	int c;
 	struct timespec *delay;
 	pool_limits_t limits;
-        sigset_t mask, oldmask;
+	sigset_t mask, oldmask;
+
 #ifdef DNSBL
 	dns_check_info_t *dns_check_info;
 #endif
 
 	ctx = initialize_context();
 
-	if ( ! ctx )
+	if (!ctx)
 		daemon_shutdown(EXIT_FATAL, "Couldn't initialize context");
 
 	/* command line arguments */
@@ -543,19 +549,18 @@ main(int argc, char *argv[])
 			configfile = optarg;
 			break;
 		case ':':
-			fprintf(stderr,
-				"Option -%c requires an operand\n", optopt);
+			fprintf(stderr, "Option -%c requires an operand\n", optopt);
 			usage();
 			break;
 		case 'r':
-                        ctx->config.flags |= FLG_NOREPLICATE;
+			ctx->config.flags |= FLG_NOREPLICATE;
 			break;
 		case 'V':
-                        printf("grossd - Greylisting of Suspicious Sources. Version %s.\n", VERSION);
+			printf("grossd - Greylisting of Suspicious Sources. Version %s.\n", VERSION);
 			daemon_shutdown(EXIT_NOERROR, NULL);
-                        break;
+			break;
 		case 'C':
-                        ctx->config.flags |= FLG_CREATE_STATEFILE;
+			ctx->config.flags |= FLG_CREATE_STATEFILE;
 			break;
 		case 'D':
 			if (ctx->config.loglevel == GLOG_DEBUG)
@@ -573,8 +578,7 @@ main(int argc, char *argv[])
 			ctx->config.flags |= FLG_CREATE_PIDFILE;
 			break;
 		case '?':
-			fprintf(stderr,
-				"Unrecognized option: -%c\n", optopt);
+			fprintf(stderr, "Unrecognized option: -%c\n", optopt);
 			usage();
 			break;
 		}
@@ -582,7 +586,7 @@ main(int argc, char *argv[])
 
 	config = read_config(configfile);
 	configure_grossd(config);
-	
+
 	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
 		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
 		ctx->syslog_open = true;
@@ -591,11 +595,11 @@ main(int argc, char *argv[])
 	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE)
 		create_statefile();
 
-	if (ctx->config.flags & FLG_CHECK_PIDFILE) 
+	if (ctx->config.flags & FLG_CHECK_PIDFILE)
 		check_pidfile();
 
 	/* daemonize must be run before any pthread_create */
-	if ((ctx->config.flags & FLG_NODAEMON) == 0) 
+	if ((ctx->config.flags & FLG_NODAEMON) == 0)
 		daemonize();
 
 	if (ctx->config.flags & FLG_CREATE_PIDFILE)
@@ -605,10 +609,10 @@ main(int argc, char *argv[])
 	setup_signal_handlers();
 
 	/* Mask all allowed signals */
-        sigfillset(&mask);
-        ret = pthread_sigmask(SIG_BLOCK, &mask, &oldmask);
-        if (ret)
-                daemon_fatal("pthread_sigmask");
+	sigfillset(&mask);
+	ret = pthread_sigmask(SIG_BLOCK, &mask, &oldmask);
+	if (ret)
+		daemon_fatal("pthread_sigmask");
 
 	/* initialize the update queue */
 	delay = Malloc(sizeof(struct timespec));
@@ -621,12 +625,14 @@ main(int argc, char *argv[])
 	/* start the bloom manager thread */
 	bloommgr_init();
 
-	if ( (ctx->config.flags & FLG_NOREPLICATE) == 0) {
+	if ((ctx->config.flags & FLG_NOREPLICATE) == 0) {
 		syncmgr_init();
 	}
 
-	WITH_SYNC_GUARD(logstr(GLOG_INFO, "Filters in sync. Starting..."););
-	
+	ACTIVATE_SYNC_GUARD();
+	logstr(GLOG_INFO, "Filters in sync. Starting...");
+	RELEASE_SYNC_GUARD();
+
 	/*
 	 * now that we are in synchronized state we can start listening
 	 * for client requests
@@ -679,12 +685,12 @@ main(int argc, char *argv[])
 	 * run some periodic maintenance tasks
 	 */
 	/* reset the old mask */
-        ret = pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
-        if (ret)
-                daemon_fatal("pthread_sigmask");
+	ret = pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
+	if (ret)
+		daemon_fatal("pthread_sigmask");
 
 	toleration = time(NULL);
-	for ( ; ; ) {
+	for (;;) {
 		if ((time(NULL) - *ctx->last_rotate) > ctx->config.rotate_interval) {
 			/* time to rotate filters */
 			rotatecmd.mtype = ROTATE;
@@ -694,9 +700,8 @@ main(int argc, char *argv[])
 		}
 
 		if (time(NULL) > ctx->stats.begin + ctx->config.stat_interval) {
-		  log_stats();
+			log_stats();
 		}
-
 #ifdef DNSBL
 		if (time(NULL) >= toleration + 10) {
 			toleration = time(NULL);

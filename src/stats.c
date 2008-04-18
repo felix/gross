@@ -1,7 +1,7 @@
-/* -*- mode:c; coding:utf-8 -*-
- *
- * Copyright (c) 2007 Antti Siira <antti@utu.fi>
- *                    Eino Tuominen <eino@utu.fi>
+/*
+ * Copyright (c) 2007, 2008
+ *               Antti Siira <antti@utu.fi>
+ *               Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,216 +22,231 @@
 void
 init_stats()
 {
-  pthread_mutex_init( &(ctx->stats.mx), NULL);
+	pthread_mutex_init(&(ctx->stats.mx), NULL);
 
-  ctx->stats.dnsbl_match = NULL;
-  time( &(ctx->stats.startup) );
-  ctx->stats.all_block = 0;
-  ctx->stats.all_greylist = 0;
-  ctx->stats.all_match = 0;
-  ctx->stats.all_trust = 0;
+	ctx->stats.dnsbl_match = NULL;
+	time(&(ctx->stats.startup));
+	ctx->stats.all_block = 0;
+	ctx->stats.all_greylist = 0;
+	ctx->stats.all_match = 0;
+	ctx->stats.all_trust = 0;
 
-  zero_stats();
+	zero_stats();
 }
 
 stats_t
 zero_stats()
 {
-  stats_t old;
+	stats_t old;
 
-  WITH_STATS_GUARD(/* Take a copy of the old values */
-		   old = ctx->stats;
-		   time( &(old.end) );
-
-		   /* Zero values */
-		   ctx->stats.block = 0;
-		   ctx->stats.greylist = 0;
-		   ctx->stats.match = 0;
-		   ctx->stats.trust = 0;
-		   ctx->stats.block_avg_delay = 0.0;
-		   ctx->stats.greylist_avg_delay = 0.0;
-		   ctx->stats.match_avg_delay = 0.0;
-		   ctx->stats.trust_avg_delay = 0.0;
-		   time( &(ctx->stats.begin));
-		   ctx->stats.end = 0);
-  return old;
+	ACTIVATE_STATS_GUARD();
+	/* Take a copy of the old values */
+	old = ctx->stats;
+	time(&(old.end));
+	/* Zero values */
+	ctx->stats.block = 0;
+	ctx->stats.greylist = 0;
+	ctx->stats.match = 0;
+	ctx->stats.trust = 0;
+	ctx->stats.block_avg_delay = 0.0;
+	ctx->stats.greylist_avg_delay = 0.0;
+	ctx->stats.match_avg_delay = 0.0;
+	ctx->stats.trust_avg_delay = 0.0;
+	time(&(ctx->stats.begin));
+	ctx->stats.end = 0;
+	RELEASE_STATS_GUARD();
+	return old;
 }
 
 int
 stat_add_dnsbl(const char *name)
 {
-  dnsbl_stat_t *prev = ctx->stats.dnsbl_match;
+	dnsbl_stat_t *prev = ctx->stats.dnsbl_match;
 
-  ctx->stats.dnsbl_match = (dnsbl_stat_t*)Malloc(sizeof(dnsbl_stat_t));
-  ctx->stats.dnsbl_match->dnsbl_name = strdup(name);
-  ctx->stats.dnsbl_match->matches_startup = 0;
-  ctx->stats.dnsbl_match->next = prev;
-  
-  return 1;
+	ctx->stats.dnsbl_match = (dnsbl_stat_t *)Malloc(sizeof(dnsbl_stat_t));
+	ctx->stats.dnsbl_match->dnsbl_name = strdup(name);
+	ctx->stats.dnsbl_match->matches_startup = 0;
+	ctx->stats.dnsbl_match->next = prev;
+
+	return 1;
 }
 
 uint64_t
 stat_dnsbl_match(const char *name)
 {
-  dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
-  int max_dnsbl_name_len = 256;
-  int result = 0;
-  
-  WITH_STATS_GUARD(
-		   while(cur) {
-		     if (0 == strncmp(cur->dnsbl_name, name, max_dnsbl_name_len)) {
-		       (cur->matches_startup)++;
-		       logstr(GLOG_DEBUG, "%llu matches from %s", (cur->matches_startup), name);
-		       result = cur->matches_startup;
-		       break;
-		     }
-		     
-		     cur = cur->next;
-		   });
+	dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
+	int max_dnsbl_name_len = 256;
+	int result = 0;
 
-  if (!result)
-    logstr(GLOG_WARNING, "Match from unknown dnsbl: %s", name);
-  return result;
+	ACTIVATE_STATS_GUARD();
+	while (cur) {
+		if (0 == strncmp(cur->dnsbl_name, name, max_dnsbl_name_len)) {
+			(cur->matches_startup)++;
+			logstr(GLOG_DEBUG, "%llu matches from %s", (cur->matches_startup), name);
+			result = cur->matches_startup;
+			break;
+		}
+
+		cur = cur->next;
+	}
+	RELEASE_STATS_GUARD();
+
+	if (!result)
+		logstr(GLOG_WARNING, "Match from unknown dnsbl: %s", name);
+	return result;
 }
 
-double 
+double
 block_delay_update(double d)
 {
-  WITH_STATS_GUARD(
-		   if (0 == ctx->stats.block) {
-		     ctx->stats.block_avg_delay = d;
-		     logstr(GLOG_WARNING, "Block average updated before updating counters");
-		   } else {
-		     ctx->stats.block_avg_delay = (ctx->stats.block_avg_delay * (ctx->stats.block-1) + d)/(ctx->stats.block);
-		   }
+	ACTIVATE_STATS_GUARD();
+	if (0 == ctx->stats.block) {
+		ctx->stats.block_avg_delay = d;
+		logstr(GLOG_WARNING, "Block average updated before updating counters");
+	} else {
+		ctx->stats.block_avg_delay =
+		    (ctx->stats.block_avg_delay * (ctx->stats.block - 1) + d) / (ctx->stats.block);
+	}
 
-		   if (ctx->stats.block_max_delay<d) ctx->stats.block_max_delay = d;
-		   );
+	if (ctx->stats.block_max_delay < d)
+		ctx->stats.block_max_delay = d;
+	RELEASE_STATS_GUARD();
 
-  return ctx->stats.block_avg_delay;
+	return ctx->stats.block_avg_delay;
 }
-		     
+
 double
 greylist_delay_update(double d)
 {
-  WITH_STATS_GUARD(
-		   if (0 == ctx->stats.greylist) {
-		     logstr(GLOG_WARNING, "Greylist average updated before updating counters");
-		     ctx->stats.greylist_avg_delay = d;
-		   } else {
-		     ctx->stats.greylist_avg_delay = (ctx->stats.greylist_avg_delay * (ctx->stats.greylist-1) + d)/(ctx->stats.greylist);
-		   }
+	ACTIVATE_STATS_GUARD();
+	if (0 == ctx->stats.greylist) {
+		logstr(GLOG_WARNING, "Greylist average updated before updating counters");
+		ctx->stats.greylist_avg_delay = d;
+	} else {
+		ctx->stats.greylist_avg_delay =
+		    (ctx->stats.greylist_avg_delay * (ctx->stats.greylist - 1) + d) / (ctx->stats.greylist);
+	}
 
-		   if (ctx->stats.greylist_max_delay<d) ctx->stats.greylist_max_delay = d;
-		   );
+	if (ctx->stats.greylist_max_delay < d)
+		ctx->stats.greylist_max_delay = d;
+	RELEASE_STATS_GUARD();
 
-  return ctx->stats.greylist_avg_delay;
+	return ctx->stats.greylist_avg_delay;
 }
 
-double 
+double
 match_delay_update(double d)
 {
-  WITH_STATS_GUARD(
-		   if (0 == ctx->stats.match) {
-		     logstr(GLOG_WARNING, "Match average updated before updating counters");
-		     ctx->stats.match_avg_delay = d;
-		   } else {
-		     ctx->stats.match_avg_delay = (ctx->stats.match_avg_delay * (ctx->stats.match-1) + d)/(ctx->stats.match);
-		   }
+	ACTIVATE_STATS_GUARD();
+	if (0 == ctx->stats.match) {
+		logstr(GLOG_WARNING, "Match average updated before updating counters");
+		ctx->stats.match_avg_delay = d;
+	} else {
+		ctx->stats.match_avg_delay =
+		    (ctx->stats.match_avg_delay * (ctx->stats.match - 1) + d) / (ctx->stats.match);
+	}
 
-		   if (ctx->stats.match_max_delay<d) ctx->stats.match_max_delay = d;
-		   );
-  return ctx->stats.match_avg_delay;
+	if (ctx->stats.match_max_delay < d)
+		ctx->stats.match_max_delay = d;
+	RELEASE_STATS_GUARD();
+
+	return ctx->stats.match_avg_delay;
 }
 
-double 
+double
 trust_delay_update(double d)
 {
-  WITH_STATS_GUARD(
-		   if (0 == ctx->stats.trust) {
-		     ctx->stats.trust_avg_delay = d;
-		     logstr(GLOG_WARNING, "Trust average updated before updating counters");
-		   } else {
-		     ctx->stats.trust_avg_delay = (ctx->stats.trust_avg_delay * (ctx->stats.trust-1) + d)/(ctx->stats.trust);
-		   }
+	ACTIVATE_STATS_GUARD();
+	if (0 == ctx->stats.trust) {
+		ctx->stats.trust_avg_delay = d;
+		logstr(GLOG_WARNING, "Trust average updated before updating counters");
+	} else {
+		ctx->stats.trust_avg_delay =
+		    (ctx->stats.trust_avg_delay * (ctx->stats.trust - 1) + d) / (ctx->stats.trust);
+	}
 
-		   if (ctx->stats.trust_max_delay<d) ctx->stats.trust_max_delay = d;
-		   );
+	if (ctx->stats.trust_max_delay < d)
+		ctx->stats.trust_max_delay = d;
+	RELEASE_STATS_GUARD();
 
-  return ctx->stats.trust_avg_delay;
+	return ctx->stats.trust_avg_delay;
 }
 
-char* 
+char *
 dnsbl_stats(char *buf, int32_t size)
 {
-  int32_t count = 0;
-  dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
-  char *tick = buf;
+	int32_t count = 0;
+	dnsbl_stat_t *cur = ctx->stats.dnsbl_match;
+	char *tick = buf;
 
-  count = snprintf(tick, size, "grossd dnsbl matches (");
-  tick += count;
-  size = size - count;
+	count = snprintf(tick, size, "grossd dnsbl matches (");
+	tick += count;
+	size = size - count;
 
-  while (cur) {
-    count = snprintf(tick, size, "%s", cur->dnsbl_name);
-    tick += count;
-    size = size - count;
-    if (cur->next) {
-      count = snprintf(tick, size, ", ");
-      tick += count;
-      size = size - count;
-    }
-    
-    cur = cur->next;
-  }
-  
-  count = snprintf(tick, size, "): ");
-  tick += count;
-  size = size - count;
+	while (cur) {
+		count = snprintf(tick, size, "%s", cur->dnsbl_name);
+		tick += count;
+		size = size - count;
+		if (cur->next) {
+			count = snprintf(tick, size, ", ");
+			tick += count;
+			size = size - count;
+		}
 
-  cur = ctx->stats.dnsbl_match;
+		cur = cur->next;
+	}
 
-  while (cur) {
-    count = snprintf(tick, size, "%llu", cur->matches_startup);
-    tick += count;
-    size = size - count;
-    if (cur->next) {
-      count = snprintf(tick, size, ", ");
-      tick += count;
-      size = size - count;
-    }
+	count = snprintf(tick, size, "): ");
+	tick += count;
+	size = size - count;
 
-    cur = cur->next;
-  }
+	cur = ctx->stats.dnsbl_match;
 
-  return buf;
+	while (cur) {
+		count = snprintf(tick, size, "%llu", cur->matches_startup);
+		tick += count;
+		size = size - count;
+		if (cur->next) {
+			count = snprintf(tick, size, ", ");
+			tick += count;
+			size = size - count;
+		}
+
+		cur = cur->next;
+	}
+
+	return buf;
 }
 
 stats_t
 log_stats()
 {
-  char buf[TMP_BUF_SIZE] = { 0x00 };
-  stats_t stats;
-  stats = zero_stats();
-  
+	char buf[TMP_BUF_SIZE] = { 0x00 };
+	stats_t stats;
 
-  statstr(STATS_STATUS, "grossd status summary (begin, end, trust, match, greylist, block): %lu, %lu, %llu, %llu, %llu, %llu", 
-	  stats.begin, stats.end, stats.trust, stats.match, stats.greylist, stats.block);
-
-  statstr(STATS_DELAY, "grossd processing average delay (begin, end, trust[ms], match[ms], greylist[ms], block[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf, %.3lf", 
-	  stats.begin, stats.end, stats.trust_avg_delay, stats.match_avg_delay, stats.greylist_avg_delay, stats.block_avg_delay);
-
-  statstr(STATS_DELAY, "grossd processing max delay (begin, end, trust[ms], match[ms], greylist[ms], block[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf, %.3lf", 
-	  stats.begin, stats.end, stats.trust_max_delay, stats.match_max_delay, stats.greylist_max_delay, stats.block_max_delay);
-
-  statstr(STATS_STATUS_BEGIN, "grossd summary since startup (startup, now, trust, match, greylist, block): %lu, %lu, %llu, %llu, %llu, %llu", 
-	  stats.startup, stats.end, stats.all_trust, stats.all_match, stats.all_greylist, stats.all_block);
-
-  statstr(STATS_DNSBL, "%s", dnsbl_stats(buf, TMP_BUF_SIZE));
+	stats = zero_stats();
 
 
-  return stats;
+	statstr(STATS_STATUS,
+	    "grossd status summary (begin, end, trust, match, greylist, block): %lu, %lu, %llu, %llu, %llu, %llu",
+	    stats.begin, stats.end, stats.trust, stats.match, stats.greylist, stats.block);
+
+	statstr(STATS_DELAY,
+	    "grossd processing average delay (begin, end, trust[ms], match[ms], greylist[ms], block[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf, %.3lf",
+	    stats.begin, stats.end, stats.trust_avg_delay, stats.match_avg_delay, stats.greylist_avg_delay,
+	    stats.block_avg_delay);
+
+	statstr(STATS_DELAY,
+	    "grossd processing max delay (begin, end, trust[ms], match[ms], greylist[ms], block[ms]): %lu, %lu, %.3lf, %.3lf, %.3lf, %.3lf",
+	    stats.begin, stats.end, stats.trust_max_delay, stats.match_max_delay, stats.greylist_max_delay,
+	    stats.block_max_delay);
+
+	statstr(STATS_STATUS_BEGIN,
+	    "grossd summary since startup (startup, now, trust, match, greylist, block): %lu, %lu, %llu, %llu, %llu, %llu",
+	    stats.startup, stats.end, stats.all_trust, stats.all_match, stats.all_greylist, stats.all_block);
+
+	statstr(STATS_DNSBL, "%s", dnsbl_stats(buf, TMP_BUF_SIZE));
+
+
+	return stats;
 }
-			  
-	 
-	 

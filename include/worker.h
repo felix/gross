@@ -23,57 +23,64 @@
 
 #define MAXCONNQ 5
 
-typedef enum { STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_FAIL, STATUS_BLOCK } grey_status_t;
+typedef enum
+{ STATUS_GREY, STATUS_MATCH, STATUS_TRUST, STATUS_UNKNOWN, STATUS_FAIL, STATUS_BLOCK } grey_status_t;
 
 #define LEGALREASONCHARACTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890 .-_@";
 
-typedef struct {
-        bool definitive;
-        bool wait;
-        int weight;
-        judgment_t judgment;
-        char *reason;
-        const char *checkname;
+typedef struct
+{
+	bool definitive;
+	bool wait;
+	int weight;
+	judgment_t judgment;
+	char *reason;
+	const char *checkname;
 } chkresult_t;
 
-typedef struct check_match_s {
-        const char *name;
-        int weight;
-        struct check_match_s *next;     /* linked list */
+typedef struct check_match_s
+{
+	const char *name;
+	int weight;
+	struct check_match_s *next;	/* linked list */
 } check_match_t;
 
-typedef struct {
-        int action;
-        int delay;
+typedef struct
+{
+	int action;
+	int delay;
 	int totalweight;
-        const char *proto;
-        const char *client_ip;
-        const char *sender;
-        const char *recipient;
-        const char *helo;
-        check_match_t *match;
+	const char *proto;
+	const char *client_ip;
+	const char *sender;
+	const char *recipient;
+	const char *helo;
+	check_match_t *match;
 } querylog_entry_t;
 
-typedef struct {
-        char *reason;
-        grey_status_t status;
+typedef struct
+{
+	char *reason;
+	grey_status_t status;
 	querylog_entry_t querylog_entry;
 	struct timespec starttime;
 } final_status_t;
 
-typedef struct {
-        int connfd;
-        struct sockaddr_in *caddr;
+typedef struct
+{
+	int connfd;
+	struct sockaddr_in *caddr;
 	char *ipstr;
-        int msglen;
-        void *message;
+	int msglen;
+	void *message;
 	bool single_query;
 } client_info_t;
 
-typedef struct {
-        char *sender;
-        char *recipient;
-        char *client_address;
+typedef struct
+{
+	char *sender;
+	char *recipient;
+	char *client_address;
 	char *helo_name;
 	reference_count_t reference;
 } grey_tuple_t;

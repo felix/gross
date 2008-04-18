@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006,2007 Eino Tuominen <eino@utu.fi>
+ * Copyright (c) 2006,2007
+ *               Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +18,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-enum readlineret_t { ERROR = -1, EMPTY = 0, DATA = 1};
+enum readlineret_t
+{ ERROR = -1, EMPTY = 0, DATA = 1 };
 
 #define SI_KILO 1000
 #define SI_MEGA (SI_KILO * SI_KILO)
@@ -25,7 +27,8 @@ enum readlineret_t { ERROR = -1, EMPTY = 0, DATA = 1};
 
 #ifndef HAVE_CLOCK_GETTIME
 /* OS X does not have clock_gettime, so we will fake one */
-typedef enum {
+typedef enum
+{
 	CLOCK_KLUDGE
 } clockid_t;
 

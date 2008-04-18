@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2006 Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -19,11 +20,11 @@
 #include "utils.h"
 
 int
-client_postfix(int argc, char **argv) 
+client_postfix(int argc, char **argv)
 {
 	int fd;
 	struct sockaddr_in gserv;
-	char mbuf[MAXLINELEN*4];
+	char mbuf[MAXLINELEN * 4];
 	char line[MAXLINELEN];
 	size_t linelen;
 	int opt = 1;
@@ -31,65 +32,64 @@ client_postfix(int argc, char **argv)
 	int match = 0;
 	int cmatch = 0;
 	int runs = 1;
-        char *sender, *recipient, *caddr;
-	
+	char *sender, *recipient, *caddr, *helo;
+
 #if RANDOM
 	srand(time(NULL));
 #endif
 
-	if (argc != 8 && argc != 6 && argc != 5) {
-                fprintf(stderr, "usage: gclient postfix sender recipient ip_address [runs] [host port]\n");
-                return 1;
-        }
+	if (argc != 9 && argc != 7 && argc != 6) {
+		fprintf(stderr,
+		    "usage: gclient postfix sender recipient ip_address helo [runs] [host port]\n");
+		return 1;
+	}
 
-        sender = argv[2];
-        recipient = argv[3];
-        caddr = argv[4];
+	sender = argv[2];
+	recipient = argv[3];
+	caddr = argv[4];
 
-        fd = socket(AF_INET, SOCK_STREAM, 0);
+	fd = socket(AF_INET, SOCK_STREAM, 0);
 
-        memset(&gserv, 0, sizeof(gserv));
-        gserv.sin_family = AF_INET;
+	memset(&gserv, 0, sizeof(gserv));
+	gserv.sin_family = AF_INET;
 
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-        if (argc == 8) {
-                inet_pton(AF_INET, argv[6], &gserv.sin_addr);
-                gserv.sin_port = htons(atoi(argv[7]));
-        } else {
-                inet_pton(AF_INET, "127.0.0.1", &gserv.sin_addr);
-                gserv.sin_port = htons(GROSSPORT);
-        }
+	if (argc == 9) {
+		inet_pton(AF_INET, argv[7], &gserv.sin_addr);
+		gserv.sin_port = htons(atoi(argv[8]));
+	} else {
+		inet_pton(AF_INET, "127.0.0.1", &gserv.sin_addr);
+		gserv.sin_port = htons(GROSSPORT);
+	}
 
 	if (connect(fd, (struct sockaddr *)&gserv, sizeof(gserv))) {
 		gerror("connect");
 		return 2;
 	}
-	  
-        if (argc > 5)
-                runs = atoi(argv[5]);
+
+	if (argc > 6)
+		runs = atoi(argv[6]);
 
 	while (counter < runs) {
 		counter++;
-		snprintf(mbuf,
-			MAXLINELEN*4,
-#ifdef RANDOM
-			"sender=%d\nrecipient=%d\nclient_address=%d\n\n",
-			random(), random(), random());
+		snprintf(mbuf, MAXLINELEN * 4,
+		    "sender=%d\nrecipient=%d\nclient_address=%d\nhelo_name=%d\n\n",
+		    random(), random(), random(), random());
 #else
-			"sender=%s\nrecipient=%s\nclient_address=%s\n\n",
-			sender, recipient, caddr);
+		    "sender=%s\nrecipient=%s\nclient_address=%s\nhelo_name=%s\n\n",
+		    sender, recipient, caddr, helo);
 #endif /* RANDOM */
 
 		writen(fd, mbuf, strlen(mbuf));
-	  
+
 		do {
 			linelen = readline(fd, line, MAXLINELEN);
 			if (linelen < 0) {
 				gerror("readline");
 				return 2;
 			}
-	    
+
 			if (strlen(line) > 0)
 				printf("%s\n", line);
 
@@ -100,14 +100,14 @@ client_postfix(int argc, char **argv)
 
 		} while (strlen(line) > 0);
 
-	
+
 		if (counter % 10000 == 0) {
-			printf("%d, %d, %f\n", counter, cmatch, ((double)match)/10000);
+			printf("%d, %d, %f\n", counter, cmatch, ((double)match) / 10000);
 			fflush(stdout);
 			match = 0;
 		}
 	}
 	close(fd);
-	  
+
 	return 0;
 }

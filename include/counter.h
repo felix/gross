@@ -17,7 +17,8 @@
 #ifndef COUNTER_H
 #define COUNTER_H
 
-typedef struct counter_s {
+typedef struct counter_s
+{
 	pthread_mutex_t mx;
 	long long int value;
 	int id;

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006,2007,2008
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -37,8 +37,8 @@
 #include <arpa/inet.h>
 
 #include <assert.h>
-#include <string.h> 	/* memcpy(), memset() etc */
-#include <stdlib.h>	/* malloc(), atoi() etc */
+#include <string.h>		/* memcpy(), memset() etc */
+#include <stdlib.h>		/* malloc(), atoi() etc */
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
@@ -113,7 +113,7 @@
 #define PROTO_POSTFIX (int)0x02
 #define PROTO_MILTER (int)0x04
 
-#define TMP_BUF_SIZE ((uint32_t)640) /* 640 should be enough for everyone */
+#define TMP_BUF_SIZE ((uint32_t)640)	/* 640 should be enough for everyone */
 
 /* A few utility macros */
 #define Free(a) { assert(a); free(a); a = NULL; }
@@ -130,16 +130,18 @@
 
 #ifndef HAVE_BOOL
 # ifndef bool
-#  ifndef __bool_true_false_are_defined  
+#  ifndef __bool_true_false_are_defined
 #   define __bool_true_false_are_defined       1
 typedef int bool;
+
 #  define true 1
 #  define false 0
 #  endif /* __bool_true_false_are_defined */
-# endif /* bool */
+# endif	/* bool */
 #endif /* HAVE_BOOL */
 
-typedef struct {
+typedef struct
+{
 	struct sockaddr_in peer_addr;
 	pthread_mutex_t peer_in_mutex;
 	int peerfd_in;
@@ -147,25 +149,29 @@ typedef struct {
 	int connected;
 } peer_t;
 
-typedef struct {
+typedef struct
+{
 	char *responsegrey;
 	char *responsematch;
 	char *responsetrust;
 	char *responseblock;
 } sjsms_config_t;
 
-typedef struct {
+typedef struct
+{
 	struct sockaddr_in server;
 	int weight;
 } blocker_config_t;
 
 #ifdef MILTER
-typedef struct {
+typedef struct
+{
 	char *listen;
 } milter_config_t;
 #endif /* MILTER */
 
-typedef struct {
+typedef struct
+{
 	struct sockaddr_in gross_host;
 	struct sockaddr_in sync_host;
 	struct sockaddr_in status_host;
@@ -178,12 +184,12 @@ typedef struct {
 	char *statefile;
 	int loglevel;
 	int syslogfacility;
-        int statlevel;
+	int statlevel;
 	int flags;
 	int checks;
 	int grey_mask;
 	int protocols;
-        int greylist_delay;
+	int greylist_delay;
 	sjsms_config_t sjsms;
 	blocker_config_t blocker;
 	mseconds_t query_timelimit;
@@ -194,34 +200,38 @@ typedef struct {
 	char *pidfile;
 #ifdef MILTER
 	milter_config_t milter;
-#endif /* MILTER */
+#endif				/* MILTER */
 } gross_config_t;
 
 #ifdef DNSBL
-typedef struct dnsbl_s {
-        const char *name;
-        int weight;
+typedef struct dnsbl_s
+{
+	const char *name;
+	int weight;
 	int tolerancecounter;
-        struct dnsbl_s *next; /* linked list */
+	struct dnsbl_s *next;	/* linked list */
 } dnsbl_t;
 #endif /* DNSBL */
 
-typedef void (*tmout_action)(void *arg, mseconds_t timeused);
+typedef void (*tmout_action) (void *arg, mseconds_t timeused);
 
 /* timeout action list */
-typedef struct tmout_action_s {
-        mseconds_t timeout;             /* milliseconds */
-        tmout_action action;
-        void *arg;
-        struct tmout_action_s *next;
+typedef struct tmout_action_s
+{
+	mseconds_t timeout;	/* milliseconds */
+	tmout_action action;
+	void *arg;
+	struct tmout_action_s *next;
 } tmout_action_t;
 
-typedef struct {
-	pthread_t* thread;
-	/*time_t watchdog;*/
+typedef struct
+{
+	pthread_t *thread;
+	/*time_t watchdog; */
 } thread_info_t;
 
-typedef struct {
+typedef struct
+{
 	thread_info_t bloommgr;
 	thread_info_t syncmgr;
 	thread_info_t postfix_server;
@@ -231,30 +241,32 @@ typedef struct {
 
 #define MAXCHECKS 128
 
-typedef struct {
+typedef struct
+{
 	thread_pool_t *pool;
 	bool definitive;
 	char *name;
-	void (*init_routine)(void *, pool_limits_t *);
+	void (*init_routine) (void *, pool_limits_t *);
 	void *check_arg;
 } check_t;
 
-typedef struct {
-        bloom_ring_queue_t *filter;
-        int update_q;
-        sem_t* sync_guard;
-        pthread_mutex_t bloom_guard;
+typedef struct
+{
+	bloom_ring_queue_t *filter;
+	int update_q;
+	sem_t *sync_guard;
+	pthread_mutex_t bloom_guard;
 	pthread_mutex_t update_guard;
-        time_t* last_rotate;
+	time_t *last_rotate;
 #ifdef DNSBL
-        dnsbl_t *dnsbl;
-        dnsbl_t *dnswl;
-        dnsbl_t *rhsbl;
-#endif /* ENDBL */
-        gross_config_t config;
-        mmapped_brq_t *mmap_info;
-        thread_collection_t process_parts;
-        stats_t stats;
+	dnsbl_t *dnsbl;
+	dnsbl_t *dnswl;
+	dnsbl_t *rhsbl;
+#endif				/* ENDBL */
+	gross_config_t config;
+	mmapped_brq_t *mmap_info;
+	thread_collection_t process_parts;
+	stats_t stats;
 	check_t *checklist[MAXCHECKS];
 	bool syslog_open;
 } gross_ctx_t;

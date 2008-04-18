@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2006,2007
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,7 +21,8 @@
 #include "srvutils.h"
 #include "utils.h"
 
-enum parse_status_t { PARSE_OK, PARSE_CLOSED, PARSE_ERROR, PARSE_SYS_ERROR };
+enum parse_status_t
+{ PARSE_OK, PARSE_CLOSED, PARSE_ERROR, PARSE_SYS_ERROR };
 
 /* prototypes of internals */
 int postfix_connection(thread_pool_t *, thread_ctx_t *, edict_t *edict);
@@ -44,7 +45,7 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 
 	logstr(GLOG_DEBUG, "postfix client connected from %s", client_info->ipstr);
 
-	while(1) {
+	while (1) {
 		request = request_new();
 		ret = parse_postfix(client_info, request);
 		if (ret == PARSE_OK) {
@@ -63,11 +64,11 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 					break;
 				case STATUS_BLOCK:
 					snprintf(response, MAXLINELEN, "action=reject %s",
-						status->reason ? status->reason : "Rejected");
+					    status->reason ? status->reason : "Rejected");
 					break;
 				case STATUS_GREY:
 					snprintf(response, MAXLINELEN, "action=defer_if_permit %s",
-						status->reason ? status->reason : "Please try again later");
+					    status->reason ? status->reason : "Please try again later");
 					break;
 				default:
 					snprintf(response, MAXLINELEN, "action=dunno");
@@ -75,9 +76,9 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 			}
 
 			/* Make sure it's terminated */
-			response[MAXLINELEN-1] = '\0';
+			response[MAXLINELEN - 1] = '\0';
 			ret = respond(client_info->connfd, response);
-			if ( -1 == ret ) {
+			if (-1 == ret) {
 				logstr(GLOG_ERROR, "respond() failed in handle_connection");
 			}
 
@@ -99,7 +100,7 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 		}
 	}
 
-        close(client_info->connfd);
+	close(client_info->connfd);
 	free_client_info(client_info);
 	logstr(GLOG_DEBUG, "postfix_connection returning");
 
@@ -165,9 +166,9 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 			logstr(GLOG_DEBUG, "Client requested a single connection mode");
 			continue;
 		}
-		
+
 	} while (strlen(line) > 0);
-	
+
 	ret = check_request(grey_tuple);
 	if (ret < 0)
 		return PARSE_ERROR;
@@ -182,64 +183,64 @@ parse_postfix(client_info_t *client_info, grey_tuple_t *grey_tuple)
 static void *
 postfix_server(void *arg)
 {
-        int ret;
-        int grossfd;
-        int opt;
-        client_info_t *client_info;
-        socklen_t clen;
-        thread_pool_t *postfix_pool;
-        edict_t *edict;
+	int ret;
+	int grossfd;
+	int opt;
+	client_info_t *client_info;
+	socklen_t clen;
+	thread_pool_t *postfix_pool;
+	edict_t *edict;
 
-        /* create socket for incoming requests */
-        grossfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (grossfd < 0) 
+	/* create socket for incoming requests */
+	grossfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (grossfd < 0)
 		daemon_fatal("postfix_server: socket");
-        opt = 1;
-        ret = setsockopt(grossfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        if (ret < 0) 
-                daemon_fatal("setsockopt (SO_REUSEADDR)");
+	opt = 1;
+	ret = setsockopt(grossfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	if (ret < 0)
+		daemon_fatal("setsockopt (SO_REUSEADDR)");
 
-        ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host), sizeof(struct sockaddr_in));
-        if (ret < 0) 
-                daemon_fatal("bind");
+	ret = bind(grossfd, (struct sockaddr *)&(ctx->config.gross_host), sizeof(struct sockaddr_in));
+	if (ret < 0)
+		daemon_fatal("bind");
 
-        ret = listen(grossfd, MAXCONNQ);
-        if (ret < 0)
-                daemon_fatal("listen");
+	ret = listen(grossfd, MAXCONNQ);
+	if (ret < 0)
+		daemon_fatal("listen");
 
-        /* initialize the thread pool */
-        logstr(GLOG_INFO, "initializing postfix thread pool");
-        postfix_pool = create_thread_pool("postfix", &postfix_connection, NULL, NULL);
-        if (postfix_pool == NULL)
-                daemon_fatal("create_thread_pool");
+	/* initialize the thread pool */
+	logstr(GLOG_INFO, "initializing postfix thread pool");
+	postfix_pool = create_thread_pool("postfix", &postfix_connection, NULL, NULL);
+	if (postfix_pool == NULL)
+		daemon_fatal("create_thread_pool");
 
-        /* server loop */
-        for ( ; ; ) {
-                /* client_info struct is free()d by the worker thread */
-                client_info = Malloc(sizeof(client_info_t));
+	/* server loop */
+	for (;;) {
+		/* client_info struct is free()d by the worker thread */
+		client_info = Malloc(sizeof(client_info_t));
 		memset(client_info, 0, sizeof(client_info_t));
-                client_info->caddr = Malloc(sizeof(struct sockaddr_in));
+		client_info->caddr = Malloc(sizeof(struct sockaddr_in));
 
-                clen = sizeof(struct sockaddr_in);
+		clen = sizeof(struct sockaddr_in);
 
-                logstr(GLOG_INSANE, "waiting for connections");
-                client_info->connfd = accept(grossfd, (struct sockaddr *)client_info->caddr, &clen);
-                if (client_info->connfd < 0) {
-                        if (errno != EINTR)
-                                daemon_fatal("accept()");
-                } else {
-                        logstr(GLOG_INSANE, "new connection");
-                        /* a client is connected, handle the
-                         * connection over to a worker thread
-                         */
-                        client_info->ipstr = ipstr(client_info->caddr);
-                        /* Write the edict */
-                        edict = edict_get(true);
-                        edict->job = (void *)client_info;
-                        submit_job(postfix_pool, edict);
-                        edict_unlink(edict);
-                }
-        }
+		logstr(GLOG_INSANE, "waiting for connections");
+		client_info->connfd = accept(grossfd, (struct sockaddr *)client_info->caddr, &clen);
+		if (client_info->connfd < 0) {
+			if (errno != EINTR)
+				daemon_fatal("accept()");
+		} else {
+			logstr(GLOG_INSANE, "new connection");
+			/* a client is connected, handle the
+			 * connection over to a worker thread
+			 */
+			client_info->ipstr = ipstr(client_info->caddr);
+			/* Write the edict */
+			edict = edict_get(true);
+			edict->job = (void *)client_info;
+			submit_job(postfix_pool, edict);
+			edict_unlink(edict);
+		}
+	}
 }
 
 void
@@ -248,4 +249,3 @@ postfix_server_init()
 	logstr(GLOG_INFO, "starting postfix policy server");
 	create_thread(&ctx->process_parts.postfix_server, DETACH, &postfix_server, NULL);
 }
-

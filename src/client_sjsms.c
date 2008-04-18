@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2006 Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -19,7 +20,7 @@
 #include "proto_sjsms.h"
 
 int
-client_sjsms(int argc, char **argv) 
+client_sjsms(int argc, char **argv)
 {
 	int fd;
 	struct sockaddr_in gserv;
@@ -28,7 +29,7 @@ client_sjsms(int argc, char **argv)
 	int counter = 0, n;
 	const char *request;
 	char *sender, *recipient, *caddr;
-	
+
 	if (argc != 8 && argc != 6 && argc != 5) {
 		fprintf(stderr, "usage: gclient sjsms sender recipient ip_address [runs] [host port]\n");
 		return 1;
@@ -64,7 +65,7 @@ client_sjsms(int argc, char **argv)
 		request = buildquerystr(sender, recipient, caddr, NULL);
 
 		sendquerystr(fd, &gserv, request);
-	  
+
 		do {
 			n = recvfrom(fd, recbuf, MAXLINELEN, 0, NULL, NULL);
 			recbuf[n] = '\0';

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006,2007
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2007
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -31,7 +31,7 @@ buildquerystr(const char *sender, const char *rcpt, const char *caddr, const cha
 	char buffer[MAXLINELEN];
 
 	snprintf(buffer, MAXLINELEN - 1, "sender=%s\nrecipient=%s\nclient_address=%s%s%s\n\n",
-		sender, rcpt, caddr, helo ? "\nhelo_name=" : "", helo ? helo : "");
+	    sender, rcpt, caddr, helo ? "\nhelo_name=" : "", helo ? helo : "");
 
 	return strdup(buffer);
 }
@@ -85,7 +85,7 @@ int
 senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...)
 {
 	sjsms_msg_t message;
-	va_list	vap;
+	va_list vap;
 
 	va_start(vap, fmt);
 	vsnprintf(message.message, MAXLINELEN, fmt, vap);
@@ -96,12 +96,13 @@ senderrormsg(int fd, struct sockaddr_in *gserv, const char *fmt, ...)
 
 	return send_sjsms_msg(fd, gserv, &message);
 }
-	
+
 
 int
 sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request)
 {
 	sjsms_msg_t message;
+
 	/* check struct grey_req_t */
 	message.msglen = MIN(ntohs(request->msglen) + sizeof(grey_req_t) - sizeof(char *), MAXLINELEN);
 	message.msgtype = MSGTYPE_QUERY;
@@ -109,7 +110,7 @@ sendquery(int fd, struct sockaddr_in *gserv, grey_req_t *request)
 	return send_sjsms_msg(fd, gserv, &message);
 }
 
-int 
+int
 sendquerystr(int fd, struct sockaddr_in *gserv, const char *querystr)
 {
 	sjsms_msg_t message;
@@ -123,20 +124,20 @@ sendquerystr(int fd, struct sockaddr_in *gserv, const char *querystr)
 int
 recvquery(sjsms_msg_t *message, grey_req_t *request)
 {
-  memcpy(request, message->message, MIN(message->msglen, MAXLINELEN));
-  request->message[MAXLINELEN-1] = '\0';
-  
-  return 1;
+	memcpy(request, message->message, MIN(message->msglen, MAXLINELEN));
+	request->message[MAXLINELEN - 1] = '\0';
+
+	return 1;
 }
 
 char *
-recvquerystr(sjsms_msg_t *message) 
+recvquerystr(sjsms_msg_t *message)
 {
 	char querystr[MAXLINELEN] = { '\0' };
 
 	snprintf(querystr, MAXLINELEN - 1, "%s", message->message);
-	querystr[MAXLINELEN-1] = '\0';
-	
+	querystr[MAXLINELEN - 1] = '\0';
+
 	return strdup(querystr);
 }
 
@@ -150,14 +151,14 @@ send_sjsms_msg(int fd, struct sockaddr_in *gserv, sjsms_msg_t *message)
 	mlen = message->msglen + 2 * sizeof(uint16_t);
 	message->msgtype = htons(message->msgtype);
 	message->msglen = htons(message->msglen);
-	
+
 	return sendto(fd, message, mlen, 0, (struct sockaddr *)gserv, slen);
 }
 
 int
 sjsms_to_host_order(sjsms_msg_t *message)
 {
-  	message->msgtype = ntohs(message->msgtype);
+	message->msgtype = ntohs(message->msgtype);
 	message->msglen = ntohs(message->msglen);
 
 	return 1;

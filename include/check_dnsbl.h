@@ -20,18 +20,21 @@
 #define MAXQUERYSTRLEN 256
 #define ERRORTOLERANCE 5
 
-typedef enum { TYPE_DNSBL, TYPE_RHSBL, TYPE_DNSWL } dns_check_type_t;
+typedef enum
+{ TYPE_DNSBL, TYPE_RHSBL, TYPE_DNSWL } dns_check_type_t;
 
-typedef struct {
+typedef struct
+{
 	const char *name;
 	bool definitive;
 	dns_check_type_t type;
 	dnsbl_t *dnsbase;
 } dns_check_info_t;
 
-typedef const char * constchar_t;
+typedef const char *constchar_t;
 
-typedef struct {
+typedef struct
+{
 	dnsbl_t *dnsbl;
 	bool *done;
 	int *timeout;

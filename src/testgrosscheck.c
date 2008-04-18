@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007
- *                    Eino Tuominen <eino@utu.fi>
+ *               Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -30,14 +30,15 @@ main(int argc, char **argv)
 	void *gc;
 
 	long arglen, reslen;
-	int (*grosscheck)(char *arg, long *arglen, char *res, long *reslen);
+	int (*grosscheck) (char *arg, long *arglen, char *res, long *reslen);
 	char *error;
 
 	char *arg = "127.0.0.1,,1111,127.0.0.2,foo@foo,bar@bar\0";
+
 	arglen = strlen(arg);
 
 	gc = dlopen("grosscheck.so", RTLD_LAZY);
-	if (! gc) {
+	if (!gc) {
 		fprintf(stderr, "%s\n", dlerror());
 		exit(1);
 	}
@@ -48,12 +49,12 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s\n", error);
 		exit(1);
 	}
-	
-	if ((*grosscheck)(arg, &arglen, res, &reslen) ==  MAP_SUCCESS) {
+
+	if ((*grosscheck) (arg, &arglen, res, &reslen) == MAP_SUCCESS) {
 		printf("%ld: %s\n", reslen, res);
 	} else {
 		printf("error\n");
 	}
-	
+
 	return 0;
 }

@@ -1,5 +1,9 @@
 Version 0.9-svn
 
+- changed filter_size default to 24, as stated in the docs.
+
+Version 0.9.3
+
 * A few important bug fixes to milter server
 * New logfile format! An example log line: 
 

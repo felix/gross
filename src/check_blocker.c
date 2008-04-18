@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006,2007,2008
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2007, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -37,14 +37,14 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	grey_tuple_t *request;
 	const char *client_address;
-	char buffer[MAXLINELEN] = {'\0'};
+	char buffer[MAXLINELEN] = { '\0' };
 	struct timespec start, timeleft;
 
-	request = (grey_tuple_t *) edict->job;
+	request = (grey_tuple_t *)edict->job;
 	client_address = request->client_address;
 	assert(client_address);
 
-	result = (chkresult_t *) Malloc(sizeof(chkresult_t));
+	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
 	result->judgment = J_UNDEFINED;
 
@@ -56,8 +56,7 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		logstr(GLOG_ERROR, "blocker: socket: %s", strerror(errno));
 		goto FINISH;
 	}
-	ret = connect(blocker, (struct sockaddr *) & ctx->config.blocker.server,
-		      sizeof(struct sockaddr_in));
+	ret = connect(blocker, (struct sockaddr *)&ctx->config.blocker.server, sizeof(struct sockaddr_in));
 	if (ret < 0) {
 		logstr(GLOG_ERROR, "blocker: connect: %s", strerror(errno));
 		close(blocker);
@@ -87,7 +86,7 @@ blocker(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		result->judgment = J_SUSPICIOUS;
 		result->weight = ctx->config.blocker.weight;
 	}
-FINISH:
+      FINISH:
 	send_result(edict, result);
 	logstr(GLOG_DEBUG, "blocker returning");
 	request_unlink(request);

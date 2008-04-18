@@ -24,7 +24,7 @@
 			"sync_port",		"5524",		\
 			"status_port",		"5522",		\
 			"rotate_interval", 	"3600",		\
-			"filter_bits",		"22",		\
+			"filter_bits",		"24",		\
 			"number_buffers",	"8",            \
 			"stat_interval",	"300",		\
 			"sjsms_response_grey",	"$X4.4.3|$NPlease$ try$ again$ later.", \
@@ -98,7 +98,7 @@
 				"peerport",		\
 				"peerhost",		\
 				"statushost",		\
-				"statusport"		
+				"statusport"
 
 
 /*
@@ -109,17 +109,19 @@
 		"rhsbl",	"0",	"1",	\
 		"pidfile",	"0",	"1"
 
-typedef struct params_s {
+typedef struct params_s
+{
 	const char *value;
-	struct params_s *next;  /* linked list */
+	struct params_s *next;	/* linked list */
 } params_t;
 
-typedef struct configlist_s {
+typedef struct configlist_s
+{
 	bool is_default;
 	const char *name;
 	const char *value;
 	params_t *params;
-	struct configlist_s *next;  /* linked list */
+	struct configlist_s *next;	/* linked list */
 } configlist_t;
 
 configlist_t *read_config(const char *filename);

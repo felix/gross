@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2006,2007 Eino Tuominen <eino@utu.fi>
+ * Copyright (c) 2006,2007
+ *               Eino Tuominen <eino@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,22 +23,24 @@
 
 #define WITH_HELO 0
 
-typedef struct {
-        uint16_t msglen;
-        uint16_t sender;
-        uint16_t recipient;
-        uint16_t client_address;
+typedef struct
+{
+	uint16_t msglen;
+	uint16_t sender;
+	uint16_t recipient;
+	uint16_t client_address;
 #if WITH_HELO
-        uint16_t helo_name;
+	uint16_t helo_name;
 #endif
-        char message[MAXLINELEN];
+	char message[MAXLINELEN];
 } grey_req_t;
 
 #define MSGTYPE_QUERY    ((uint16_t) 0)
 #define MSGTYPE_LOGMSG   ((uint16_t) 1)
 #define MSGTYPE_QUERY_V2 ((uint16_t) 2)
 
-typedef struct {
+typedef struct
+{
 	uint16_t msgtype;
 	uint16_t msglen;
 	char message[MAXLINELEN];

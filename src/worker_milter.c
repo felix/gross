@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2007, 2008
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -24,24 +24,24 @@
 
 #include <libmilter/mfapi.h>
 
-struct private_ctx_s {
+struct private_ctx_s
+{
 	char *client_address;
 	char *sender;
 	char *helo_name;
-};	
+};
 
 #define MILTER_PRIVATE	((struct private_ctx_s *) smfi_getpriv(milter_ctx))
 
 /* internal functions */
-sfsistat mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr);
-sfsistat mlfi_helo(SMFICTX *milter_ctx, char *helohost);
-sfsistat mlfi_envfrom(SMFICTX *milter_ctx, char **argv);
-sfsistat mlfi_envrcpt(SMFICTX *milter_ctx, char **argv);
-sfsistat mlfi_close(SMFICTX *milter_ctx);
+sfsistat mlfi_connect(SMFICTX * milter_ctx, char *hostname, _SOCK_ADDR * hostaddr);
+sfsistat mlfi_helo(SMFICTX * milter_ctx, char *helohost);
+sfsistat mlfi_envfrom(SMFICTX * milter_ctx, char **argv);
+sfsistat mlfi_envrcpt(SMFICTX * milter_ctx, char **argv);
+sfsistat mlfi_close(SMFICTX * milter_ctx);
 static void *milter_server(void *arg);
 
-struct smfiDesc grossfilter =
-{
+struct smfiDesc grossfilter = {
 	"Gross",		/* filter name */
 	SMFI_VERSION,		/* version code -- do not change */
 	0,			/* flags */
@@ -58,7 +58,7 @@ struct smfiDesc grossfilter =
 };
 
 sfsistat
-mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr)
+mlfi_connect(SMFICTX * milter_ctx, char *hostname, _SOCK_ADDR * hostaddr)
 {
 	struct private_ctx_s *priv;
 	struct sockaddr_in *client_saddr;
@@ -72,9 +72,8 @@ mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr)
 		logstr(GLOG_INFO, "milter: unsupported protocol %d", client_saddr->sin_family);
 		return SMFIS_ACCEPT;
 	}
-	
-	if (NULL == inet_ntop(AF_INET, &client_saddr->sin_addr,
-		caddr, INET_ADDRSTRLEN)) {
+
+	if (NULL == inet_ntop(AF_INET, &client_saddr->sin_addr, caddr, INET_ADDRSTRLEN)) {
 		logstr(GLOG_ERROR, "inet_top failed: %s", strerror(errno));
 		return SMFIS_ACCEPT;
 	}
@@ -88,7 +87,7 @@ mlfi_connect(SMFICTX *milter_ctx, char *hostname, _SOCK_ADDR *hostaddr)
 }
 
 sfsistat
-mlfi_helo(SMFICTX *milter_ctx, char *helohost)
+mlfi_helo(SMFICTX * milter_ctx, char *helohost)
 {
 	struct private_ctx_s *priv = MILTER_PRIVATE;
 
@@ -100,7 +99,7 @@ mlfi_helo(SMFICTX *milter_ctx, char *helohost)
 }
 
 sfsistat
-mlfi_envfrom(SMFICTX *milter_ctx, char **argv)
+mlfi_envfrom(SMFICTX * milter_ctx, char **argv)
 {
 	struct private_ctx_s *priv = MILTER_PRIVATE;
 
@@ -112,7 +111,7 @@ mlfi_envfrom(SMFICTX *milter_ctx, char **argv)
 }
 
 sfsistat
-mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
+mlfi_envrcpt(SMFICTX * milter_ctx, char **argv)
 {
 	struct private_ctx_s *priv = MILTER_PRIVATE;
 	grey_tuple_t *tuple;
@@ -134,12 +133,13 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 	ret = test_tuple(status, tuple, NULL);
 	request_unlink(tuple);
 
-	switch(status->status) {
+	switch (status->status) {
 	case STATUS_GREY:
 		retvalue = SMFIS_TEMPFAIL;
 		break;
 	case STATUS_BLOCK:
-		smfi_setreply(milter_ctx, "550", "5.7.1", status->reason ? status->reason : "rejected by policy");
+		smfi_setreply(milter_ctx, "550", "5.7.1",
+		    status->reason ? status->reason : "rejected by policy");
 		retvalue = SMFIS_REJECT;
 		break;
 	default:
@@ -151,7 +151,7 @@ mlfi_envrcpt(SMFICTX *milter_ctx, char **argv)
 }
 
 sfsistat
-mlfi_close(SMFICTX *milter_ctx) 
+mlfi_close(SMFICTX * milter_ctx)
 {
 	struct private_ctx_s *priv = MILTER_PRIVATE;
 
@@ -175,11 +175,11 @@ static void *
 milter_server(void *arg)
 {
 	int ret;
-	
+
 	ret = smfi_setconn(ctx->config.milter.listen);
 	if (MI_FAILURE == ret)
 		daemon_shutdown(EXIT_FATAL, "smfi_setconn failed");
-	
+
 	if (strncasecmp(ctx->config.milter.listen, "unix:", 5) == 0)
 		unlink(ctx->config.milter.listen + 5);
 	if (strncasecmp(ctx->config.milter.listen, "local:", 5) == 0)
@@ -205,10 +205,10 @@ milter_watcher(void *arg)
 void
 milter_server_init(void)
 {
-        logstr(GLOG_INFO, "starting milter policy server");
+	logstr(GLOG_INFO, "starting milter policy server");
 
 	/* the milter thread */
-        create_thread(&ctx->process_parts.milter_server, 0, &milter_server, NULL);
+	create_thread(&ctx->process_parts.milter_server, 0, &milter_server, NULL);
 	/* watcher thread */
 	create_thread(NULL, DETACH, &milter_watcher, NULL);
 }

@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2006 Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,7 +23,7 @@ int client_sjsms(int argc, char **argv);
 int client_postfix(int argc, char **argv);
 
 int
-main (int argc, char **argv) 
+main(int argc, char **argv)
 {
 	if (argc < 2) {
 		fprintf(stderr, "usage gclient PROTOCOL\n");
@@ -38,4 +39,3 @@ main (int argc, char **argv)
 		return 1;
 	}
 }
-

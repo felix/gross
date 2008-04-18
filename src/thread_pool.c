@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2007 Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2007, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -71,7 +72,7 @@ thread_pool(void *arg)
 	POOL_MUTEX_UNLOCK;
 
 	logstr(GLOG_DEBUG, "threadpool '%s' thread #%d starting%s", pool_ctx->info->name,
-			pool_ctx->count_thread, pool_ctx->watchdog_time ? " watchdog enabled" : "");
+	    pool_ctx->count_thread, pool_ctx->watchdog_time ? " watchdog enabled" : "");
 
 	for (;;) {
 		/* check if there are too many idling threads */
@@ -95,20 +96,21 @@ thread_pool(void *arg)
 					lastseenms = ms_diff(&now, &dogp->last_seen);
 					if (lastseenms > pool_ctx->watchdog_time) {
 						/* a stuck thread */
-						logstr(GLOG_WARNING, "thread #%x of pool '%s' stuck, last seen %d ms ago.",
-						       (uint32_t)dogp->tid, pool_ctx->info->name, lastseenms);
+						logstr(GLOG_WARNING,
+						    "thread #%x of pool '%s' stuck, last seen %d ms ago.",
+						    (uint32_t) dogp->tid, pool_ctx->info->name, lastseenms);
 						pthread_kill(dogp->tid, SIGALRM);
 					}
 					dogp = dogp->next;
 				}
 			}
 
-			if  (pool_ctx->count_thread > 8 && pool_ctx->ewma_idle > pool_ctx->count_thread / 2) {
+			if (pool_ctx->count_thread > 8 && pool_ctx->ewma_idle > pool_ctx->count_thread / 2) {
 				/* prepare for shutdown */
 				pool_ctx->count_thread--;
 				/*
 				 * update the moving average by decrementing it
-			         * brutal, but efficient for the purpose
+				 * brutal, but efficient for the purpose
 				 */
 				pool_ctx->ewma_idle--;
 				if (pool_ctx->watchdog_time) {
@@ -120,19 +122,19 @@ thread_pool(void *arg)
 					if (dogp->tid == pthread_self()) {
 						/* first node */
 						pool_ctx->wdlist = pool_ctx->wdlist->next;
-					} else { 
+					} else {
 						while (dogp->next) {
 							if (dogp->next->tid == pthread_self()) {
 								dogp->next = dogp->next->next;
 								break;
 							}
-						dogp = dogp->next;
+							dogp = dogp->next;
 						}
 					}
 				}
 				POOL_MUTEX_UNLOCK;
 				logstr(GLOG_DEBUG, "threadpool '%s' thread shutting down",
-					pool_ctx->info->name);
+				    pool_ctx->info->name);
 				/* run a cleanup routine if defined */
 				if (thread_ctx.cleanup)
 					thread_ctx.cleanup(thread_ctx.state);
@@ -145,7 +147,9 @@ thread_pool(void *arg)
 		POOL_MUTEX_UNLOCK;
 
 		/* wait for new jobs */
-		ret = get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0, IDLETIME);
+		ret =
+		    get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0,
+		    IDLETIME);
 
 		POOL_MUTEX_LOCK;
 		/* kick the watchdog */
@@ -162,17 +166,19 @@ thread_pool(void *arg)
 			assert(edict->job);
 
 			logstr(GLOG_DEBUG, "threadpool '%s' processing", pool_ctx->info->name);
-	
+
 			POOL_MUTEX_LOCK;
 			if (pool_ctx->count_idle < 1) {
 				/* We were the last idling thread, start another */
-				if (pool_ctx->count_thread <= pool_ctx->max_thread || 0 == pool_ctx->max_thread) {
+				if (pool_ctx->count_thread <= pool_ctx->max_thread
+				    || 0 == pool_ctx->max_thread) {
 					logstr(GLOG_DEBUG, "threadpool '%s' starting another thread",
-						pool_ctx->info->name);
+					    pool_ctx->info->name);
 					create_thread(NULL, DETACH, &thread_pool, pool_ctx);
 				} else {
-					logstr(GLOG_ERROR, "threadpool '%s': maximum thread count (%d) reached",
-						pool_ctx->info->name, pool_ctx->max_thread);
+					logstr(GLOG_ERROR,
+					    "threadpool '%s': maximum thread count (%d) reached",
+					    pool_ctx->info->name, pool_ctx->max_thread);
 					process = false;
 				}
 			}
@@ -196,8 +202,8 @@ thread_pool(void *arg)
 }
 
 thread_pool_t *
-create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_t *, edict_t *),
-	pool_limits_t *limits, void *arg)
+create_thread_pool(const char *name, int (*routine) (thread_pool_t *, thread_ctx_t *, edict_t *),
+    pool_limits_t *limits, void *arg)
 {
 	thread_pool_t *pool;
 	pthread_mutex_t *pool_mx;
@@ -215,7 +221,7 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool->arg = arg;
 	pool->name = name;
 
-	pool_mx = (pthread_mutex_t *)Malloc(sizeof(pthread_mutex_t));
+	pool_mx = (pthread_mutex_t *) Malloc(sizeof(pthread_mutex_t));
 	ret = pthread_mutex_init(pool_mx, NULL);
 	if (ret)
 		daemon_fatal("pthread_mutex_init");
@@ -228,8 +234,8 @@ create_thread_pool(const char *name, int (*routine)(thread_pool_t *, thread_ctx_
 	pool_ctx->count_thread = 0;
 	pool_ctx->count_idle = 0;
 	pool_ctx->ewma_idle = 0;
-	pool_ctx->max_thread = limits ? limits->max_thread : 0; 
-	pool_ctx->watchdog_time = limits ? limits->watchdog_time : 0; 	/* watchdog timer, 0 is disabled */
+	pool_ctx->max_thread = limits ? limits->max_thread : 0;
+	pool_ctx->watchdog_time = limits ? limits->watchdog_time : 0;	/* watchdog timer, 0 is disabled */
 	pool_ctx->wdlist = NULL;
 
 	/* start the first thread */
@@ -270,7 +276,7 @@ edict_get(bool forget)
 	/* reserve a message queue, if results are wanted */
 	if (false == forget)
 		edict->resultmq = get_queue();
-	else 
+	else
 		edict->resultmq = -1;
 
 	pthread_mutex_init(&edict->reference.mx, NULL);
@@ -283,7 +289,7 @@ void
 edict_unlink(edict_t *edict)
 {
 	int ret;
-        poolresult_message_t message;
+	poolresult_message_t message;
 
 	ret = pthread_mutex_lock(&edict->reference.mx);
 	assert(0 == ret);
@@ -295,8 +301,7 @@ edict_unlink(edict_t *edict)
 			while (release_queue(edict->resultmq) < 0) {
 				/* queue wasn't emtpy */
 				logstr(GLOG_INSANE, "queue not empty, flushing");
-				ret = get_msg_timed(edict->resultmq, &message,
-					sizeof(message.result), 0, -1);
+				ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, -1);
 				if (ret > 0) {
 					assert(message.result);
 					free((chkresult_t *)message.result);
@@ -317,7 +322,7 @@ send_result(edict_t *edict, void *result)
 	poolresult_message_t message;
 
 	message.result = result;
-	
+
 	ret = put_msg(edict->resultmq, &message, sizeof(message), 0);
 	if (ret < 0)
 		gerror("send_result");

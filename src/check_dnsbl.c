@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006,2007,2008
- *                    Eino Tuominen <eino@utu.fi>
- *                    Antti Siira <antti@utu.fi>
+ * Copyright (c) 2006, 2007, 2008
+ *               Eino Tuominen <eino@utu.fi>
+ *               Antti Siira <antti@utu.fi>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -103,15 +103,15 @@ increment_dnsbl_tolerance_counters(dnsbl_t *dnsbl)
 
 static void
 #if ARES_VERSION_MAJOR > 0 && ARES_VERSION_MINOR > 4
-addrinfo_callback(void *arg, int status, int timeouts, struct hostent * host)
+addrinfo_callback(void *arg, int status, int timeouts, struct hostent *host)
 #else
-addrinfo_callback(void *arg, int status, struct hostent * host)
+addrinfo_callback(void *arg, int status, struct hostent *host)
 #endif
 {
-        chkresult_t *result;
+	chkresult_t *result;
 	callback_arg_t *cba;
 
-	cba = (callback_arg_t *) arg;
+	cba = (callback_arg_t *)arg;
 
 	if (status == ARES_SUCCESS) {
 		/*
@@ -131,12 +131,10 @@ addrinfo_callback(void *arg, int status, struct hostent * host)
 			*cba->done = true;
 		}
 		stat_dnsbl_match(cba->dnsbl->name);
-		logstr(GLOG_DEBUG, "dns-match: %s for %s",
-		       cba->dnsbl->name, cba->querystr);
+		logstr(GLOG_DEBUG, "dns-match: %s for %s", cba->dnsbl->name, cba->querystr);
 	}
 	if (*cba->timeout) {
-		logstr(GLOG_DEBUG, "dns-timeout: %s for %s",
-		       cba->dnsbl->name, cba->querystr);
+		logstr(GLOG_DEBUG, "dns-timeout: %s for %s", cba->dnsbl->name, cba->querystr);
 		/* decrement tolerancecounter */
 		cba->dnsbl->tolerancecounter--;
 	}
@@ -221,7 +219,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	const char *orig_qstr;
 	dnsbl_t *dnsbl;
 	callback_arg_t *callback_arg;
-	const char *dnslname; 
+	const char *dnslname;
 	int timeused;
 
 	chkresult_t *result;
@@ -233,7 +231,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	/* fetch check_info */
 	assert(info);
 	assert(info->arg);
-	check_info = (dns_check_info_t *) info->arg;
+	check_info = (dns_check_info_t *)info->arg;
 
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
@@ -248,9 +246,9 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		channel = (ares_channel *)thread_ctx->state;
 	}
 
-	request = (grey_tuple_t *) edict->job;
+	request = (grey_tuple_t *)edict->job;
 	assert(request);
-	result = (chkresult_t *) Malloc(sizeof(chkresult_t));
+	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
 
 	if (check_info->type == TYPE_DNSBL || check_info->type == TYPE_DNSWL) {
@@ -271,9 +269,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		}
 	} else if (check_info->type == TYPE_RHSBL) {
 
-		/*
-		 * try to find the last '@' of the sender address
-		 */
+		/* try to find the last '@' of the sender address */
 		sender = strdup(request->sender);
 		assert(sender);
 		ptr = sender + strlen(sender);	/* end of the address */
@@ -347,7 +343,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 			count = select(nfds, &readers, &writers, NULL, &tv);
 			ares_process(*channel, &readers, &writers);
-		} while (! (done || edict->obsolete));
+		} while (!(done || edict->obsolete));
 
 		clock_gettime(CLOCK_TYPE, &now);
 		timeused = ms_diff(&now, &start);
@@ -364,7 +360,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	Free(qstr);
 
 	ares_cancel(*channel);
-FINISH:
+      FINISH:
 	if (done && check_info->type == TYPE_DNSWL) {
 		result->judgment = J_PASS;
 		result->checkname = dnslname;
@@ -386,7 +382,7 @@ dnsbl_init(dns_check_info_t *check_info, pool_limits_t *limits)
 
 	/* initialize the thread pool */
 	logstr(GLOG_INFO, "initializing dns checker thread pool '%s'", check_info->name);
-	pool = create_thread_pool(check_info->name, &dnsblc, limits, (void *) check_info);
+	pool = create_thread_pool(check_info->name, &dnsblc, limits, (void *)check_info);
 	if (pool == NULL)
 		daemon_fatal("create_thread_pool");
 
