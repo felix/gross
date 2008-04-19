@@ -1,3 +1,5 @@
+/* $Id */
+
 /*
  * Copyright (c) 2006
  *               Antti Siira <antti@utu.fi>

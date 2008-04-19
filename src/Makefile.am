@@ -1,3 +1,5 @@
+# $Id
+
 AM_CPPFLAGS = @REENTRANT_FLAG@
 INCLUDES = -I$(top_srcdir)/include
 

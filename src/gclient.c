@@ -1,3 +1,5 @@
+/* $Id */
+
 /*
  * Copyright (c) 2006
  *               Eino Tuominen <eino@utu.fi>
