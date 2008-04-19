@@ -1,6 +1,10 @@
 Version 0.9-svn
 
-- changed filter_size default to 24, as stated in the docs.
+* New match shortcut logic. Now grossd will shortcut after
+  a filter match only if no checks are configured (traditional
+  greylister) or block_threshold == 0. 
+
+- changed filter_bits default back to 24, as stated in the docs.
 
 Version 0.9.3
 

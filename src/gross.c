@@ -593,8 +593,6 @@ main(int argc, char *argv[])
 	config = read_config(configfile);
 	configure_grossd(config);
 
-	logstr(LOG_DEBUG, "flags: %x", ctx->config.flags);
-
 	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
 		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
 		ctx->syslog_open = true;
