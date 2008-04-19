@@ -1,7 +1,7 @@
 REQUIREMENTS
 
 You'll need a decent compiler, we have tested gcc on FreeBSD and
-Sun Studio 8 on Solaris Sparc.
+Linux, Sun Studio 8 and 12 on Solaris Sparc.
 
 In order to configure dnsbl queries you need c-ares library for
 asynhronous dns queries. You can download it here:
@@ -24,9 +24,6 @@ An example configuration is included in doc/example/grossd.conf:
 It is installed also as the default configuration in
 $PREFIX/etc/grossd.conf. You may tell grossd to use another config
 file via -f command line option. 
-
-sync_listen is the server ip, and sync_peer stands for the replication
-partners ip address.
 
 Grossd query server defaults to port 5525/tcp with proto=postfix,
 port 5525/udp with proto=sjsms and replication service
@@ -57,7 +54,7 @@ the the number_buffers setting accordingly.  Alternatively, you could
 increase the rotate_interval, but setting this value too high isn't 
 recommended.
 
-The filter_bits setting (default is 22) defines the size of each 
+The filter_bits setting (default is 24) defines the size of each 
 Bloom filter.  Increasing the filter_bits setting will reduce the 
 likelihood of false positives within the filter.  See
 http://en.wikipedia.org/wiki/Bloom_filter for more information.
@@ -70,7 +67,6 @@ configured statefile, you have to start grossd with -C option
 in order to create the state file.
 
 $ sudo -u nobody $PREFIX/sbin/grossd -C
-(wait until the statefile stops growing, then kill grossd)
 
 Note: make sure that the run-time user has permissions to create
 and write to the statefile.

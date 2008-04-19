@@ -10,10 +10,11 @@ stand out from other greylisters are:
 - it can be configured to query DNSBL databases, and
 enforce greylisting only for hosts that are found on
 those databases
+- it can block hosts that match multiple DNSBL's
 - it can be replicated and run parallel on two servers
 
-It supports Sun Java System Messaging Server and Postfix.
-Well, only SJSMS implementation is being run on production.
+It supports Sun Java System Messaging Server and Postfix,
+Exim and Sendmail.
 
 AUTHORS
 

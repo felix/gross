@@ -1,4 +1,17 @@
 Original code:
-
   Eino Tuominen <eino@utu.fi>
   Antti Siira <antti@utu.fi>
+
+People who have contributed to the project:
+  Jesse Thompson <jesse.thompson@doit.wisc.edu>
+    - documentation, lot's of ideas and invaluable testing feedback
+  John Fox Maule <john@fox-maule.dk>
+    - FreeBSD ports specification (just waiting for 1.0 release)
+  Teemu Toivanen <teemu.toivanen@profnetti.fi>
+    - a bug fix, and testing Postfix policy server in an Exim environment
+
+The brave ones that have tested the early releases, and provided
+invaluable feedback:
+  Rolf E. Sonneveld <R.E.Sonneveld@sonnection.nl>
+  Kenneth Cheng <Kenneth.Cheng@emerge.com.my>
+  Michael Konopka <michael.j.konopka@gmail.com> 
