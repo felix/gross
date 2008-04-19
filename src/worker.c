@@ -239,7 +239,13 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 	checkcount = i;
 
 	/* check status */
-	if (is_in_ring_queue(ctx->filter, digest)) {
+	if (is_in_ring_queue(ctx->filter, digest) && ((ctx->config.flags & FLG_MATCH_SHORTCUT)
+		|| (0 == checkcount))) {
+		/*
+		 * shortcut when match, iff
+		 *   - traditional greylister (no checks), or
+		 *   - configured to do so (FLG_MATCH_SHORTCUT)
+		 */
 		retvalue = STATUS_MATCH;
 	} else if (0 == checkcount) {
 		/* traditional greylister */
@@ -304,7 +310,8 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 					if (NULL == result) {
 						/*
 						 * FIXME: we do not know if the failed check was definitive
-						 * so we end up waiting until all checks return
+						 * so we end up waiting until all checks return. It should
+						 * be a rare event, though.
 						 */
 						logstr(GLOG_DEBUG,
 						    "NULL check result received (pool exhausted)");
@@ -374,7 +381,14 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 				retvalue = STATUS_BLOCK;
 				reasonstr = strdup(ctx->config.block_reason);
 			} else if (grey_threshold > 0 && susp_weight >= grey_threshold) {
-				retvalue = STATUS_GREY;
+				/*
+				 * two possibilities here: return TRUST if this 
+				 * has been seen before, GREY if not
+				 */
+				if (is_in_ring_queue(ctx->filter, digest))
+					retvalue = STATUS_MATCH;
+				else
+					retvalue = STATUS_GREY;
 			} else {
 				retvalue = STATUS_TRUST;
 			}

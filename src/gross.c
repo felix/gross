@@ -447,6 +447,10 @@ configure_grossd(configlist_t *config)
 	if (CONF("block_reason"))
 		ctx->config.block_reason = strdup(CONF("block_reason"));
 
+	/* Shortcut match ony if not blocking */
+	if (ctx->config.block_threshold == 0) 
+		ctx->config.flags |= FLG_MATCH_SHORTCUT;
+
 #ifdef MILTER
 	/* milter */
 	if (CONF("milter_listen"))
@@ -588,6 +592,8 @@ main(int argc, char *argv[])
 
 	config = read_config(configfile);
 	configure_grossd(config);
+
+	logstr(LOG_DEBUG, "flags: %x", ctx->config.flags);
 
 	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
 		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);

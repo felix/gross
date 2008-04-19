@@ -104,6 +104,7 @@
 #define FLG_SYSLOG (int)0x20
 #define FLG_CHECK_PIDFILE (int)0x40
 #define FLG_CREATE_PIDFILE (int)0x80
+#define FLG_MATCH_SHORTCUT (int)0x0100
 
 #define CHECK_DNSBL (int)0x01
 #define CHECK_BLOCKER (int)0x02
