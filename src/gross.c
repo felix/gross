@@ -33,6 +33,9 @@
 #ifdef DNSBL
 #include "check_dnsbl.h"
 #endif /* DNSBL */
+#ifdef SPF
+#include "check_spf.h"
+#endif
 #include "check_blocker.h"
 #include "check_random.h"
 
@@ -364,6 +367,8 @@ configure_grossd(configlist_t *config)
 				ctx->config.checks |= CHECK_BLOCKER;
 			else if (strcmp(cp->value, "random") == 0)
 				ctx->config.checks |= CHECK_RANDOM;
+			else if (strcmp(cp->value, "spf") == 0)
+				ctx->config.checks |= CHECK_SPF;
 		}
 		cp = cp->next;
 	}
@@ -680,6 +685,10 @@ main(int argc, char *argv[])
 		blocker_init(&limits);
 	if (ctx->config.checks & CHECK_RANDOM)
 		random_init(&limits);
+#ifdef SPF
+	if (ctx->config.checks & CHECK_SPF)
+		spf_init(&limits);
+#endif
 
 	/* start the worker thread */
 	worker_init();

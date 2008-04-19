@@ -81,8 +81,9 @@ AC_ARG_ENABLE(dnsbl,
 
 if test "$dnsbl" == "yes"
 then
-    AC_CHECK_HEADERS(ares.h,
-	DNSBLSOURCES='check_dnsbl.o'
+    AC_CHECK_HEADERS(ares.h, 
+	DNSBLSOURCES='check_dnsbl.o',
+	AC_MSG_ERROR([ares.h needed for dnsbl checking.])
     )
     AC_SUBST([DNSBLSOURCES])
     AC_CHECK_LIB(cares, ares_init, ,
@@ -100,7 +101,8 @@ AC_ARG_ENABLE(milter,
 if test "$milter" == "yes"
 then
     AC_CHECK_HEADERS(libmilter/mfapi.h,
-	MILTERSOURCES='worker_milter.o'
+	MILTERSOURCES='worker_milter.o',
+	AC_MSG_ERROR([libmilter/mfapi.h needed for dnsbl checking.])
     )
     AC_SUBST([MILTERSOURCES])
     AC_CHECK_LIB(milter, smfi_main, ,
@@ -119,14 +121,17 @@ if test "$spf" == "yes"
 then
     AC_CHECK_HEADERS(arpa/nameser_compat.h)
     AC_CHECK_HEADERS(arpa/inet.h)
-    AC_CHECK_HEADERS(spf2/spf.h)
-
     AC_CHECK_HEADERS(spf2/spf.h,
-	SPFSOURCES='check_spf.o'
-    )
+	SPFSOURCES='check_spf.o',
+	AC_MSG_ERROR(spf2/spf.h needed for spf checks.),
+	[#include <arpa/nameser_compat.h>
+	 #include <arpa/inet.h>
+	 #include <time.h>
+	])
+
     AC_SUBST([SPFSOURCES])
     AC_CHECK_LIB(spf2, SPF_request_new, ,
-	AC_MSG_ERROR([libspf2 library needed for spf check])
+	AC_MSG_ERROR([libspf2 library needed for spf checks.])
     )
 fi
 

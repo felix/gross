@@ -37,7 +37,7 @@ cleanup_spfc(void *state)
 }
 
 int
-spfc(thread_ctx_t *thread_ctx, edict_t *edict)
+spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	struct timespec ts, start, now, timeleft;
 	chkresult_t *result;
@@ -46,6 +46,7 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 	SPF_request_t *spf_request = NULL;
 	SPF_response_t *spf_response = NULL;
 	SPF_response_t *spf_response_2mx = NULL;
+	int ret;
 
 	logstr(GLOG_DEBUG, "spfc called");
 
@@ -59,8 +60,8 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
 		/* Initialize */
-		spf_server = SPF_server_new();
-		if (NULL = spf_server) {
+		spf_server = SPF_server_new(SPF_DNS_CACHE, 2);
+		if (NULL == spf_server) {
 			logstr(GLOG_ERROR, "SPF_server_new failed");
 			goto FINISH;
 		}
@@ -73,27 +74,34 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 	/* Now we are ready to query */
 	spf_request = SPF_request_new(spf_server);
 
-	ret = SPF_request_set_ipv4_str(spf_request, request->client_ip);
+	ret = SPF_request_set_ipv4_str(spf_request, request->client_address);
 	if (ret) {
-		logstr(GLOG_ERROR, "invalid IP address %s", request->client_ip);
-		goto ERROR;
+		logstr(GLOG_ERROR, "invalid IP address %s", request->client_address);
+		goto CLEANUP;
 	}
 
-	ret = SPF_request_set_helo_dom(spf_request, request->helo_name);
-	if (ret) {
-		logstr(GLOG_ERROR, "invalid HELO domain: %s.", "");
-		goto ERROR;
+	if (request->helo_name) {
+		ret = SPF_request_set_helo_dom(spf_request, request->helo_name);
+		if (ret) {
+			logstr(GLOG_ERROR, "invalid HELO domain: %s.", "");
+			goto CLEANUP;
+		}
 	}
 
 	ret = SPF_request_set_env_from(spf_request, request->sender);
 	if (ret) {
 		logstr(GLOG_ERROR, "invalid envelope sender address %s", request->sender);
-		goto ERROR;
+		goto CLEANUP;
 	}
 
-	SPF_request_query_mailfrom(spf_request, &spf_response);
+	ret = SPF_request_query_mailfrom(spf_request, &spf_response);
+	if (ret) {
+		logstr(GLOG_ERROR, "spf: sender based query failed: %s", SPF_strerror(ret));
+		goto CLEANUP;
+	}
 
 	ret = SPF_response_result(spf_response);
+#ifdef SECOND_MX_CHECKING
 	if (ret != SPF_RESULT_PASS) {
 		SPF_request_query_rcptto(spf_request, &spf_response_2mx, request->recipient);
 		ret = SPF_response_result(spf_response_2mx);
@@ -109,12 +117,34 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 			logstr(GLOG_DEBUG, "SPF policy violation (SOFTFAIL) for: %s from %s",
 				request->sender, request->client_address);
 			break;
-		case default:
+		default:
+			logstr(GLOG_DEBUG, "SPF returned %d", ret);
 			break;
 		}
 	}
+#else
+	switch (ret) {
+	case SPF_RESULT_FAIL:
+		result->judgment = J_BLOCK;
+		logstr(GLOG_DEBUG, "SPF policy violation (FAIL)");
+		result->reason = strdup("SPF policy violation");
+		break;
+	case SPF_RESULT_SOFTFAIL:
+		result->judgment = J_SUSPICIOUS;
+		logstr(GLOG_DEBUG, "SPF policy violation (SOFTFAIL)");
+		result->weight = 1;	/* FIXME: configurable */
+		break;
+	case SPF_RESULT_PASS:
+		result->judgment = J_UNDEFINED;
+		logstr(GLOG_DEBUG, "SPF policy conformance");
+		break;
+	default:
+		logstr(GLOG_ERROR, "Unknown SPF result (%d)", ret);
+		break;
+	}
+#endif
 
-      ERROR:
+      CLEANUP:
 	if (spf_request)
 		SPF_request_free(spf_request);
       FINISH:
@@ -134,7 +164,7 @@ spf_init(pool_limits_t *limits)
 
 	/* initialize the thread pool */
 	logstr(GLOG_INFO, "initializing spf checker thread pool");
-	pool = create_thread_pool("spf", &spfc, limits);
+	pool = create_thread_pool("spf", &spfc, limits, NULL);
 	if (pool == NULL)
 		daemon_fatal("create_thread_pool");
 

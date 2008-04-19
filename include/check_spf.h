@@ -19,7 +19,7 @@
 #ifndef CHECK_SPF_H
 #define CHECK_SPF_H
 
-#include <spf.h>
+#include <spf2/spf.h>
 
 void spf_init(pool_limits_t *limits);
 

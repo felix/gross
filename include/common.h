@@ -57,6 +57,9 @@
 # define MILTER
 #endif
 
+#ifdef HAVE_SPF2_SPF_H
+# define SPF
+#endif
 #if PROTOCOL == POSTFIX
 # define WORKER_PROTO_TCP
 #elif PROTOCOL == SJSMS
@@ -111,6 +114,7 @@
 #define CHECK_RANDOM (int)0x04
 #define CHECK_RHSBL (int)0x08
 #define CHECK_DNSWL (int)0x10
+#define CHECK_SPF (int)0x20
 
 #define PROTO_SJSMS (int)0x01
 #define PROTO_POSTFIX (int)0x02

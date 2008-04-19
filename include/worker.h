@@ -30,7 +30,7 @@ typedef enum
 
 #define LEGALREASONCHARACTERS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890 .-_@";
 
-typedef struct
+typedef struct chkresult_s
 {
 	bool definitive;
 	bool wait;
@@ -47,7 +47,7 @@ typedef struct check_match_s
 	struct check_match_s *next;	/* linked list */
 } check_match_t;
 
-typedef struct
+typedef struct querylog_entry_s
 {
 	int action;
 	int delay;
@@ -60,7 +60,7 @@ typedef struct
 	check_match_t *match;
 } querylog_entry_t;
 
-typedef struct
+typedef struct final_status_s
 {
 	char *reason;
 	grey_status_t status;
@@ -68,7 +68,7 @@ typedef struct
 	struct timespec starttime;
 } final_status_t;
 
-typedef struct
+typedef struct client_info_s
 {
 	int connfd;
 	struct sockaddr_in *caddr;
@@ -78,7 +78,7 @@ typedef struct
 	bool single_query;
 } client_info_t;
 
-typedef struct
+typedef struct grey_tuple_s
 {
 	char *sender;
 	char *recipient;
