@@ -77,8 +77,7 @@ spfc(thread_ctx_t *thread_ctx, edict_t *edict)
 		goto ERROR;
 	}
 
-	/* FIXME: no helo domain from clients yet */
-	ret = SPF_request_set_helo_dom(spf_request, "");
+	ret = SPF_request_set_helo_dom(spf_request, request->helo_name);
 	if (ret) {
 		logstr(GLOG_ERROR, "invalid HELO domain: %s.", "");
 		goto ERROR;

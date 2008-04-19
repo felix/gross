@@ -1,3 +1,5 @@
+dnl $Id$
+
 AC_INIT([gross],[svn])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
@@ -115,9 +117,11 @@ AC_ARG_ENABLE(spf,
 
 if test "$spf" == "yes"
 then
-    AC_CHECK_HEADERS(spf2/spf_request.h)
+    AC_CHECK_HEADERS(arpa/nameser_compat.h)
+    AC_CHECK_HEADERS(arpa/inet.h)
+    AC_CHECK_HEADERS(spf2/spf.h)
 
-    AC_CHECK_HEADERS(foo.h,
+    AC_CHECK_HEADERS(spf2/spf.h,
 	SPFSOURCES='check_spf.o'
     )
     AC_SUBST([SPFSOURCES])
