@@ -76,6 +76,7 @@ client_postfix(int argc, char **argv)
 	while (counter < runs) {
 		counter++;
 		snprintf(mbuf, MAXLINELEN * 4,
+#if RANDOM
 		    "sender=%d\nrecipient=%d\nclient_address=%d\nhelo_name=%d\n\n",
 		    random(), random(), random(), random());
 #else
