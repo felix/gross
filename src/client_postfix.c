@@ -49,6 +49,7 @@ client_postfix(int argc, char **argv)
 	sender = argv[2];
 	recipient = argv[3];
 	caddr = argv[4];
+	helo = argv[5];
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 
