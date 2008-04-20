@@ -46,6 +46,7 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	SPF_request_t *spf_request = NULL;
 	SPF_response_t *spf_response = NULL;
 	SPF_response_t *spf_response_2mx = NULL;
+	const char *smtp_error;
 	int ret;
 
 	logstr(GLOG_DEBUG, "spfc called");
@@ -72,6 +73,11 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	}
 
 	/* Now we are ready to query */
+	ret = SPF_server_set_explanation(spf_server,
+		"http://www.openspf.org/Why?id=%{S}&ip=%{C}", &spf_response);
+	if (ret)
+		logstr(GLOG_ERROR, "SPF: setting explanation failed");
+
 	spf_request = SPF_request_new(spf_server);
 
 	ret = SPF_request_set_ipv4_str(spf_request, request->client_address);
@@ -95,54 +101,47 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	}
 
 	ret = SPF_request_query_mailfrom(spf_request, &spf_response);
-	if (ret) {
+	switch (ret) {
+	case SPF_E_SUCCESS:
+	case SPF_E_NOT_SPF:
+		break; 
+	default:
 		logstr(GLOG_ERROR, "spf: sender based query failed: %s", SPF_strerror(ret));
 		goto CLEANUP;
 	}
 
+	/* XXX: do we need 2mx checks? */
 	ret = SPF_response_result(spf_response);
-#ifdef SECOND_MX_CHECKING
-	if (ret != SPF_RESULT_PASS) {
-		SPF_request_query_rcptto(spf_request, &spf_response_2mx, request->recipient);
-		ret = SPF_response_result(spf_response_2mx);
-		switch (ret) {
-		case SPF_RESULT_FAIL:
-			result->judgment = J_BLOCK;
-			logstr(GLOG_DEBUG, "SPF policy violation (FAIL) for: %s from %s",
-				request->sender, request->client_address);
-			result->reason = strdup("SPF policy violation");
-			break;
-		case SPF_RESULT_SOFTFAIL:
-			result->judgment = J_SUSPICIOUS;
-			logstr(GLOG_DEBUG, "SPF policy violation (SOFTFAIL) for: %s from %s",
-				request->sender, request->client_address);
-			break;
-		default:
-			logstr(GLOG_DEBUG, "SPF returned %d", ret);
-			break;
-		}
-	}
-#else
 	switch (ret) {
 	case SPF_RESULT_FAIL:
 		result->judgment = J_BLOCK;
-		logstr(GLOG_DEBUG, "SPF policy violation (FAIL)");
-		result->reason = strdup("SPF policy violation");
+		logstr(GLOG_DEBUG, "SPF: fail");
+		smtp_error = SPF_response_get_smtp_comment(spf_response);
+		if (smtp_error) 
+			result->reason = strdup(smtp_error);
+		else
+			result->reason = strdup("SPF: policy violation: (no message available)");
 		break;
 	case SPF_RESULT_SOFTFAIL:
 		result->judgment = J_SUSPICIOUS;
-		logstr(GLOG_DEBUG, "SPF policy violation (SOFTFAIL)");
+		logstr(GLOG_DEBUG, "SPF softfail");
 		result->weight = 1;	/* FIXME: configurable */
 		break;
 	case SPF_RESULT_PASS:
 		result->judgment = J_UNDEFINED;
-		logstr(GLOG_DEBUG, "SPF policy conformance");
+		logstr(GLOG_DEBUG, "SPF: pass");
+		break;
+	case SPF_RESULT_NEUTRAL:
+		result->judgment = J_UNDEFINED;
+		logstr(GLOG_DEBUG, "SPF: neutral");
+		break;
+	case SPF_RESULT_NONE:
+		result->judgment = J_UNDEFINED;
+		logstr(GLOG_DEBUG, "SPF: no record");
 		break;
 	default:
-		logstr(GLOG_ERROR, "Unknown SPF result (%d)", ret);
-		break;
+		logstr(GLOG_DEBUG, "Unexpected SPF result (%d)", ret);
 	}
-#endif
 
       CLEANUP:
 	if (spf_request)
