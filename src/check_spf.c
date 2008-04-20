@@ -24,6 +24,8 @@
 #include "utils.h"
 #include "worker.h"
 
+#define SPF_DEBUG_LEVEL 0
+
 /* the cleanup routine */
 int
 cleanup_spfc(void *state)
@@ -61,7 +63,7 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
 		/* Initialize */
-		spf_server = SPF_server_new(SPF_DNS_CACHE, 2);
+		spf_server = SPF_server_new(SPF_DNS_CACHE, SPF_DEBUG_LEVEL);
 		if (NULL == spf_server) {
 			logstr(GLOG_ERROR, "SPF_server_new failed");
 			goto FINISH;
@@ -74,7 +76,7 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	/* Now we are ready to query */
 	ret = SPF_server_set_explanation(spf_server,
-		"http://www.openspf.org/Why?id=%{S}&ip=%{C}", &spf_response);
+		"Please see http://www.openspf.org/Why?id=%{S}&ip=%{C}", &spf_response);
 	if (ret)
 		logstr(GLOG_ERROR, "SPF: setting explanation failed");
 
