@@ -44,12 +44,9 @@ test_thread(pthread_t * thread)
 {
 	int ret = pthread_kill(*thread, 0);
 
-	if (ret != 0)
-		return -1;
-	else
+	if (ret == 0)
 		return 1;
-
-	assert(0);
+	return -1;
 }
 
 

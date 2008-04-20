@@ -1,8 +1,14 @@
 Version 0.9-svn
 
+* Prevent grossd from running as root (euid == 0). You may 
+  have to modify configuration and state file ownerships
+  and/or permissions.
 * New match shortcut logic. Now grossd will shortcut after
   a filter match only if no checks are configured (traditional
   greylister) or block_threshold == 0. 
+
+Issues fixed:
+#59: grossd 0.9.3 leaks memory
 
 - changed filter_bits default back to 24, as stated in the docs.
 

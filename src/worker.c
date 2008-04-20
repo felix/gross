@@ -76,6 +76,8 @@ request_unlink(grey_tuple_t *request)
 			Free(request->recipient);
 		if (request->client_address)
 			Free(request->client_address);
+		if (request->helo_name)
+			Free(request->helo_name);
 		pthread_mutex_unlock(&request->reference.mx);
 		Free(request);
 	} else {
@@ -96,6 +98,19 @@ request_new()
 
 	return request;
 }
+
+void
+request_reference(grey_tuple_t *request)
+{
+	int ret;
+
+	ret = pthread_mutex_lock(&request->reference.mx);
+	assert(0 == ret);
+	request->reference.count++;
+	ret = pthread_mutex_unlock(&request->reference.mx);
+	assert(0 == ret);
+}
+
 
 char *
 grey_mask(char *ipstr)
@@ -274,7 +289,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 		i = 0;
 		definitives_running = 0;
 		while (ctx->checklist[i]) {
-			request->reference.count++;
+			request_reference(request);
 			submit_job(ctx->checklist[i]->pool, edict);
 			if (ctx->checklist[i]->definitive)
 				definitives_running++;
