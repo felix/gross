@@ -145,6 +145,7 @@ mlfi_envrcpt(SMFICTX * milter_ctx, char **argv)
 		retvalue = SMFIS_REJECT;
 		break;
 	default:
+		retvalue = SMFIS_CONTINUE;
 		break;
 	}
 
@@ -193,6 +194,9 @@ milter_server(void *arg)
 
 	logstr(GLOG_DEBUG, "milter thread calling smfi_main()");
 	smfi_main();
+
+	/* never reached */
+	pthread_exit(NULL);
 }
 
 static void *
@@ -202,6 +206,8 @@ milter_watcher(void *arg)
 
 	ret = pthread_join(*ctx->process_parts.milter_server.thread, NULL);
 	daemon_shutdown(EXIT_NOERROR, "milter exited");
+	
+	pthread_exit(NULL);
 }
 
 void

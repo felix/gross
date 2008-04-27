@@ -19,8 +19,8 @@
  */
 
 #include <stdio.h>
-#include "../include/sha256.h"
 #include <string.h>
+#include "sha256.h"
 
 #define MAX_MESSAGE_LEN 1024
 

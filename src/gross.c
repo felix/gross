@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pwd.h>
 
 #include "common.h"
 #include "conf.h"
@@ -79,7 +80,7 @@ initialize_context()
 	memset(ctx->checklist, 0, MAXCHECKS * sizeof(*ctx->checklist));
 
 	/* initial loglevel and facility, they will be set in configure_grossd() */
-	ctx->config.loglevel = 0;
+	ctx->config.loglevel = GLOG_INFO;
 	ctx->config.syslogfacility = 0;
 
 	ctx->filter = NULL;
@@ -172,10 +173,10 @@ configure_grossd(configlist_t *config)
 	ctx->config.peer.peer_addr.sin_port = htons(atoi(CONF("sync_port")));
 
 	if (CONF("sync_peer") == NULL) {
-		logstr(GLOG_INFO, "No peer configured. Replication suppressed.");
+		logstr(GLOG_DEBUG, "No peer configured. Replication suppressed.");
 		ctx->config.flags |= FLG_NOREPLICATE;
 	} else {
-		logstr(GLOG_INFO, "Peer %s configured. Replicating.", CONF("sync_peer"));
+		logstr(GLOG_DEBUG, "Peer %s configured. Replicating.", CONF("sync_peer"));
 		ctx->config.peer.peer_addr.sin_family = AF_INET;
 		host = gethostbyname(CONF("sync_peer"));
 		inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
@@ -186,10 +187,10 @@ configure_grossd(configlist_t *config)
 
 	updatestr = CONF("update");
 	if (strncmp(updatestr, "always", 7) == 0) {
-		logstr(GLOG_INFO, "updatestyle: ALWAYS");
+		logstr(GLOG_DEBUG, "updatestyle: ALWAYS");
 		ctx->config.flags |= FLG_UPDATE_ALWAYS;
 	} else if ((updatestr == NULL) || (strncmp(updatestr, "grey", 5) == 0))
-		logstr(GLOG_INFO, "updatestyle: GREY");
+		logstr(GLOG_DEBUG, "updatestyle: GREY");
 	else {
 		daemon_shutdown(EXIT_CONFIG, "Invalid updatestyle: %s", updatestr);
 	}
@@ -453,7 +454,7 @@ configure_grossd(configlist_t *config)
 		ctx->config.block_reason = strdup(CONF("block_reason"));
 
 	/* Shortcut match ony if not blocking */
-	if (ctx->config.block_threshold == 0) 
+	if (ctx->config.block_threshold == 0)
 		ctx->config.flags |= FLG_MATCH_SHORTCUT;
 
 #ifdef MILTER
@@ -487,10 +488,11 @@ mrproper(int signo)
 void
 usage(void)
 {
-	printf("Usage: grossd [-dCDnrV] [-f configfile]\n");
-	printf("       -d	Run grossd as a foreground process.\n");
-	printf("       -C	create statefile\n");
+	printf("Usage: grossd [-CDdhnPprV] [-f configfile]\n");
+	printf("       -C	create statefile and exit\n");
 	printf("       -D	Enable debug logging (insane verbosity with -DD)\n");
+	printf("       -d	Run grossd as a foreground process\n");
+	printf("       -h	Print command usage and exit\n");
 	printf("       -f	override default configfile\n");
 	printf("       -n	dry run: always send TRUST\n");
 	printf("       -p file  write the process id in a pidfile\n");
@@ -537,6 +539,7 @@ main(int argc, char *argv[])
 	struct timespec *delay;
 	pool_limits_t limits;
 	sigset_t mask, oldmask;
+	struct passwd *pwd;
 
 #ifdef DNSBL
 	dns_check_info_t *dns_check_info;
@@ -588,11 +591,28 @@ main(int argc, char *argv[])
 			ctx->config.flags |= FLG_CHECK_PIDFILE;
 			ctx->config.flags |= FLG_CREATE_PIDFILE;
 			break;
-		case '?':
+		case 'h':
+			usage();
+			break;
+		default:
 			fprintf(stderr, "Unrecognized option: -%c\n", optopt);
 			usage();
 			break;
 		}
+	}
+
+	/* grossd doesn't need to be running as root */
+	if (geteuid() == 0) {
+		logstr(GLOG_DEBUG, "Running as root: setuid() to 'nobody'");
+		pwd = getpwnam("nobody");
+		if (NULL == pwd)
+			daemon_shutdown(EXIT_FATAL, "Running as root: can't find user 'nobody'");
+		if (setgid(pwd->pw_gid) != 0)
+			daemon_shutdown(EXIT_FATAL, "Running as root: can't setgid(%d) to 'nobody': %s",
+			    pwd->pw_gid, strerror(errno));
+		if (setuid(pwd->pw_uid) != 0)
+			daemon_shutdown(EXIT_FATAL, "Running as root: can't setuid(%d) to 'nobody': %s",
+			    pwd->pw_uid, strerror(errno));
 	}
 
 	config = read_config(configfile);
