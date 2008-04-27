@@ -1,12 +1,12 @@
 man_MANS = grossd.8 grossd.conf.5
 
-EXTRA_DIST = grossd.8.in grossd.conf.5.in
+EXTRA_DIST = grossd.8.pod.in grossd.conf.5.pod.in
 
 CLEANFILES = $(man_MANS)
 
 SUFFIXES = .in .pod
 
-.pod:
+.pod: .in
 	pod2man $< $@
 
 .in:
