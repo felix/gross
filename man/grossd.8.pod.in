@@ -51,7 +51,7 @@ versus the number of handled connections.
 
 =head1 OPTIONS
 
-=over 12
+=over
 
 =item B<-C>
 
@@ -118,7 +118,7 @@ B<grossd> daemon exits 0 if success, and >0 if an error occurs.
 =head1 SEE ALSO
 
 Regarding the configuration both the daemon and MTA's, refer to 
-L<grossd.conf>
+grossd.conf(5)
 
 Gross project site: L<http://code.google.com/p/gross/>
 
@@ -129,6 +129,4 @@ L<http://daniel.haxx.se/projects/c-ares/>.
 
 =head1 AUTHORS
 
-Eino Tuominen L<eino@utu.fi>
-
-Antti Siira L<antti@utu.fi>
+Eino Tuominen and Antti Siira

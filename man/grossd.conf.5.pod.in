@@ -24,7 +24,7 @@ C<#>, everything after it is ignored by the config file parser.
 
 =head2 Network configuration options
 
-=over 12
+=over
 
 =item B<host>
 
@@ -78,7 +78,7 @@ mail flow exceeds millions a day you may want to tweak
 B<query_timelimit> and/or B<pool_maxthreads>.  If you run grossd in a
 server with limited memory you may want to adjust B<filter_bits>. 
 
-=over 12
+=over
 
 =item B<filter_bits>
 
@@ -110,11 +110,11 @@ DNS servers.
 
 is the mask for grossd to use when matching
 C<smtp-client-ip> against the database. Default is 24, which makes grossd
-to treat addresses like C<a.b.c.d> as .Ad C<a.b.c.0>.
+to treat addresses like C<a.b.c.d> as C<a.b.c.0>.
 Setting B<grey_mask> to 32 makes grossd to require that consecutive
 attempts are made from the same C<smtp-client-ip>.
 
-item B<statefile>
+=item B<statefile>
 
 is the full path of the file that the server uses to store
 the state information. Default is not to have a statefile. You may
@@ -131,13 +131,14 @@ starting, should pidfile already exist.
 
 =head2 Query constraints
 
-=over 12
+=over
 
 =item B<grey_delay>
 
 is the time in seconds new triplets are kept on the greylist. Default is 180.
 
 =item B<query_timelimit>
+
 is the query timeout in milliseconds. You may have to adjust this if you
 exceed millions of queries a day.
 
@@ -153,7 +154,7 @@ B<query_timelimit> (in seconds, of course). It defaults to 100.
 
 =head2 Configuring server responses
 
-=over 12 
+=over 
 
 =item B<block_threshold>
 
@@ -179,7 +180,7 @@ sends a C<STATUS_GREY> response.
 
 =head2 Logging options
 
-=over 12
+=over
 
 =item B<log_method>
 
@@ -202,7 +203,7 @@ C<mail>.
 is the name of the requested statistic. It is of multivalued type. The
 valid options are
 
-=over 12
+=over
 
 =item C<full>
 
@@ -237,7 +238,7 @@ is the number of seconds between status log entries. Default is 3600.
 
 =head2 Configuring checks
 
-=over 12
+=over
 
 =item B<check>
 
@@ -293,7 +294,7 @@ B<grey_threshold> and B<block_threshold> regarding the weights.
 You may configure the responses grossd sends over to grosscheck
 library. 
 
-=over 12
+=over
 
 =item B<sjsms_response_grey>
 
@@ -341,42 +342,33 @@ Here is an example:
 
 Mapping call parameters are as follows:
 
-=over 12
+=over
 
-=item
-
+=item 1.
 full path of the C<grosscheck.so>
 
-=item
-
+=item 2.
 function name to call (always C<grosscheck>)
 
-=item
-
+=item 3.
 first server's IP address,
 
-=item
-
+=item 4.
 second server's IP address,
 
-=item
-
+=item 5.
 UDP port for server connections,
 
-=item
-
+=item 6.
 SMTP client's IP address,
 
-=item
-
+=item 7.
 envelope sender's email address,
 
-=item
-
+=item 8.
 envelope recipient's email address,
 
-=item
-
+=item 9.
 HELO/EHLO string. 
 
 =back
@@ -428,7 +420,7 @@ Acl section:
 
 =head1 SEE ALSO
 
-L<grossd>
+grossd(8)
 
 Gross project site:
 L<http://code.google.com/p/gross/>
@@ -437,5 +429,4 @@ Bloom filters: L<http://en.wikipedia.org/wiki/Bloom_filter>
 
 =head1 AUTHORS
 
-Eino Tuominen L<eino@utu.fi>
-Antti Siira L<antti@utu.fi>
+Eino Tuominen and Antti Siira
