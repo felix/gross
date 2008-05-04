@@ -660,8 +660,6 @@ querylogwrite(querylog_entry_t *q)
 		q->sender = "N/A";
 	if (NULL == q->recipient)
 		q->recipient = "N/A";
-	if (NULL == q->helo)
-		q->helo = "N/A";
 
 	snprintf(line, MAXLINELEN - 1, "a=%s d=%d w=%d c=%s s=%s r=%s", actionstr, q->delay, q->totalweight,  q->client_ip, q->sender, q->recipient);
 	

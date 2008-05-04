@@ -18,6 +18,10 @@ Issues fixed:
 Version 0.9.3
 
 * A few important bug fixes to milter server
+* HELOify all the rest of the code. There are still no checks
+  that use helo info, but now grossd logs it and also gclient 
+  can send it to the server. Check INSTALL details about 
+  configuring SJSMS to send helo string over to grossd.
 * New logfile format! An example log line: 
 
   Thu Apr 17 14:50:05 2008 #8505600: a=greylist d=3 w=5 c=127.0.0.2
@@ -34,6 +38,7 @@ Version 0.9.3
   h = helo/ehlo
   m = matched check with possible weight
 
+- A few important bug fixes to milter server
 - behaviour change: grossd now exits after creating the
   statefile when invoked with -C command line option. This
   makes life easier for package maintainers in the future.

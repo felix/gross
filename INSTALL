@@ -95,13 +95,13 @@ ORIG_MAIL_ACCESS
   TCP|*|*|*|*|*|*|tcp_local|*|*|postmaster@*  $Y$E
   TCP|*|*|*|*|*|*|tcp_local|*|*|abuse@*  $Y$E
 ! use gross to check all triplets (client_ip,sender,recipient)
-  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/usr/local/gross/lib/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,5525,$2,$=$8$_,$=$6$_]
+  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/usr/local/gross/lib/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,5525,$2,$=$8$_,$=$6$_,$=$4$_]
 
 The server will always query the first server if it's available.
 
 First, when you have only one server, you can test it like this:
 
-  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/path/to/grosscheck.so,grosscheck,127.0.0.1,,5525,$2,$=$8$_,$=$6$_]
+  TCP|*|*|*|*|*|*|tcp_local|*|*|*  $[/path/to/grosscheck.so,grosscheck,127.0.0.1,,5525,$2,$=$8$_,$=$6$_,$=$4$_]
 
 SOPHOS BLOCKER INTEGRATION
 
