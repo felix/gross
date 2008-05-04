@@ -31,7 +31,7 @@ client_sjsms(int argc, char **argv)
 	int counter = 0, n;
 	const char *request;
 	char *sender, *recipient, *caddr, *helo;
-
+	
 	if (argc != 9 && argc != 7 && argc != 6) {
 		fprintf(stderr, "usage: gclient sjsms sender recipient ip_address helo [runs] [host port]\n");
 		return 1;
