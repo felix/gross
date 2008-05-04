@@ -71,7 +71,7 @@ B<grossd> will output to terminal instead of using syslog.
 =item B<-f> I<config>
 
 Specifies the name of the configuration file. The default is
-F<@sysconfdir@/etc/grossd.conf>
+F<%{sysconfdir}/etc/grossd.conf>
 
 =item B<-h>
 
@@ -101,7 +101,7 @@ Output version information and exit.
 
 =head1 FILES
 
-F<@sysconfdir@/grossd.conf>
+F<%{sysconfdir}/grossd.conf>
 
 =head1 SECURITY CONSIDERATIONS
 

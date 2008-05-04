@@ -6,14 +6,14 @@ B<grossd.conf> - Greylisting of Suspicious Sources daemon configuration file
 
 =head1 SYNOPSIS
 
-F<@sysconfdir@/etc/grossd.conf>
+F<%{sysconfdir}/etc/grossd.conf>
 
 =head1 DESCRIPTION
 
-B<grossd> reads configuration data from F<@sysconfdir@/etc/grossd.conf>
+grossd(8) reads configuration data from F<%{sysconfdir}/etc/grossd.conf>
 (or the file specified with B<-f> on the command line). 
 An example configuration file is installed by default. You have to
-set some configuration options in order to get grossd running in 
+set some configuration options in order to get grossd(8) running in 
 your environment. The format is as follows:
 
   name = value [ ; param ] ...
@@ -52,16 +52,16 @@ with the peer. Default is C<5524>.
 
 =item B<status_host>
 
-is the address grossd listens for status queries. Default is C<localhost>.
+is the address grossd(8) listens for status queries. Default is C<localhost>.
 
 =item B<status_port>
 
-is the port number grossd listens for status queries. Default is
+is the port number grossd(8) listens for status queries. Default is
 C<5522>.
 
 =item B<protocol>
 
-activates the server protocols grossd will support. Valid settings are 
+activates the server protocols grossd(8) will support. Valid settings are 
 C<sjsms>, C<postfix> and C<milter>.
 
 =item B<milter_listen>
@@ -75,7 +75,7 @@ C<proto:port@host>. Refer to Milter documentation for the specifics.
 
 Most probably you can leave these to default settings. If your daily
 mail flow exceeds millions a day you may want to tweak 
-B<query_timelimit> and/or B<pool_maxthreads>.  If you run grossd in a
+B<query_timelimit> and/or B<pool_maxthreads>.  If you run grossd(8) in a
 server with limited memory you may want to adjust B<filter_bits>. 
 
 =over
@@ -102,16 +102,16 @@ seconds on average. Defaults to 3600 seconds (one hour).
 
 is the way server updates the database. Valid options are 
 C<grey> and C<always>.  If set to C<grey>, which is the default,
-grossd will update the database only if response is
+grossd(8) will update the database only if response is
 C<STATUS_GREY>.  Setting it to C<always> may reduce the impact on
 DNS servers. 
 
 =item B<grey_mask>
 
-is the mask for grossd to use when matching
-C<smtp-client-ip> against the database. Default is 24, which makes grossd
+is the mask for grossd(8) to use when matching
+C<smtp-client-ip> against the database. Default is 24, which makes grossd(8)
 to treat addresses like C<a.b.c.d> as C<a.b.c.0>.
-Setting B<grey_mask> to 32 makes grossd to require that consecutive
+Setting B<grey_mask> to 32 makes grossd(8) to require that consecutive
 attempts are made from the same C<smtp-client-ip>.
 
 =item B<statefile>
@@ -123,8 +123,8 @@ replication.
 
 =item B<pidfile>
 
-is the full path of the file grossd writes its pid into.
-You can set parameter C<check>, if you want to keep grossd from
+is the full path of the file grossd(8) writes its pid into.
+You can set parameter C<check>, if you want to keep grossd(8) from
 starting, should pidfile already exist.
 
 =back
@@ -147,7 +147,7 @@ exceed millions of queries a day.
 is the maximum threadcount per pool. You may have to raise the limit from
 the default if you get more than 100 queries per second and/or have slow
 DNS servers. Rule of thumb would be to decide how many queries you want
-grossd to be able to handle per second, and multiply that with
+grossd(8) to be able to handle per second, and multiply that with
 B<query_timelimit> (in seconds, of course). It defaults to 100.
 
 =back
@@ -158,11 +158,11 @@ B<query_timelimit> (in seconds, of course). It defaults to 100.
 
 =item B<block_threshold>
 
-is the threshold after which grossd sends 
+is the threshold after which grossd(8) sends 
 a permanent error to the client. Every check that considers
 C<smtp-client-ip> as suspicious returns a value
 (check weight).  When sum of these values gets equivalent or
-greater than B<block_threshold> grossd sends a
+greater than B<block_threshold> grossd(8) sends a
 C<STATUS_BLOCK> response. Default is 0 which disables this
 functionality.
 
@@ -173,7 +173,7 @@ B<block_threshold>. Default is "Bad reputation".
 
 =item B<grey_threshold>
 
-is analogous to B<block_threshold>, except at the threshold grossd
+is analogous to B<block_threshold>, except at the threshold grossd(8)
 sends a C<STATUS_GREY> response.
 
 =back
@@ -246,14 +246,14 @@ is a multivalued option, that is, you can configure multiple checks by
 setting B<check> option multiple times. Currently implemented checks
 are C<dnsbl>, C<dnswl>, C<rhsbl> and C<blocker>.
 Refer to sections describing the checks below. If you don't configure
-any checks grossd will act as a traditional greylisting server.
+any checks grossd(8) will act as a traditional greylisting server.
 
 =item B<dnsbl>
 
 is a DNS domain name of the dnsbl that C<dnsbl> B<check>
 will query. There are no defaults, but the default configuration file
 lists a few as an example. If you have any locally administrated
-block lists take into account that grossd makes all queries as
+block lists take into account that grossd(8) makes all queries as
 fully qualified. You may assign different weights for the dnsbl's,
 default weight is 1.  Refer to B<grey_threshold> and B<block_threshold>
 about the weights. B<dnsbl> is a multivalued option.
@@ -261,10 +261,10 @@ about the weights. B<dnsbl> is a multivalued option.
 =item B<dnswl>
 
 is analogous to B<dnsbl>.  Remember that B<dnswl> is a
-I<definitive> check, that is grossd waits for the check to complete
+I<definitive> check, that is grossd(8) waits for the check to complete
 before deciding how to respond. This may cause unwanted latency,
 although you can adjust the maximum latency by B<query_timelimit>
-option. Highly recommended if you use grossd as a traditional greylister.
+option. Highly recommended if you use grossd(8) as a traditional greylister.
 This is a multivalued option.
 
 =item B<rhsbl>
@@ -291,29 +291,29 @@ B<grey_threshold> and B<block_threshold> regarding the weights.
 
 =head2 Sun Java System Messaging Server specific options
 
-You may configure the responses grossd sends over to grosscheck
+You may configure the responses grossd(8) sends over to grosscheck
 library. 
 
 =over
 
 =item B<sjsms_response_grey>
 
-is the mapping result template grossd uses for a C<STATUS_GREY>
+is the mapping result template grossd(8) uses for a C<STATUS_GREY>
 result. Default is C<$X4.4.3|$NPlease$ try$ again$ later>.
 
 =item B<sjsms_response_match>
 
-is the mapping result template grossd uses for a C<STATUS_MATCH>
+is the mapping result template grossd(8) uses for a C<STATUS_MATCH>
 result. Default is C<$Y>.
 
 =item B<sjsms_response_trust>
 
-is the mapping result template grossd uses for a
+is the mapping result template grossd(8) uses for a
 C<STATUS_TRUST> result. Default is C<$Y>.
 
 =item B<sjsms_response_block>
 
-is the mapping result template grossd uses for a
+is the mapping result template grossd(8) uses for a
 C<STATUS_BLOCK> result. Default is
 C<$N%reason%>, where C<%reason%> is the template for the reason
 string.
@@ -325,8 +325,8 @@ string.
 =head2 Sun Java System Messaging Server
 
 You have to add a mapping entry to set
-B<SJSMS> to query grossd. It's also a good idea to exclude
-L<postmaster> and L<abuse> addresses before querying grossd.
+B<SJSMS> to query grossd(8). It's also a good idea to exclude
+L<postmaster> and L<abuse> addresses before querying grossd(8).
 
 Here is an example:
 
@@ -338,7 +338,7 @@ Here is an example:
     TCP|*|*|*|*|*|*|tcp_local|*|*|postmaster@*  $Y$E
     TCP|*|*|*|*|*|*|tcp_local|*|*|abuse@*  $Y$E
   ! use gross to check all triplets (client_ip,sender,recipient)
-    TCP|*|*|*|*|SMTP/*|*|tcp_local|*|*|*  $[@libdir@/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,5525,$2,$=$8$_,$=$6$_,$=$4$_]
+    TCP|*|*|*|*|SMTP/*|*|tcp_local|*|*|*  $[%{libdir}/grosscheck.so,grosscheck,10.10.13.1,10.10.13.2,5525,$2,$=$8$_,$=$6$_,$=$4$_]
 
 Mapping call parameters are as follows:
 
@@ -376,7 +376,7 @@ HELO/EHLO string.
 =head2 Postfix
 
 Grossd implements native Postfix policy delegation protocol. Just specify
-grossd at the C<smtpd_recipient_restrictions>
+grossd server address at the C<smtpd_recipient_restrictions>
 in the main configuration file
 
 main.cf :
@@ -393,7 +393,7 @@ L<http://www.postfix.org> for specifics.
 
 =head2 Exim
 
-Exim can be configured to query grossd via
+Exim can be configured to query grossd(8) via
 Postfix policy delegation protocol. 
 
 Main section:
@@ -417,6 +417,13 @@ Acl section:
     message = ${if match {$acl_c0}{action=reject (.*)}{$1}\\
       {Rejected by Gross.}}
     condition = ${if match {$acl_c0}{action=reject}} 
+
+=head2 Sendmail
+
+Sendmail can query grossd via milter protocol. Insert this in
+sendmail.mc and configure B<milter_listen> accordingly:
+
+  INPUT_MAIL_FILTER(`Gross', `S=inet:5523@localhost, T=R:20s')
 
 =head1 SEE ALSO
 
