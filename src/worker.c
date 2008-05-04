@@ -366,11 +366,17 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 					 * 1.  we have a whitelist match, or
 					 * 2a. all the definitive checks have returned, and
 					 * 2b. susp_weight > grey_threshold
+					 * broken up for readability 
 					 */
-					if (judgment == J_PASS
-					    || (0 == definitives_running
-						&& block_threshold != 0 && susp_weight >= block_threshold))
+					if (judgment == J_PASS) {
 						definitive = true;
+					} else if (0 == definitives_running) {
+						if (block_threshold != 0 && susp_weight >= block_threshold)
+							definitive = true;
+						else if (block_threshold == 0
+						    && susp_weight >= grey_threshold)
+							definitive = true;
+					}
 				}
 			} else if (ta->action) {
 				ta->action(ta->arg, timeused);
