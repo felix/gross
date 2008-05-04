@@ -21,6 +21,10 @@
 #include "common.h"
 #include "utils.h"
 
+#ifndef HAVE_CLOCK_GETTIME
+# include <sys/time.h>
+#endif
+
 /*
  * readline	- implementation by W. Richard Stevens, 
  * modified to not include line terminator (\n or \r\n)
