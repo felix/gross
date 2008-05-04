@@ -23,6 +23,10 @@ AC_PROG_SED
 AC_PATH_PROG(POD2MAN, pod2man)
 AM_CONDITIONAL(HAVE_POD2MAN, test x$POD2MAN != x)
 
+SED="$lt_cv_path_SED"
+AC_SUBST([SED])
+AM_CONDITIONAL(HAVE_SED, test x$SED != x)
+
 CPPFLAGS="$CPPFLAGS -I/usr/local/include"
 LDFLAGS="$LDFLAGS -L/usr/local/lib"
 
