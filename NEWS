@@ -12,13 +12,14 @@ Issues fixed:
 #48: Need man pages
 #59: grossd 0.9.3 leaks memory
 #60: Grossd should do all dns queries as fully qualified
+#61: Space Character in Mail From Crashing Gross
 
 - changed filter_bits default back to 24, as stated in the docs.
 
 Version 0.9.3
 
 * A few important bug fixes to milter server
-* HELOify all the rest of the code. There are still no checks
+* HELOified all the rest of the code. There are still no checks
   that use helo info, but now grossd logs it and also gclient 
   can send it to the server. Check INSTALL details about 
   configuring SJSMS to send helo string over to grossd.
