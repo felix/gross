@@ -22,16 +22,26 @@
 typedef struct counter_s
 {
 	pthread_mutex_t mx;
-	long long int value;
+	int64_t value;
 	int id;
 	const char *name;
 	const char *description;
+	bool publish;
+	bool active;
 } counter_t;
 
-int counter_create(void);
-long long int counter_increment(int cid);
-long long int counter_decrement(int cid);
-long long int counter_restart(int cid);
-long long int counter_set(int cid, long long int value);
+typedef struct counter_queue_s
+{
+	counter_t *counter;
+	struct counter_queue_s *next;
+} counter_queue_t;
+
+int counter_create(const char *name, const char *description);
+int counter_release(int cid);
+int64_t counter_increment(int cid);
+int64_t counter_decrement(int cid);
+int64_t counter_restart(int cid);
+int64_t counter_set(int cid, int64_t value);
+int64_t counter_read(int cid);
 
 #endif /* COUNTER_H */

@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /*
- * Copyright (c) 2006,2007
+ * Copyright (c) 2008
  *                    Eino Tuominen <eino@utu.fi>
  *                    Antti Siira <antti@utu.fi>
  *
@@ -34,12 +34,13 @@
 /* prototypes of internals */
 counter_t *counterbyid(int counterid);
 void counter_realloc(void);
-counter_t *try_available(void);
+counter_t *check_freelist(void);
 
 /* array of counters */
 int numcounters = 0;
 int counterspace = 1;
 counter_t **counters;
+counter_queue_t *freecounters = NULL;
 
 pthread_mutex_t global_counter_lk = PTHREAD_MUTEX_INITIALIZER;
 
@@ -90,7 +91,7 @@ counterbyid(int cid)
  * get_counter    - returns a new counter
  */
 int
-counter_create(void)
+counter_create(const char *name, const char *description)
 {
 	int i;
 	counter_t *counter;
@@ -99,31 +100,102 @@ counter_create(void)
 	/* is this the first call? */
 	if (0 == numcounters)
 		counters = calloc(counterspace, sizeof(counter_t *));
-	i = numcounters;
-	++numcounters;
-	counter = Malloc(sizeof(counter_t));
-	memset(counter, 0, sizeof(counter_t));
-	pthread_mutex_init(&counter->mx, NULL);
 
-	counter->id = i;
+	/* first check the list of free counters */
 
-	if (numcounters > counterspace) {
-		/* there is no space left in the array */
-		counter_realloc();
+	counter = check_freelist();
+	if (counter) {
+		/* found one, so let's use it */
+		i = counter->id;
+	} else {
+		/* must create a new counter */
+		i = numcounters;
+		++numcounters;
+		counter = Malloc(sizeof(counter_t));
+		memset(counter, 0, sizeof(counter_t));
+		pthread_mutex_init(&counter->mx, NULL);
+
+		counter->id = i;
+
+		if (numcounters > counterspace) {
+			/* there is no space left in the array */
+			counter_realloc();
+		}
+
+		counters[i] = counter;
 	}
 
-	counters[i] = counter;
-
 	GLOBAL_COUNTER_UNLOCK;
+
+	counter->name = name;
+	counter->description = description;
+	counter->active = true;
+
 
 	return i;
 }
 
-uint64_t
+/* 
+ *  release_queue        - add the counter to the counterqueue. Clean up.
+ */
+int
+counter_release(int cid)
+{
+	int ret;
+	counter_t *counter;
+	counter_queue_t *f;
+
+	counter = counterbyid(cid);
+
+	ret = pthread_mutex_lock(&counter->mx);
+	assert(ret == 0);
+	counter->active = false;
+	counter->publish = false;
+	counter->name = NULL;
+	counter->description = NULL;
+	counter->value = 0;
+	ret = pthread_mutex_unlock(&counter->mx);
+	assert(ret == 0);
+
+	/* insert the counter to the list of free counters */
+	GLOBAL_COUNTER_LOCK;
+	f = Malloc(sizeof(counter_queue_t));
+	f->counter = counter;
+	f->next = freecounters;
+	freecounters = f;
+	GLOBAL_COUNTER_UNLOCK;
+
+	return 0;
+}
+
+
+/*
+ *  check_freelist        - tries to fetch a message from the counterqueue
+ *  			    must hold GLOBAL_COUNTER_LOCK;
+ */
+counter_t *
+check_freelist(void)
+{
+	counter_t *counter = NULL;
+	counter_queue_t *next;
+
+	if (freecounters) {
+		/* found */
+		counter = freecounters->counter;
+		next = freecounters->next;
+		Free(freecounters);
+		freecounters = next;
+	}
+
+	return counter;
+}
+
+
+int64_t
 counter_read(int cid)
 {
 	counter_t *counter;
-	uint64_t value;
+	int64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
@@ -138,11 +210,11 @@ counter_read(int cid)
 	return value;
 }
 
-uint64_t
+int64_t
 counter_increment(int cid)
 {
 	counter_t *counter;
-	uint64_t value;
+	int64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
@@ -158,11 +230,11 @@ counter_increment(int cid)
 	return value;
 }
 
-uint64_t
+int64_t
 counter_decrement(int cid)
 {
 	counter_t *counter;
-	uint64_t value;
+	int64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
@@ -178,11 +250,11 @@ counter_decrement(int cid)
 	return value;
 }
 
-uint64_t
+int64_t
 counter_restart(int cid)
 {
 	counter_t *counter;
-	uint64_t value;
+	int64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
@@ -198,11 +270,11 @@ counter_restart(int cid)
 	return value;
 }
 
-uint64_t
-counter_set(int cid, uint64_t newvalue)
+int64_t
+counter_set(int cid, int64_t newvalue)
 {
 	counter_t *counter;
-	uint64_t value;
+	int64_t value;
 	int ret;
 
 	counter = counterbyid(cid);
