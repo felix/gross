@@ -28,6 +28,9 @@
 /* internal functions */
 static void *countertest(void *arg); 
 
+/* dummy context */
+gross_ctx_t *ctx;
+
 static void *
 countertest(void *arg)
 {
@@ -102,6 +105,9 @@ main(int argc, char **argv)
 	int jc;
 	int *ep;
 	int i;
+	gross_ctx_t myctx = { 0x00 }; /* dummy context */
+
+	ctx = &myctx;
 
 	/* create a counter that all the threads will be incrementing */
 	jc = counter_create("jc", "joint counter");
