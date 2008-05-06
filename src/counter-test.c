@@ -23,26 +23,26 @@
 #include "counter.h"
 
 #define LOOPSIZE 100
-#define THREADCOUNT 100
+#define THREADCOUNT 1000
+#define JOINTCOUNTERS 10
 
 /* internal functions */
 static void *countertest(void *arg); 
 
 /* dummy context */
 gross_ctx_t *ctx;
+unsigned *seed;
 
 static void *
 countertest(void *arg)
 {
 	int c1, c2;
-	int jc;
+	int *jc;
 	int counters[LOOPSIZE];
 	int i;
 	int *ep, errors;
-	gross_ctx_t myctx = { 0x00 };
 
-	ctx = &myctx;
-	jc = *(int *)arg;
+	jc = (int *)arg;
 
 	/* create two counters */
 	c1 = counter_create("c1", "first counter");
@@ -51,7 +51,7 @@ countertest(void *arg)
 	for (i=0; i < LOOPSIZE; i++) {
 		counter_increment(c1);
 		counter_increment(c2);
-		counter_increment(jc);
+		counter_increment(jc[rand_r(seed) % JOINTCOUNTERS]);
 	}
 
 	if (counter_read(c1) != LOOPSIZE)
@@ -101,19 +101,23 @@ int
 main(int argc, char **argv)
 {
 	thread_info_t threads[THREADCOUNT];
+	int jc[JOINTCOUNTERS];
 	int ret;
-	int jc;
 	int *ep;
 	int i;
+	int sum = 0;
 	gross_ctx_t myctx = { 0x00 }; /* dummy context */
+	unsigned myseed = time(NULL);
 
 	ctx = &myctx;
+	seed = &myseed;
 
 	/* create a counter that all the threads will be incrementing */
-	jc = counter_create("jc", "joint counter");
+	for (i=0; i < JOINTCOUNTERS; i++)
+		jc[i] = counter_create("jc", "joint counter");
 
 	for (i=0; i < THREADCOUNT; i++)
-		create_thread(&threads[i], 0, &countertest, &jc);
+		create_thread(&threads[i], 0, &countertest, jc);
 
 	for (i=0; i < THREADCOUNT; i++) {
 		ret = pthread_join(*threads[i].thread, (void **)&ep);
@@ -125,7 +129,10 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (counter_read(jc) != THREADCOUNT * LOOPSIZE)
+	for (i=0; i < JOINTCOUNTERS; i++)
+		sum += counter_read(jc[i]);
+
+	if (sum != THREADCOUNT * LOOPSIZE) 
 		return 3;
 	else
 		return 0;

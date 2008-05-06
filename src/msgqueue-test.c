@@ -23,8 +23,7 @@
 #include "msgqueue.h"
 
 #define LOOPSIZE 100
-#define THREADPAIRS 100
-#define BALLS 10
+#define THREADPAIRS 500
 #define TIMELIMIT 10000
 
 typedef struct queuepair_s {
@@ -68,7 +67,7 @@ int
 main(int argc, char **argv)
 {
 	thread_info_t threads[THREADPAIRS * 2];
-	int *balls[BALLS];
+	int *balls[THREADPAIRS];
 	int ret;
 	int i;
 	int qa, qb;
@@ -94,7 +93,7 @@ main(int argc, char **argv)
 	}
 
 	/* serve ping pong balls */
-	for (i=0; i < BALLS; i++) {
+	for (i=0; i < THREADPAIRS; i++) {
 		balls[i] = Malloc(sizeof(int));
 		*balls[i] = 0;
 		put_msg(qa, &balls[i], sizeof(int *), 0);
@@ -110,7 +109,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	for (i=0; i < BALLS; i++)
+	for (i=0; i < THREADPAIRS; i++)
 		sum += *balls[i];
 
 	if (sum != LOOPSIZE * THREADPAIRS * 2)
