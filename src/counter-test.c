@@ -112,13 +112,23 @@ main(int argc, char **argv)
 	ctx = &myctx;
 	seed = &myseed;
 
+	printf("Check: counter\n");
+
 	/* create a counter that all the threads will be incrementing */
+	printf("  Creating %d counters that the threads will be incrementing...", JOINTCOUNTERS);
+	fflush(stdout);
 	for (i=0; i < JOINTCOUNTERS; i++)
 		jc[i] = counter_create("jc", "joint counter");
+	printf("  Done.\n");
 
+	printf("  Creating %d threads to test the counters...", THREADCOUNT);
+	fflush(stdout);
 	for (i=0; i < THREADCOUNT; i++)
 		create_thread(&threads[i], 0, &countertest, jc);
+	printf("  Done.\n");
 
+	printf("  Waiting for the results...");
+	fflush(stdout);
 	for (i=0; i < THREADCOUNT; i++) {
 		ret = pthread_join(*threads[i].thread, (void **)&ep);
 		if (ret == 0) {
@@ -128,6 +138,7 @@ main(int argc, char **argv)
 			return 2;
 		}
 	}
+	printf("  Done.\n");
 
 	for (i=0; i < JOINTCOUNTERS; i++)
 		sum += counter_read(jc[i]);

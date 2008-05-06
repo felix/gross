@@ -86,19 +86,29 @@ main(int argc, char **argv)
 	qpair_pong.inq = qb;
 	qpair_pong.outq = qa;
 
+	printf("Check: msgqueue\n");
+
+	printf("  Creating %d threads to test the message queues...", THREADPAIRS * 2);
+	fflush(stdout);
 	/* start the threads */
 	for (i=0; i < THREADPAIRS; i++) {
 		create_thread(&threads[i*2], 0, &msgqueueping, &qpair_ping);
 		create_thread(&threads[i*2+1], 0, &msgqueueping, &qpair_pong);
 	}
+	printf("  Done.\n");
 
+	printf("  Sending out %d chain letters...", THREADPAIRS);
+	fflush(stdout);
 	/* serve ping pong balls */
 	for (i=0; i < THREADPAIRS; i++) {
 		balls[i] = Malloc(sizeof(int));
 		*balls[i] = 0;
 		put_msg(qa, &balls[i], sizeof(int *), 0);
 	}
+	printf("  Done.\n");
 
+	printf("  Waiting for the results...");
+	fflush(stdout);
 	for (i=0; i < THREADPAIRS * 2; i++) {
 		ret = pthread_join(*threads[i].thread, (void **)&ep);
 		if (ret == 0) {
@@ -108,6 +118,7 @@ main(int argc, char **argv)
 			return 2;
 		}
 	}
+	printf("  Done.\n");
 
 	for (i=0; i < THREADPAIRS; i++)
 		sum += *balls[i];
