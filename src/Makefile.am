@@ -24,3 +24,4 @@ check_PROGRAMS = sha256 bloom counter
 bloom_SOURCES = sha256.c bloom-test.c bloom.c srvutils.c utils.c
 sha256_SOURCES = sha256-test.c sha256.c srvutils.c utils.c bloom.c
 counter_SOURCES = counter-test.c counter.c srvutils.c bloom.c utils.c
+TESTS = counter
