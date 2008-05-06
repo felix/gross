@@ -130,7 +130,7 @@ mlfi_envrcpt(SMFICTX * milter_ctx, char **argv)
 	tuple->recipient = strdup(argv[0]);
 	tuple->client_address = strdup(priv->client_address);
 	if (priv->helo_name)
-		tuple->helo_name = priv->helo_name;
+		tuple->helo_name = strdup(priv->helo_name);
 
 	ret = test_tuple(status, tuple, NULL);
 	request_unlink(tuple);

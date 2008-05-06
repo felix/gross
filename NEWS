@@ -13,6 +13,7 @@ Issues fixed:
 #59: grossd 0.9.3 leaks memory
 #60: Grossd should do all dns queries as fully qualified
 #61: Space Character in Mail From Crashing Gross
+#62: Double free() with milter
 
 - changed filter_bits default back to 24, as stated in the docs.
 
