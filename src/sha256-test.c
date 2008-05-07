@@ -45,13 +45,14 @@ main(int argc, char **argv)
 	int error_count = 0;
 	test_vector *test;
 
-	printf("\nCheck: sha256");
+	printf("Check: sha256\n");
 	
 	for (test=test_vectors ; test->message && test->reference_digest ; test++) {
 		strncpy(message, test->message, MAX_MESSAGE_LEN);
 		strncpy(reference_digest, test->reference_digest, MAX_MESSAGE_LEN);
 
-		printf("\n  Checking '%s'...  ", message);
+		printf("  Checking '%s'...  ", message);
+		fflush(stdout);
 
 		digest = sha256((sha_byte_t *)message, strlen(message));
 		snprintf(digest_hex, MAX_MESSAGE_LEN, "%08x %08x %08x %08x %08x %08x %08x %08x", digest.h0,
@@ -59,10 +60,10 @@ main(int argc, char **argv)
 
 		if (strncmp(digest_hex, reference_digest, MAX_MESSAGE_LEN) != 0) {
 			if (argc>2) {
-				printf("\nERROR: For string %s digest '%s' and reference digest '%s' differ.",
+				printf("\nERROR: For string %s digest '%s' and reference digest '%s' differ.\n",
 				       message, digest_hex, reference_digest);
 			} else {
-				printf("Fail.");
+				printf("Fail.\n");
 			}
 
 			error_count++;
@@ -71,15 +72,9 @@ main(int argc, char **argv)
 				printf("\nMessage: '%s'\n\t          digest: '%s'\n\treference digest: '%s'.",
 				       message, digest_hex, reference_digest);
 			} else {
-				printf("Done.");
+				printf("Done.\n");
 			}
 		}
-	}
-
-	if (!error_count) {
-		printf("\nPASS: sha256");
-	} else {
-		printf("\FAIL: sha256. Errors %d\n", error_count);
 	}
 
 	return error_count > 0;
