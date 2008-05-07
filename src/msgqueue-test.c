@@ -31,6 +31,7 @@ typedef struct queuepair_s {
 	int outq;
 } queuepair_t;
 
+
 /* internal functions */
 static void *msgqueueping(void *arg); 
 
@@ -40,17 +41,19 @@ msgqueueping(void *arg)
 	queuepair_t *qpair;
 	size_t size;
 	int *ret;
-	int retval = 0;
 	int *message;
 	int i;
+
+	ret = Malloc(sizeof(int));
+	*ret = 0;
 
 	qpair = (queuepair_t *)arg;
 
 	for (i=0; i < LOOPSIZE; i++) {
-		size = get_msg_timed(qpair->inq, &message, MSGSZ, 0, TIMELIMIT);
+		size = get_msg_timed(qpair->inq, &message, sizeof(int *), 0, TIMELIMIT);
 		if (size == 0) {
 			printf("timeout\n");
-			retval = -1;
+			*ret = 1;
 			goto OUT;
 		} else {
 			(*message)++;
@@ -58,8 +61,6 @@ msgqueueping(void *arg)
 		}
 	}
 OUT:
-	ret = Malloc(sizeof(int));
-	*ret = retval;
 	pthread_exit(ret);
 }
 
@@ -71,7 +72,7 @@ main(int argc, char **argv)
 	int ret;
 	int i;
 	int qa, qb;
-	int *ep;
+	int *exitvalue;
 	int sum = 0;
 	queuepair_t qpair_ping;
 	queuepair_t qpair_pong;
@@ -110,11 +111,14 @@ main(int argc, char **argv)
 	printf("  Waiting for the results...");
 	fflush(stdout);
 	for (i=0; i < THREADPAIRS * 2; i++) {
-		ret = pthread_join(*threads[i].thread, (void **)&ep);
+		ret = pthread_join(*threads[i].thread, (void **)&exitvalue);
 		if (ret == 0) {
-			if (*ep != 0)
+			if (*exitvalue != 0) {
+				printf(" Thread returned %d (!= 0)\n", *exitvalue);
 				return 1;
+			}
 		} else {
+			perror("pthread_join:");
 			return 2;
 		}
 	}
