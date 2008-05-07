@@ -23,7 +23,10 @@
 #include "msgqueue.h"
 
 #define LOOPSIZE 100
-#define THREADPAIRS 500
+#define QUEUES 8
+#define BALLS (16 * QUEUES)
+#define QUEUEPAIRS (8 * QUEUES)
+#define THREADS (8 * QUEUEPAIRS)
 #define TIMELIMIT 10000
 
 typedef struct queuepair_s {
@@ -46,8 +49,8 @@ msgqueueping(void *arg)
 	queuepair_t *qpair;
 	size_t size;
 	int *ret;
-	test_message_t message;
 	int i;
+	test_message_t message;
 
 	ret = Malloc(sizeof(int));
 	*ret = 0;
@@ -57,8 +60,7 @@ msgqueueping(void *arg)
 	for (i=0; i < LOOPSIZE; i++) {
 		size = get_msg_timed(qpair->inq, &message, sizeof(int *), 0, TIMELIMIT);
 		if (size == 0) {
-			printf("timeout\n");
-			*ret = 1;
+			printf("  timeout\n");
 			goto OUT;
 		} else {
 			(*message.counter)++;
@@ -72,52 +74,54 @@ OUT:
 int
 main(int argc, char **argv)
 {
-	thread_info_t threads[THREADPAIRS * 2];
-	int balls[THREADPAIRS];
+	thread_info_t threads[THREADS];
+	int balls[BALLS];
+	int queues[QUEUES];
+	queuepair_t qpairs[QUEUEPAIRS];
 	test_message_t message;
 	int ret;
 	int i;
-	int qa, qb;
 	int *exitvalue;
 	int sum = 0;
-	queuepair_t qpair_ping;
-	queuepair_t qpair_pong;
 	gross_ctx_t myctx = { 0x00 }; /* dummy context */
 	ctx = &myctx;
 
-	qa = get_queue();
-	qb = get_queue();
-
-	qpair_ping.inq = qa;
-	qpair_ping.outq = qb;
-	qpair_pong.inq = qb;
-	qpair_pong.outq = qa;
-
 	printf("Check: msgqueue\n");
 
-	printf("  Creating %d threads to test the message queues...", THREADPAIRS * 2);
+	printf("  Creating %d message queues...", QUEUES);
 	fflush(stdout);
-	/* start the threads */
-	for (i=0; i < THREADPAIRS; i++) {
-		create_thread(&threads[i*2], 0, &msgqueueping, &qpair_ping);
-		create_thread(&threads[i*2+1], 0, &msgqueueping, &qpair_pong);
+	for (i=0; i < QUEUES; i++)
+		queues[i] = get_queue();
+	printf("  Done.\n");
+ 
+	printf("  Making %d circular queue pairs...", QUEUEPAIRS);
+	for (i=0; i < QUEUEPAIRS; i++) {
+		qpairs[i].inq = queues[i % QUEUES];
+		qpairs[i].outq = queues[(i + 1) % QUEUES];
 	}
 	printf("  Done.\n");
 
-	printf("  Sending out %d chain letters...", THREADPAIRS);
+	printf("  Creating %d threads to test the message queues...", THREADS);
+	fflush(stdout);
+	/* start the threads */
+	for (i=0; i < THREADS; i++) 
+		create_thread(&threads[i], 0, &msgqueueping, &qpairs[i % QUEUEPAIRS]);
+	printf("  Done.\n");
+
+	printf("  Sending out %d chain letters...", BALLS);
 	fflush(stdout);
 	/* serve ping pong balls */
-	for (i=0; i < THREADPAIRS; i++) {
+	for (i=0; i < BALLS; i++) {
 		balls[i] = 0;
 		message.mtype = 0;
 		message.counter = &balls[i];
-		put_msg(qa, &message, sizeof(int *), 0);
+		put_msg(queues[i % QUEUES], &message, sizeof(int *), 0);
 	}
 	printf("  Done.\n");
 
 	printf("  Waiting for the results...");
 	fflush(stdout);
-	for (i=0; i < THREADPAIRS * 2; i++) {
+	for (i=0; i < THREADS; i++) {
 		ret = pthread_join(*threads[i].thread, (void **)&exitvalue);
 		if (ret == 0) {
 			if (*exitvalue != 0) {
@@ -133,10 +137,10 @@ main(int argc, char **argv)
 	}
 	printf("  Done.\n");
 
-	for (i=0; i < THREADPAIRS; i++)
+	for (i=0; i < BALLS; i++)
 		sum += balls[i];
 
-	if (sum != LOOPSIZE * THREADPAIRS * 2)
+	if (sum != LOOPSIZE * THREADS)
 		return 3;
 	else 
 		return 0;

@@ -23,7 +23,7 @@
 #include "counter.h"
 
 #define LOOPSIZE 100
-#define THREADCOUNT 1000
+#define THREADCOUNT 100
 #define JOINTCOUNTERS 10
 
 /* internal functions */
