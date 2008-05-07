@@ -338,14 +338,6 @@ create_bloom_ring_queue(unsigned int num, bitindex_t num_bits)
 }
 
 void
-release_bloom_ring_queue(bloom_ring_queue_t *brq)
-{
-	release_bloom_filter_group(brq->group);
-	release_bloom_filter(brq->aggregate);
-	Free(brq);
-}
-
-void
 insert_digest_bloom_ring_queue(bloom_ring_queue_t *brq, sha_256_t digest)
 {
 	assert(brq);

@@ -25,4 +25,4 @@ bloom_SOURCES = sha256.c bloom-test.c bloom.c srvutils.c utils.c
 sha256_SOURCES = sha256-test.c sha256.c srvutils.c utils.c bloom.c
 counter_SOURCES = counter-test.c counter.c srvutils.c bloom.c utils.c
 msgqueue_SOURCES = msgqueue-test.c msgqueue.c srvutils.c bloom.c utils.c
-TESTS = counter msgqueue sha256
+TESTS = counter msgqueue sha256 bloom

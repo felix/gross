@@ -108,6 +108,7 @@ void daemon_shutdown(int return_code, const char *fmt, ...);
 void daemon_fatal(const char *reason);
 int connected(peer_t *peer);
 bloom_ring_queue_t *build_bloom_ring(unsigned int num, bitindex_t num_bits);
+void release_bloom_ring_queue(bloom_ring_queue_t *brq);
 void daemonize(void);
 void *Malloc(size_t size);
 void *create_thread(thread_info_t *tinfo, int detach, void *(*routine) (void *), void *arg);

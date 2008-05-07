@@ -104,7 +104,6 @@ bloom_filter_t *add_filter(bloom_filter_t *lvalue, const bloom_filter_t *rvalue)
 void insert_digest_to_group_member(bloom_filter_group_t *filter_group, unsigned int member_index,
     sha_256_t digest);
 bloom_ring_queue_t *create_bloom_ring_queue(unsigned int num, bitindex_t num_bits);
-void release_bloom_ring_queue(bloom_ring_queue_t *brq);
 void insert_digest_bloom_ring_queue(bloom_ring_queue_t *brq, sha_256_t digest);
 bloom_ring_queue_t *rotate_bloom_ring_queue(bloom_ring_queue_t *brq);
 void zero_bloom_filter(bloom_filter_t *filter);

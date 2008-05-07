@@ -22,12 +22,19 @@
 #include "srvutils.h"
 #include "bloom.h"
 
+#define PRINTSTATUS do { \
+	if (error_count > tmperr) \
+		printf("  Failed\n"); \
+	else \
+		printf("  OK.\n"); \
+	} while (0)
 int
 main(int argc, char *argv[])
 {
 	int i, j, k;
 	double c = 0.001;
 	int error_count = 0;
+	int tmperr = 0;
 	char test[512] = { 0x00 };
 	gross_ctx_t myctx = { 0x00 };
 
@@ -39,116 +46,122 @@ main(int argc, char *argv[])
 	bloom_ring_queue_t *brq;
 
 	ctx = &myctx;
+	
+	printf("Check: bloom\n");
 
-	printf("bloom-test: ");
+	printf("  Checking optimal size calculations...");
+	fflush(stdout);
+	tmperr = error_count;
 	if (optimal_size(1000, c) != 10) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 1000");
+			printf("  Error: size 1000\n");
 	}
 	if (optimal_size(2000, c) != 11) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 2000");
+			printf("  Error: size 2000\n");
 	}
 	if (optimal_size(3000, c) != 12) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 3000");
+			printf("  Error: size 3000\n");
 	}
 	if (optimal_size(4000, c) != 12) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 4000");
+			printf("  Error: size 4000\n");
 	}
 	if (optimal_size(5000, c) != 13) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 5000");
+			printf("  Error: size 5000\n");
 	}
 	if (optimal_size(8000, c) != 13) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 8000");
+			printf("  Error: size 8000\n");
 	}
 	if (optimal_size(9000, c) != 14) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 9000");
+			printf("  Error: size 9000\n");
 	}
 	if (optimal_size(16000, c) != 14) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 16000");
+			printf("  Error: size 16000\n");
 	}
 	if (optimal_size(17000, c) != 15) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 17000");
+			printf("  Error: size 17000\n");
 	}
 	if (optimal_size(32000, c) != 15) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 32000");
+			printf("  Error: size 32000\n");
 	}
 	if (optimal_size(33000, c) != 16) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 33000");
+			printf("  Error: size 33000\n");
 	}
 	if (optimal_size(65000, c) != 16) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 65000");
+			printf("  Error: size 65000\n");
 	}
 	if (optimal_size(66000, c) != 17) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 66000");
+			printf("  Error: size 66000\n");
 	}
 	if (optimal_size(131000, c) != 17) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 131000");
+			printf("  Error: size 131000\n");
 	}
 	if (optimal_size(132000, c) != 18) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 132000");
+			printf("  Error: size 132000\n");
 	}
 	if (optimal_size(262000, c) != 18) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 262000");
+			printf("  Error: size 262000\n");
 	}
 	if (optimal_size(263000, c) != 19) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 263000");
+			printf("  Error: size 263000\n");
 	}
 	if (optimal_size(524000, c) != 19) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 524000");
+			printf("  Error: size 524000\n");
 	}
 	if (optimal_size(525000, c) != 20) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 525000");
+			printf("  Error: size 525000\n");
 	}
 	if (optimal_size(1048000, c) != 20) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 1048000");
+			printf("  Error: size 1048000\n");
 	}
 	if (optimal_size(1049000, c) != 21) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: size 1049000");
+			printf("  Error: size 1049000\n");
 	}
-
-
-
+	PRINTSTATUS;
+	
+	printf("  Testing with a 7-bit filter...");
+	fflush(stdout);
+	tmperr = error_count;
 	if (argc > 1 && strcmp(argv[1], "visualize") == 0) {
 		printf("\n");
 		/* 7-bit filter */
@@ -183,8 +196,11 @@ main(int argc, char *argv[])
 		}
 	}
 	release_bloom_filter(bf);
+	PRINTSTATUS;
 
-
+	printf("  Testing merging of filters...");
+	fflush(stdout);
+	tmperr = error_count;
 	/* Test filter merge */
 
 	bf = create_bloom_filter(7);
@@ -193,23 +209,23 @@ main(int argc, char *argv[])
 	if (is_in_array(bf, sha256_string("omena"))) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: omena in array bf");
+			printf("\nError: 'omena' in array bf");
 	}			/* initially empty */
 	insert_digest(bf, sha256_string("omena"));
 
 	if (argc > 1 && strcmp(argv[1], "visualize") == 0) {
-		printf("\nbf after omena: ");
+		printf("\nbf after 'omena': ");
 		debug_print_filter(bf, FALSE);
 	}
 
 	if (is_in_array(bf2, sha256_string("omena"))) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: omena in array bf2");
+			printf("\nError: 'omena' in array bf2");
 	}			/* so is the other one */
 	insert_digest(bf2, sha256_string("luumu"));
 	if (argc > 1 && strcmp(argv[1], "visualize") == 0) {
-		printf("\nbf2 after luumu: ");
+		printf("\nbf2 after 'luumu': ");
 		debug_print_filter(bf2, FALSE);
 	}
 
@@ -217,12 +233,12 @@ main(int argc, char *argv[])
 	if (!is_in_array(bf2, sha256_string("omena"))) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: omena not in array bf2");
+			printf("\nError: 'omena' not in array bf2");
 	}			/* bf2 should now contain omena */
 	if (is_in_array(bf2, sha256_string("appelsiini"))) {
 		error_count++;
 		if (argc > 2)
-			printf("\nError: appelsiini in array bf2");
+			printf("\nError: 'appelsiini' in array bf2");
 	}			/* ... but not appelsiini */
 	if (argc > 1 && strcmp(argv[1], "visualize") == 0) {
 		printf("\nbf2 after merge: ");
@@ -231,7 +247,11 @@ main(int argc, char *argv[])
 
 	release_bloom_filter(bf);
 	release_bloom_filter(bf2);
+	PRINTSTATUS;
 
+	printf("  Testing filter groups...");
+	fflush(stdout);
+	tmperr = error_count;
 	bfg = create_bloom_filter_group(8, 8);	/* 8 filters of 8bit length */
 
 	j = 64;
@@ -259,6 +279,11 @@ main(int argc, char *argv[])
 	}
 
 	release_bloom_filter_group(bfg);
+	PRINTSTATUS;
+
+	printf("  Testing rings...");
+	fflush(stdout);
+	tmperr = error_count;
 
 	/* Ring queue test */
 	/* Ring of 8 10-bit filters */
@@ -308,6 +333,12 @@ main(int argc, char *argv[])
 
 	}
 
+	PRINTSTATUS;
+
+
+	printf("  Stress test...");
+	fflush(stdout);
+	tmperr = error_count;
 	/* Stress test */
 	brq = build_bloom_ring(10, 22);
 	for (i = 0; i < 1000000; i++) {
@@ -327,13 +358,10 @@ main(int argc, char *argv[])
 	}
 	release_bloom_ring_queue(brq);
 
-	if (!error_count) {
-		printf("OK\n");
-	} else {
-		printf("Error count: %d\n", error_count);
-	}
-
-
+	PRINTSTATUS;
+	
+	if (error_count)
+		printf("  Total error count: %d\n", error_count);
 
 	return error_count > 0;
 }

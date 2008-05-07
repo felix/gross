@@ -370,6 +370,16 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 	return brq;
 }
 
+void
+release_bloom_ring_queue(bloom_ring_queue_t *brq)
+{
+	/* FIXME: munmap() statefile  */
+	if (! ctx->config.statefile) {
+		Free(brq);
+	}
+		
+}
+
 /*
  * create_pidfile	- write the process id into the pidfile 
  */
