@@ -50,6 +50,7 @@ msgqueueping(void *arg)
 	size_t size;
 	int *ret;
 	int i;
+	int tmp;
 	test_message_t message;
 
 	ret = Malloc(sizeof(int));
@@ -63,7 +64,10 @@ msgqueueping(void *arg)
 			printf("  timeout\n");
 			goto OUT;
 		} else {
-			(*message.counter)++;
+			/* avoid ++ to lure out concurrency problems */
+			tmp = *message.counter + 1;
+			usleep(1000);
+			*message.counter = tmp;
 			put_msg(qpair->outq, &message, sizeof(int *), 0);
 		}
 	}
