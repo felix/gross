@@ -40,7 +40,8 @@ countertest(void *arg)
 	int *jc;
 	int counters[LOOPSIZE];
 	int i;
-	int *ep, errors;
+	int *ep;
+	int  errors = 0;
 
 	jc = (int *)arg;
 
@@ -94,7 +95,9 @@ countertest(void *arg)
 
 	ep = Malloc(sizeof(int));
 	*ep = errors;
-	pthread_exit(ep);
+	if (errors > 0)
+		printf("\n  error count: %d\n", errors);
+	pthread_exit((void *)ep);
 }
 
 int
@@ -132,11 +135,19 @@ main(int argc, char **argv)
 	for (i=0; i < THREADCOUNT; i++) {
 		ret = pthread_join(*threads[i].thread, (void **)&ep);
 		if (ret == 0) {
-			if (*ep != 0)
+			if (ep == NULL) {
+				printf("\n  thread returned NULL pointer\n");
 				return 1;
+			}
+			if (*ep != 0) {
+				printf("\n  thread returned %d\n", *ep);
+				return 1;
+			}
 		} else {
 			return 2;
 		}
+		Free(threads[i].thread);
+		Free(ep);
 	}
 	printf("  Done.\n");
 

@@ -31,6 +31,11 @@ typedef struct queuepair_s {
 	int outq;
 } queuepair_t;
 
+typedef struct test_message_s
+{
+        long mtype;
+        int *counter;
+} test_message_t;
 
 /* internal functions */
 static void *msgqueueping(void *arg); 
@@ -41,7 +46,7 @@ msgqueueping(void *arg)
 	queuepair_t *qpair;
 	size_t size;
 	int *ret;
-	int *message;
+	test_message_t message;
 	int i;
 
 	ret = Malloc(sizeof(int));
@@ -56,7 +61,7 @@ msgqueueping(void *arg)
 			*ret = 1;
 			goto OUT;
 		} else {
-			(*message)++;
+			(*message.counter)++;
 			put_msg(qpair->outq, &message, sizeof(int *), 0);
 		}
 	}
@@ -68,7 +73,8 @@ int
 main(int argc, char **argv)
 {
 	thread_info_t threads[THREADPAIRS * 2];
-	int *balls[THREADPAIRS];
+	int balls[THREADPAIRS];
+	test_message_t message;
 	int ret;
 	int i;
 	int qa, qb;
@@ -102,9 +108,10 @@ main(int argc, char **argv)
 	fflush(stdout);
 	/* serve ping pong balls */
 	for (i=0; i < THREADPAIRS; i++) {
-		balls[i] = Malloc(sizeof(int));
-		*balls[i] = 0;
-		put_msg(qa, &balls[i], sizeof(int *), 0);
+		balls[i] = 0;
+		message.mtype = 0;
+		message.counter = &balls[i];
+		put_msg(qa, &message, sizeof(int *), 0);
 	}
 	printf("  Done.\n");
 
@@ -121,11 +128,13 @@ main(int argc, char **argv)
 			perror("pthread_join:");
 			return 2;
 		}
+		Free(threads[i].thread);
+		Free(exitvalue);
 	}
 	printf("  Done.\n");
 
 	for (i=0; i < THREADPAIRS; i++)
-		sum += *balls[i];
+		sum += balls[i];
 
 	if (sum != LOOPSIZE * THREADPAIRS * 2)
 		return 3;
