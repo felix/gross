@@ -37,7 +37,6 @@ test_vector test_vectors[] = { {"The quick brown fox jumps over the lazy dog","d
 int
 main(int argc, char **argv)
 {
-	FILE *data;
 	sha_256_t digest;
 	char message[MAX_MESSAGE_LEN] = { 0x00 };
 	char reference_digest[MAX_MESSAGE_LEN] = { 0x00 };
