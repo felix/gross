@@ -214,7 +214,7 @@ create_statefile(void)
 			if (fputc(0, statefile))
 				daemon_fatal("fputc()");
 		fclose(statefile);
-		daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...", ctx->config.statefile);
+		return;
 	} else {
 		daemon_fatal("statefile opening failed: stat:");
 	}
@@ -249,6 +249,9 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 	}
 
 	if (use_mmap) {
+                if (NULL != ctx->statefile_info)
+                        daemon_shutdown(EXIT_FATAL, "statefile already open");
+
 		/* prepare for mmapping */
 		lumpsize += sizeof(mmapped_brq_t);
 
@@ -263,9 +266,10 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 			daemon_shutdown(EXIT_FATAL, "statefile size differs from the calculated size");
 		}
 
-		fd = open(ctx->config.statefile, O_RDWR);
+		ctx->statefile_info = Malloc(sizeof(statefile_info_t));
+                ctx->statefile_info->fd = open(ctx->config.statefile, O_RDWR);
 
-		ptr = (char *)mmap((void *)0, lumpsize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		ptr = (char *)mmap((void *)0, lumpsize, PROT_READ | PROT_WRITE, MAP_SHARED, ctx->statefile_info->fd, 0);
 		assert(ptr);
 		ctx->mmap_info = (mmapped_brq_t *)ptr;
 
@@ -373,11 +377,17 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 void
 release_bloom_ring_queue(bloom_ring_queue_t *brq)
 {
-	/* FIXME: munmap() statefile  */
-	if (! ctx->config.statefile) {
+	if (ctx->statefile_info && brq == ctx->mmap_info->brq) {
+		/* requested release of mmapped brq */
+		munmap(ctx->mmap_info->brq, ctx->mmap_info->lumpsize);
+		close(ctx->statefile_info->fd);
+		Free(ctx->statefile_info);
+		ctx->statefile_info = NULL;
+		ctx->filter = NULL;
+		ctx->mmap_info = NULL;
+	} else {
 		Free(brq);
 	}
-		
 }
 
 /*

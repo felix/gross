@@ -623,8 +623,10 @@ main(int argc, char *argv[])
 		ctx->syslog_open = true;
 	}
 
-	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE)
+	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE) {
 		create_statefile();
+		daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...");
+	}
 
 	if (ctx->config.flags & FLG_CHECK_PIDFILE)
 		check_pidfile();

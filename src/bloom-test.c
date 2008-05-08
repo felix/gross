@@ -36,6 +36,7 @@ main(int argc, char *argv[])
 	int error_count = 0;
 	int tmperr = 0;
 	char test[512] = { 0x00 };
+	char buf[MAXLINELEN];
 	gross_ctx_t myctx = { 0x00 };
 
 	bloom_filter_t *bf;
@@ -46,6 +47,7 @@ main(int argc, char *argv[])
 	bloom_ring_queue_t *brq;
 
 	ctx = &myctx;
+        memset(ctx, 0, sizeof(gross_ctx_t));
 	
 	printf("Check: bloom\n");
 
@@ -299,6 +301,62 @@ main(int argc, char *argv[])
 		insert_digest_bloom_ring_queue(brq, sha256_string(test));
 	}
 
+	/* Test for all inclusion */
+	for (i = 0; i < k; i++) {
+		sprintf(test, "%d", i);
+		if (!is_in_ring_queue(brq, sha256_string(test))) {
+			error_count++;
+			if (argc > 2)
+				printf("\nError: %s not in brq", test);
+		}
+	}
+
+	/* Test with removal */
+	for (i = 0; i < (k / 8); i++) {
+		rotate_bloom_ring_queue(brq);
+		for (j = i; j < (i + 1) * (k / 8); j++) {
+			sprintf(test, "%d", i);
+			if (is_in_ring_queue(brq, sha256_string(test))) {
+				error_count++;
+				if (argc > 2)
+					printf("\nError: %s in brq", test);
+			}
+		}
+
+		for (j = (i + 1) * (k / 8); j < (k / 8); j++) {
+			sprintf(test, "%d", i);
+			if (!is_in_ring_queue(brq, sha256_string(test))) {
+				error_count++;
+				if (argc > 2)
+					printf("\nError: %s not in brq after removal", test);
+			}
+		}
+
+	}
+	PRINTSTATUS;
+
+	snprintf(buf, MAXLINELEN - 1, "/tmp/test.state.%d", getpid());
+	ctx->config.statefile = strdup(buf);
+	ctx->config.num_bufs = 8;
+	ctx->config.filter_size = 21;
+	printf("  Testing statefile %s...", buf);
+	fflush(stdout);
+	tmperr = error_count;
+	create_statefile();
+
+	/* Ring queue test */
+	/* Ring of 8 10-bit filters */
+	brq = build_bloom_ring(8, 21);
+	k = 128;
+
+	/* Init */
+	for (i = 0; i < k; i++) {
+		if (i % (k / 8) == 0)
+			rotate_bloom_ring_queue(brq);
+
+		sprintf(test, "%d", i);
+		insert_digest_bloom_ring_queue(brq, sha256_string(test));
+	}
 
 	/* Test for all inclusion */
 	for (i = 0; i < k; i++) {
@@ -332,9 +390,14 @@ main(int argc, char *argv[])
 		}
 
 	}
-
+	release_bloom_ring_queue(brq);
+	if (unlink(ctx->config.statefile))
+		perror("unlink");
+	Free(ctx->config.statefile);
+	ctx->config.statefile = NULL;
+	ctx->config.num_bufs = 8;
+	ctx->config.filter_size = 21;
 	PRINTSTATUS;
-
 
 	printf("  Stress test...");
 	fflush(stdout);

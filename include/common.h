@@ -257,6 +257,11 @@ typedef struct
 	void *check_arg;
 } check_t;
 
+typedef struct statefile_info_s
+{
+	int fd;
+} statefile_info_t;
+
 typedef struct
 {
 	bloom_ring_queue_t *filter;
@@ -272,6 +277,7 @@ typedef struct
 #endif				/* ENDBL */
 	gross_config_t config;
 	mmapped_brq_t *mmap_info;
+	statefile_info_t *statefile_info;
 	thread_collection_t process_parts;
 	stats_t stats;
 	check_t *checklist[MAXCHECKS];
