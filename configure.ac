@@ -74,7 +74,7 @@ AC_CHECK_HEADERS(netinet/in.h)
 
 AC_CHECK_TYPE([bool])
 
-AC_CHECK_FUNC([clock_gettime],
+AC_CHECK_FUNCS([clock_gettime],
     dnl clock_gettime() found
     [AC_CHECK_DECLS([CLOCK_MONOTONIC],,
 	dnl no CLOCK_MONOTONIC
