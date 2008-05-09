@@ -69,16 +69,14 @@
 #endif
 
 /* what clock type to use */
-#if HAVE_DECL_CLOCK_MONOTONIC
+#if HAVE_GETTIMEOFDAY
+# define CLOCK_TYPE CLOCK_KLUDGE
+#elif HAVE_DECL_CLOCK_MONOTONIC
 # define CLOCK_TYPE CLOCK_MONOTONIC
 #elif HAVE_DECL_CLOCK_HIGHRES
 # define CLOCK_TYPE CLOCK_HIGHRES
 #else
-# ifndef HAVE_CLOCK_GETTIME
-#  define CLOCK_TYPE CLOCK_KLUDGE
-# else
-#  error No suitable clock type found (CLOCK_MONOTONIC or CLOCK_HIGHRES)
-# endif
+# error No suitable clock type found (shouldn't happen)
 #endif
 
 /*
