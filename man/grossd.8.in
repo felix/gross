@@ -1,0 +1,95 @@
+.TH grossd 8 "2008-05-04" "" ""
+.if n .ad l
+.nh
+.SH "NAME"
+grossd \- Greylisting of Suspicious Sources \- the Server
+.SH "SYNOPSIS"
+.BR grossd " [" -dCDhnrV "] [" -f
+.IR config ]
+.RB [{ -p | -P }
+.IR pidfile ]
+.SH "DESCRIPTION"
+\fBgrossd\fP is a greylisting server, and more. It's blazingly fast and
+amazingly resource efficient. It can be configured to query DNSBL
+databases, and enforce greylisting only for hosts that are found on those databases.
+It can block hosts that match multiple's. It can be replicated and run parallel
+on two servers. It supports Sun Java System Messaging Server,
+Postfix and Exim. Sendmail Milter implementation needs testing.
+.SS "Theory of operation"
+Gross consists of \fBgrossd\fP,
+the greylisting daemon, and a client library for \s-1SJSMS\s+1.
+The server also implements Postfix content filtering protocol. 
+.PP
+Upon receiving a request from a client, \fBgrossd\fR first validates it.
+The request includes a triplet (`smtp\-client\-ip', `sender\-address',
+`recipient\-address').
+A hash is then calculated and matched against the Bloom filter. If a
+match is found, and test result does not exceed \fBblock_threshold\fP
+value, \fBgrossd\fP sends an \s-1OK\s+1 (\s-1STATUS_TRUST\s+1) message.
+.PP
+If the triplet has not been seen before, \fBgrossd\fP then
+runs configured checks against the client information.
+Based on check results \fBgrossd\fP returns the client 
+a result. Possible results are \s-1STATUS_TRUST\s+1, \s-1STATUS_BLOCK\s+1
+and \s-1STATUS_GREY\s+1. The final response is query protocol specific.
+.PP
+Then, the Bloom filters are updated according the
+\fBupdate\fP configuration option. A Bloom filter is a
+very efficient way to store data. It's a probabilistic data
+structure, which means that there is a possibility of error when
+querying the database. False positives are possible, but false
+negatives are not. This means that there is a possibility
+that grossd will falsely give an \s-1STATUS_TRUST\s+1 response when a
+connection should be greylisted. By sizing the bloom
+filters, you can control the error possibility to meet your
+needs. The right bloom filter size depends on the number
+of entries in the database, that is, the retention time
+versus the number of handled connections.
+.SH "OPTIONS"
+.IP "\fB\-C\fP" 4
+Create the statefile and exit. The \fBstatefile\fP configuration option
+must be specified in the configuration file.
+.IP "\fB\-D\fP" 4
+Make debugging output more verbose. It can be set twice
+for maximum verbosity.
+.IP "\fB\-d\fP" 4
+Run \fBgrossd\fP on foreground without daemonizing the process.
+\fBgrossd\fP will output to terminal instead of using syslog.
+.IP "\fB\-f\fP \fIconfig\fP" 4
+Specifies the name of the configuration file. The default is
+\fI@sysconfdir@/etc/grossd.conf\fP
+.IP "\fB\-h\fP" 4
+Output short usage information and exit.
+.IP "\fB\-n\fP" 4
+Enable dry-run.
+.IP "\fB\-P\fP \fIpidfile\fP" 4
+Bail out if the pidfile already exists. Create pidfile after the check.
+.IP "\fB\-p\fP \fIpidfile\fP" 4
+Create the pidfile. Overwrite if it already exists.
+.IP "\fB\-r\fP" 4
+Disable replication.
+.IP "\fB\-V\fP" 4
+Output version information and exit.
+.SH "FILES"
+.IX Header "FILES"
+\fI@sysconfdir@/grossd.conf\fP
+.SH "SECURITY CONSIDERATIONS"
+Run \fBgrossd\fP under some unprivileged user id. If started as root
+\fBgrossd\fP will \fBsetuid()\fR itself to nobody's user id. There are no
+known security flaws but you must not expose \fBgrossd\fP
+to the Internet. It could be used for a DoS against a domains
+\s-1DNS\s+1 servers by an attacker as there is no authentication in grossd.
+.SH "DIAGNOSTICS"
+\fBgrossd\fP daemon exits 0 if success, and >0 if an error occurs.
+.SH "SEE ALSO"
+Regarding the configuration both the daemon and \s-1MTA\s+1's, refer to 
+\fIgrossd.conf\fP\|(5)
+.PP
+Gross project site: <http://code.google.com/p/gross/>
+.PP
+Bloom filters: <http://en.wikipedia.org/wiki/Bloom_filter>
+.PP
+\s-1DNS\s+1 queries are done asynchronously using c\-ares library
+<http://daniel.haxx.se/projects/c\-ares/>.
+.SH "AUTHORS"
+Eino Tuominen and Antti Siira
