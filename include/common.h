@@ -201,6 +201,7 @@ typedef struct
 	int grey_threshold;
 	int block_threshold;
 	int pool_maxthreads;
+	char *grey_reason;
 	char *block_reason;
 	char *pidfile;
 #ifdef MILTER

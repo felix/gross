@@ -8,14 +8,15 @@ Version 1.0.0
   a filter match only if no checks are configured (traditional
   greylister) or block_threshold == 0. 
 
+- changed filter_bits default back to 24, as stated in the docs.
+- added grey_reason configuration file option. See block_reason.
+
 Issues fixed:
 #48: Need man pages
 #59: grossd 0.9.3 leaks memory
 #60: Grossd should do all dns queries as fully qualified
 #61: Space Character in Mail From Crashing Gross
 #62: Double free() with milter
-
-- changed filter_bits default back to 24, as stated in the docs.
 
 Version 0.9.3
 

@@ -450,6 +450,9 @@ configure_grossd(configlist_t *config)
 	else
 		ctx->config.block_threshold = 0;
 
+	if (CONF("grey_reason"))
+		ctx->config.grey_reason = strdup(CONF("grey_reason"));
+
 	if (CONF("block_reason"))
 		ctx->config.block_reason = strdup(CONF("block_reason"));
 

@@ -29,7 +29,7 @@
 			"filter_bits",		"24",		\
 			"number_buffers",	"8",            \
 			"stat_interval",	"300",		\
-			"sjsms_response_grey",	"$X4.4.3|$NPlease$ try$ again$ later.", \
+			"sjsms_response_grey",	"$X4.4.3|%reason%", \
 			"sjsms_response_match",	"$Y", 		\
 			"sjsms_response_trust",	"$Y",		\
 			"sjsms_response_block", "$N%reason%",	\
@@ -44,6 +44,7 @@
 			"blocker_weight",	"1",		\
 			"block_threshold",	"0",		\
 			"grey_threshold",	"1",		\
+			"grey_reason",		"Please try again later.", \
 			"block_reason",		"Bad reputation", \
 			"query_timelimit",	"5000",		\
 			"pool_maxthreads",	"100"
@@ -90,6 +91,7 @@
 			"query_timelimit",		\
 			"block_threshold",		\
 			"grey_threshold",		\
+			"grey_reason",			\
 			"block_reason",			\
 			"milter_listen",		\
 			"pidfile",			\

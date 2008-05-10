@@ -137,11 +137,13 @@ mlfi_envrcpt(SMFICTX * milter_ctx, char **argv)
 
 	switch (status->status) {
 	case STATUS_GREY:
+		smfi_setreply(milter_ctx, "452", "4.4.3",
+		    status->reason ? status->reason : "Please try again later");
 		retvalue = SMFIS_TEMPFAIL;
 		break;
 	case STATUS_BLOCK:
 		smfi_setreply(milter_ctx, "550", "5.7.1",
-		    status->reason ? status->reason : "rejected by policy");
+		    status->reason ? status->reason : "Rejected by policy");
 		retvalue = SMFIS_REJECT;
 		break;
 	default:

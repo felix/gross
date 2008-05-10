@@ -108,6 +108,9 @@ is the reason given when client is too suspicious, see
 .IP "\fBgrey_threshold\fP" 4
 is analogous to \fBblock_threshold\fP, except at the threshold \fIgrossd\fP\|(8)
 sends a \s-1STATUS_GREY\s+1 response.
+.IP "\fBgrey_reason\fP" 4
+is the reason given when client is suspicious enough to be greylisted, see
+\fBgrey_threshold\fP. Default is \(lqPlease try again later.\(rq.
 .SS "Logging options"
 .IP "\fBlog_method\fP" 4
 is used to choose the logging method. Currently the only implemented

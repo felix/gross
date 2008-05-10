@@ -96,7 +96,7 @@ AC_ARG_ENABLE(dnsbl,
     [AC_MSG_RESULT([no]) ; dnsbl="yes"]
 )
 
-if test "x$dnsbl" == "xyes"
+if test "x$dnsbl" = "xyes"
 then
     AC_CHECK_HEADERS(ares.h, 
 	DNSBLSOURCES='check_dnsbl.o',
@@ -115,7 +115,7 @@ AC_ARG_ENABLE(milter,
     [AC_MSG_RESULT([no]) ; milter="no"]
 )
 
-if test "$milter" == "yes"
+if test "$milter" = "yes"
 then
     AC_CHECK_HEADERS(libmilter/mfapi.h,
 	MILTERSOURCES='worker_milter.o',
@@ -160,7 +160,7 @@ AC_TYPE_SIGNAL
 
 AC_SUBST(REENTRANT_FLAG)
 
-if test "x$GCC" == "xyes"
+if test "x$GCC" = "xyes"
 then
 	STATIC_GLIBC_FLAG="-XCClinker -static-libgcc"
 else
@@ -171,7 +171,7 @@ AC_SUBST(STATIC_GLIBC_FLAG)
 dnl various defines used by gross
 dnl
 dnl default config file location
-if test "x$prefix" == xNONE; then
+if test "x$prefix" = xNONE; then
     prefix=$ac_default_prefix
 fi
 AC_DEFINE_UNQUOTED([CONFIGFILE], "`eval echo $sysconfdir/grossd.conf`", [Default config file])
