@@ -627,8 +627,12 @@ main(int argc, char *argv[])
 	}
 
 	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE) {
-		create_statefile();
-		daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...");
+		if (ctx->config.statefile) {
+			create_statefile();
+			daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...", ctx->config.statefile);
+		} else {
+			daemon_shutdown(EXIT_FATAL, "statefile not configured");	
+		}
 	}
 
 	if (ctx->config.flags & FLG_CHECK_PIDFILE)
