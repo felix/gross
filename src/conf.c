@@ -203,15 +203,15 @@ namevalueparams(char *buffer, char **name, char **value, params_t **params)
 			p = *params;
 			/* first node? */
 			if (NULL == *params) {
-				*params = p = Malloc(sizeof(p));
-				memset(p, 0, sizeof(p));
+				*params = p = Malloc(sizeof(params_t));
+				memset(p, 0, sizeof(params_t));
 			} else {
 				/* find the end of the list */
 				while (p->next)
 					p = p->next;
-				p->next = Malloc(sizeof(p->next));
+				p->next = Malloc(sizeof(params_t));
 				p = p->next;
-				memset(p, 0, sizeof(p));
+				memset(p, 0, sizeof(params_t));
 			}
 			/* p->value contains whole tail, so strdup must be done at the later stage */
 			p->value = tail;

@@ -183,7 +183,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	client_info = edict->job;
 	assert(client_info);
-	assert(0 <= client_info->msglen);
+	assert(0 < client_info->msglen);
 	assert(client_info->msglen <= MSGSZ);
 
 	logstr(GLOG_DEBUG, "query from %s", client_info->ipstr);
@@ -208,7 +208,8 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	}
 
 	/* clean the input */
-	msg = (sjsms_msg_t *)Malloc(client_info->msglen);
+	msg = Malloc(sizeof(sjsms_msg_t));
+	memset(msg, 0, sizeof(sjsms_msg_t));
 	memcpy(msg, client_info->message, client_info->msglen);
 
 	sjsms_to_host_order(msg);
@@ -341,7 +342,6 @@ sjsms_server(void *arg)
 			client_info->connfd = grossfd;
 			client_info->msglen = msglen;
 			client_info->ipstr = ipstr(client_info->caddr);
-
 			memcpy(client_info->message, mesg, msglen);
 
 			/* Write the edict */

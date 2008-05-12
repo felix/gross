@@ -76,7 +76,7 @@
 #elif HAVE_DECL_CLOCK_HIGHRES
 # define CLOCK_TYPE CLOCK_HIGHRES
 #else
-# error No suitable clock type found (shouldn't happen)
+# error "No suitable clock type found (should not happen)"
 #endif
 
 /*

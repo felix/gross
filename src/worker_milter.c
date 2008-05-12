@@ -133,7 +133,6 @@ mlfi_envrcpt(SMFICTX * milter_ctx, char **argv)
 		tuple->helo_name = strdup(priv->helo_name);
 
 	ret = test_tuple(status, tuple, NULL);
-	request_unlink(tuple);
 
 	switch (status->status) {
 	case STATUS_GREY:
@@ -152,6 +151,7 @@ mlfi_envrcpt(SMFICTX * milter_ctx, char **argv)
 	}
 
 	finalize(status);
+	request_unlink(tuple);
 	return retvalue;
 }
 
