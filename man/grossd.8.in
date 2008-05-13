@@ -30,7 +30,7 @@ value, \fBgrossd\fP sends an \s-1OK\s+1 (\s-1STATUS_TRUST\s+1) message.
 If the triplet is not in the Bloom filters (has not been seen recently,) \fBgrossd\fP then
 runs configured checks against the client information.
 Based on check results \fBgrossd\fP returns the client 
-a result. Possible results are \s-1STATUS_TRUST\s+1, \s-1STATUS_BLOCK\s+1
+a result.  Possible results are \s-1STATUS_TRUST\s+1, \s-1STATUS_BLOCK\s+1
 and \s-1STATUS_GREY\s+1.  The final response is query protocol specific.
 .PP
 The Bloom filters are updated according the
@@ -47,25 +47,25 @@ of entries in the database, that is, the retention time
 versus the number of handled connections.
 .SH "OPTIONS"
 .IP "\fB\-C\fP" 4
-Create the statefile and exit. The \fBstatefile\fP configuration option
+Create the statefile and exit.  The \fBstatefile\fP configuration option
 must be specified in the configuration file.
 .IP "\fB\-D\fP" 4
-Make debugging output more verbose. It can be set twice
+Make debugging output more verbose.  It can be set twice
 for maximum verbosity.
 .IP "\fB\-d\fP" 4
 Run \fBgrossd\fP on foreground without daemonizing the process.
 \fBgrossd\fP will output to terminal instead of using syslog.
 .IP "\fB\-f\fP \fIconfig\fP" 4
-Specifies the name of the configuration file. The default is
+Specifies the name of the configuration file.  The default is
 \fI@sysconfdir@/etc/grossd.conf\fP
 .IP "\fB\-h\fP" 4
 Output short usage information and exit.
 .IP "\fB\-n\fP" 4
 Enable dry-run.
 .IP "\fB\-P\fP \fIpidfile\fP" 4
-Bail out if the pidfile already exists. Create pidfile after the check.
+Bail out if the pidfile already exists.  Create pidfile after the check.
 .IP "\fB\-p\fP \fIpidfile\fP" 4
-Create the pidfile. Overwrite if it already exists.
+Create the pidfile.  Overwrite if it already exists.
 .IP "\fB\-r\fP" 4
 Disable replication.
 .IP "\fB\-V\fP" 4

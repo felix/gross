@@ -15,7 +15,7 @@ your environment.  The format is as follows:
    name = value [ ; param ] ...
 .PP
 Not all options accept parameters \- 
-refer to individual descriptions. The comment separator is 
+refer to individual descriptions.  The comment separator is 
 `#', everything after it is ignored by the config file parser.
 .SS "Network configuration options"
 .IP "\fBhost\fP" 4
@@ -61,7 +61,7 @@ is the number of seconds between Bloom filter rotations.  Let
 An entry will stay in the server's memory for \fBN \- 0.5 * I\fP
 seconds on average.  Defaults to 3600 seconds (one hour).
 .IP "\fBupdate\fP" 4
-is the way server updates the database. Valid options are 
+is the way server updates the database.  Valid options are 
 `grey' and `always'.  If set to `grey', which is the default,
 \fIgrossd\fP\|(8) will update the database only if the response is
 `\s-1STATUS_GREY\s+1'.  Setting it to `always' may reduce the impact on
@@ -165,7 +165,7 @@ lists a few as an example.  If you have any locally administered
 block lists then you should be aware that \fIgrossd\fP\|(8) makes all queries as
 fully qualified.  You may assign different weights for the dnsbls,
 default weight is 1.  Refer to \fBgrey_threshold\fP and \fBblock_threshold\fP
-about the weights. \fBdnsbl\fP is a multivalued option.
+about the weights.  \fBdnsbl\fP is a multivalued option.
 .IP "\fBdnswl\fP" 4
 is analogous to \fBdnsbl\fP.  Remember that \fBdnswl\fP is a
 \fIdefinitive\fP check, that is \fIgrossd\fP\|(8) waits
@@ -206,7 +206,7 @@ string.
 .SH "MTA CONFIGURATION"
 .SS "Sun Java System Messaging Server"
 You have to add a mapping entry to set
-\fB\s-1SJSMS\s+1\fP to query \fIgrossd\fP\|(8). It's also a good idea to exclude
+\fB\s-1SJSMS\s+1\fP to query \fIgrossd\fP\|(8).  It's also a good idea to exclude
 postmaster and abuse addresses before querying \fIgrossd\fP\|(8).
 .PP
 Here is an example:
@@ -235,7 +235,7 @@ Mapping call parameters are as follows:
 .IP "9. \s-1HELO/EHLO\s+1 string." 4
 .PD
 .SS "Postfix"
-Grossd implements native Postfix policy delegation protocol. Just specify
+Grossd implements native Postfix policy delegation protocol.  Just specify
 grossd server address at the `smtpd_recipient_restrictions'
 in the main configuration file
 .PP
@@ -276,7 +276,7 @@ Acl section:
       {Rejected by Gross.}}
     condition = ${if match {$acl_c0}{action=reject}}
 .SS "Sendmail"
-Sendmail can query grossd via milter protocol. Insert this in
+Sendmail can query grossd via milter protocol.  Insert this in
 sendmail.mc and configure \fBmilter_listen\fP accordingly:
 .PP
   INPUT_MAIL_FILTER(`Gross', `S=inet:5523@localhost, T=R:20s')
