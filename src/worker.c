@@ -318,7 +318,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 			/* make sure timeleft != 0 as it would cause get_msg_timed to block */
 			if (timeused < ta->timeout) {
 				ret = get_msg_timed(edict->resultmq, &message,
-				    sizeof(message.result), 0, ta->timeout - timeused);
+				    sizeof(message.result), ta->timeout - timeused);
 				if (ret > 0) {
 					/* We've got a response */
 					result = (chkresult_t *)message.result;
@@ -439,7 +439,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 		/* update the filter */
 		update.mtype = UPDATE;
 		memcpy(update.mtext, &digest, sizeof(sha_256_t));
-		ret = put_msg(ctx->update_q, &update, sizeof(sha_256_t), 0);
+		ret = put_msg(ctx->update_q, &update, sizeof(sha_256_t));
 		if (ret < 0)
 			gerror("update put_msg");
 

@@ -272,7 +272,7 @@ recv_sync_msg(peer_t *peer)
 	case AGGREGATE_SYNC:
 		logstr(GLOG_INFO, "Startup sync received. Syncing aggregate");
 		update.mtype = SYNC_AGGREGATE;
-		ret = instant_msg(ctx->update_q, &update, 0, 0);
+		ret = instant_msg(ctx->update_q, &update, 0);
 		/* sleep for a while to allow the message pass the queue */
 		sleep(1);
 		return !ret;
@@ -316,7 +316,7 @@ recv_startup_sync(peer_t *peer)
 
 	update.mtype = ABSOLUTE_UPDATE;
 	memcpy(update.mtext, &msg, sizeof(msg));
-	return !instant_msg(ctx->update_q, &update, sizeof(msg), 0);
+	return !instant_msg(ctx->update_q, &update, sizeof(msg));
 }
 
 int
@@ -341,7 +341,7 @@ recv_oper_sync(peer_t *peer)
 	update.mtype = UPDATE_OPER;
 	msg.digest = dtoh(msg.digest);
 	memcpy(update.mtext, &(msg.digest), sizeof(msg.digest));
-	return !put_msg(ctx->update_q, &update, sizeof(msg.digest), 0);
+	return !put_msg(ctx->update_q, &update, sizeof(msg.digest));
 }
 
 int
@@ -450,7 +450,7 @@ synchronize(peer_t *peer, int syncfd)
 		logstr(GLOG_DEBUG, "Peer fd %d", peer->peerfd_out);
 		peer->connected = peer->peerfd_out;
 		rotatecmd.mtype = ROTATE;
-		instant_msg(ctx->update_q, &rotatecmd, 0, 0);
+		instant_msg(ctx->update_q, &rotatecmd, 0);
 
 		start_syncer(NULL);
 	}

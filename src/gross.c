@@ -738,7 +738,7 @@ main(int argc, char *argv[])
 		if ((time(NULL) - *ctx->last_rotate) > ctx->config.rotate_interval) {
 			/* time to rotate filters */
 			rotatecmd.mtype = ROTATE;
-			ret = instant_msg(ctx->update_q, &rotatecmd, 0, 0);
+			ret = instant_msg(ctx->update_q, &rotatecmd, sizeof(update_message_t));
 			if (ret < 0)
 				gerror("rotate instant_msg");
 		}

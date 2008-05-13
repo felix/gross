@@ -150,7 +150,7 @@ thread_pool(void *arg)
 
 		/* wait for new jobs */
 		ret =
-		    get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict), 0,
+		    get_msg_timed(pool_ctx->info->work_queue_id, &message, sizeof(message.edict),
 		    IDLETIME);
 
 		POOL_MUTEX_LOCK;
@@ -251,17 +251,13 @@ create_thread_pool(const char *name, int (*routine) (thread_pool_t *, thread_ctx
 int
 submit_job(thread_pool_t *pool, edict_t *edict)
 {
-	edict_message_t message;
-
-	message.mtype = 0;
-	message.edict = edict;
-
 	/* increment reference counter */
 	pthread_mutex_lock(&edict->reference.mx);
 	edict->reference.count++;
 	pthread_mutex_unlock(&edict->reference.mx);
 
-	return put_msg(pool->work_queue_id, &message, sizeof(message.edict), 0);
+	/* send the pointer */
+	return put_msg(pool->work_queue_id, &edict, sizeof(edict_t *));
 }
 
 /*
@@ -303,7 +299,7 @@ edict_unlink(edict_t *edict)
 			while (release_queue(edict->resultmq) < 0) {
 				/* queue wasn't emtpy */
 				logstr(GLOG_INSANE, "queue not empty, flushing");
-				ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), 0, -1);
+				ret = get_msg_timed(edict->resultmq, &message, sizeof(message.result), -1);
 				if (ret > 0) {
 					assert(message.result);
 					free((chkresult_t *)message.result);
@@ -325,7 +321,7 @@ send_result(edict_t *edict, void *result)
 
 	message.result = result;
 
-	ret = put_msg(edict->resultmq, &message, sizeof(message), 0);
+	ret = put_msg(edict->resultmq, &message, sizeof(message));
 	if (ret < 0)
 		gerror("send_result");
 }

@@ -80,19 +80,17 @@ typedef enum
 
 typedef struct
 {
-	long mtype;
 	char mtext[MSGSZ];
 } log_message_t;
 
 typedef struct
 {
-	long mtype;
+	int mtype;
 	char mtext[MSGSZ];
 } update_message_t;
 
 typedef struct
 {
-	long mtype;
 	void *result;
 } poolresult_message_t;
 

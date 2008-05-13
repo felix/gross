@@ -243,6 +243,7 @@ typedef struct
 	thread_info_t postfix_server;
 	thread_info_t sjsms_server;
 	thread_info_t milter_server;
+	thread_info_t helper_dns;
 } thread_collection_t;
 
 #define MAXCHECKS 128
@@ -273,6 +274,7 @@ typedef struct
 	dnsbl_t *dnsbl;
 	dnsbl_t *dnswl;
 	dnsbl_t *rhsbl;
+	ares_channel *dns_channel;
 #endif				/* ENDBL */
 	gross_config_t config;
 	mmapped_brq_t *mmap_info;
