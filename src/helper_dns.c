@@ -20,6 +20,7 @@
 
 #include "common.h"
 #include "srvutils.h"
+#include "msgqueue.h"
 
 #include <netdb.h>
 
