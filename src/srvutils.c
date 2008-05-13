@@ -379,7 +379,7 @@ release_bloom_ring_queue(bloom_ring_queue_t *brq)
 {
 	if (ctx->statefile_info && brq == ctx->mmap_info->brq) {
 		/* requested release of mmapped brq */
-		munmap(ctx->mmap_info->brq, ctx->mmap_info->lumpsize);
+		munmap((void *)ctx->mmap_info->brq, ctx->mmap_info->lumpsize);
 		close(ctx->statefile_info->fd);
 		Free(ctx->statefile_info);
 		ctx->statefile_info = NULL;
