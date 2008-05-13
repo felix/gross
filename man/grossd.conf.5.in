@@ -8,9 +8,9 @@
 .SH "DESCRIPTION"
 \fIgrossd\fP\|(8) reads configuration data from \fI@sysconfdir@/etc/grossd.conf\fP
 (or the file specified with \fB\-f\fP on the command line). 
-An example configuration file is installed by default. You have to
+An example configuration file is installed by default.  You have to
 set some configuration options in order to get \fIgrossd\fP\|(8) running in 
-your environment. The format is as follows:
+your environment.  The format is as follows:
 .sp
    name = value [ ; param ] ...
 .PP
@@ -19,62 +19,62 @@ refer to individual descriptions. The comment separator is
 `#', everything after it is ignored by the config file parser.
 .SS "Network configuration options"
 .IP "\fBhost\fP" 4
-is the address the server should listen for queries. Default is
+is the address the server should listen for queries.  Default is
 `localhost'.
 .IP "\fBport\fP" 4
-is the port the server should listen for queries. Default is
+is the port the server should listen for queries.  Default is
 5525.
 .IP "\fBsync_listen\fP" 4
-is the address to listen for communication with the peer. It
-defaults to \fBhost\fP setting.
+is the address to listen for communication with the peer.  It
+defaults to the \fBhost\fP setting.
 .IP "\fBsync_peer\fP" 4
 is the address of the peer used when running in clustered mode.
 .IP "\fBsync_port\fP" 4
 is the tcp port number to listen to and connect to in communication
-with the peer. Default is 5524.
+with the peer.  Default is 5524.
 .IP "\fBstatus_host\fP" 4
-is the address \fIgrossd\fP\|(8) listens for status queries. Default is `localhost'.
+is the address \fIgrossd\fP\|(8) listens for status queries.  Default is `localhost'.
 .IP "\fBstatus_port\fP" 4
-is the port number \fIgrossd\fP\|(8) listens for status queries. Default is
+is the port number \fIgrossd\fP\|(8) listens for status queries.  Default is
 5522.
 .IP "\fBprotocol\fP" 4
-activates the server protocols \fIgrossd\fP\|(8) will support. Valid settings are 
+activates the server protocols \fIgrossd\fP\|(8) will support.  Valid settings are 
 `sjsms', `postfix' and `milter'.
 .IP "\fBmilter_listen\fP" 4
-is the socket address for the Milter service. The format is
-`proto:port@host'. Refer to Milter documentation for the specifics.
+is the socket address for the Milter service.  The format is
+`proto:port@host'.  Refer to Milter documentation for the specifics.
 .SS "Core server options"
-Most probably you can leave these to default settings. If your daily
-mail flow exceeds millions a day you may want to tweak 
+You can probably leave the default values for these settings.  If your daily
+mail flow exceeds millions of messages per day you may want to tweak 
 \fBquery_timelimit\fP and/or \fBpool_maxthreads\fP.  If you run \fIgrossd\fP\|(8) in a
 server with limited memory you may want to adjust \fBfilter_bits\fP.
 .IP "\fBfilter_bits\fP" 4
-is the size of the Bloom filter. Size will be 2^\fBfilter_bits\fP.
+is the size of the Bloom filter.  The size will be 2^\fBfilter_bits\fP.
 Lowering this value will increase the probability of false matches in each individual
-filter. Default is 24.
+filter.  Default is 24.
 .IP "\fBnumber_buffers\fP" 4
-is the number of filter used in the ring queue. Raising this value will cause
-an entry to stay in the server's memory longer. Default is 8.
+is the number of Bloom filters used in the ring queue.  Raising this value will cause
+an entry to stay in the server's memory longer.  Default is 8.
 .IP "\fBrotate_interval\fP" 4
-is the number of seconds between filter rotations. Let
-\fBN := number_buffers\fP and \fBI := rotate_interval\fP
+is the number of seconds between Bloom filter rotations.  Let
+\fBN := number_buffers\fP and \fBI := rotate_interval\fP.
 An entry will stay in the server's memory for \fBN \- 0.5 * I\fP
-seconds on average. Defaults to 3600 seconds (one hour).
+seconds on average.  Defaults to 3600 seconds (one hour).
 .IP "\fBupdate\fP" 4
 is the way server updates the database. Valid options are 
 `grey' and `always'.  If set to `grey', which is the default,
-\fIgrossd\fP\|(8) will update the database only if response is
+\fIgrossd\fP\|(8) will update the database only if the response is
 `\s-1STATUS_GREY\s+1'.  Setting it to `always' may reduce the impact on
 \s-1DNS\s+1 servers.
 .IP "\fBgrey_mask\fP" 4
-is the mask for \fIgrossd\fP\|(8) to use when matching
-`smtp\-client\-ip' against the database. Default is 24, which makes \fIgrossd\fP\|(8)
+is the mask for \fIgrossd\fP\|(8) to use when matching the 
+`smtp\-client\-ip' against the database.  Default is 24, which makes \fIgrossd\fP\|(8)
 to treat addresses like \fIa.b.c.d\fP as \fIa.b.c.0\fP.
 Setting \fBgrey_mask\fP to 32 makes \fIgrossd\fP\|(8) to require that consecutive
 attempts are made from the same `smtp\-client\-ip'.
 .IP "\fBstatefile\fP" 4
 is the full path of the file that the server uses to store
-the state information. Default is not to have a statefile. You may
+the state information.  Default is not to have a statefile.  You may
 want to configure a \fBstatefile\fP especially if you do not configure
 replication.
 .IP "\fBpidfile\fP" 4
@@ -83,47 +83,47 @@ You can set parameter `check', if you want to keep \fIgrossd\fP\|(8) from
 starting should pidfile already exist.
 .Sh "Query constraints"
 .IP "\fBgrey_delay\fP" 4
-is the time in seconds new triplets are kept on the greylist. Default is 180.
+is the time in seconds new triplets are kept on the greylist.  Default is 180.
 .IP "\fBquery_timelimit\fP" 4
-is the query timeout in milliseconds. You may have to adjust this if you
+is the query timeout in milliseconds.  You may have to adjust this if you
 exceed millions of queries a day.
 .IP "\fBpool_maxthreads\fP" 4
-is the maximum threadcount per pool. You may have to raise the limit from
+is the maximum threadcount per pool.  You may have to raise the limit from
 the default if you get more than 100 queries per second and/or have slow
-\s-1DNS\s+1 servers. Rule of thumb would be to decide how many queries you want
+\s-1DNS\s+1 servers.  The rule of thumb is to decide how many queries you want
 \fIgrossd\fP\|(8) to be able to handle per second, and multiply that with
-\fBquery_timelimit\fP (in seconds, of course). It defaults to 100.
+\fBquery_timelimit\fP (in seconds, of course).  It defaults to 100.
 .SS "Configuring server responses"
 .IP "\fBblock_threshold\fP" 4
 is the threshold after which \fIgrossd\fP\|(8) sends 
-a permanent error to the client. Every check that considers
+a permanent error to the client.  Every check that considers
 `smtp\-client\-ip' as suspicious returns a value
 (check weight).  When sum of these values gets equivalent or
 greater than \fBblock_threshold\fP \fIgrossd\fP\|(8) sends a
-\s-1STATUS_BLOCK\s+1 response. Default is 0 which disables this
+\s-1STATUS_BLOCK\s+1 response.  Default is 0 which disables this
 functionality.
 .IP "\fBblock_reason\fP" 4
 is the reason given when client is too suspicious, see
-\fBblock_threshold\fP. Default is \(lqBad reputation\(rq.
+\fBblock_threshold\fP.  Default is \(lqBad reputation\(rq.
 .IP "\fBgrey_threshold\fP" 4
 is analogous to \fBblock_threshold\fP, except at the threshold \fIgrossd\fP\|(8)
 sends a \s-1STATUS_GREY\s+1 response.
 .IP "\fBgrey_reason\fP" 4
 is the reason given when client is suspicious enough to be greylisted, see
-\fBgrey_threshold\fP. Default is \(lqPlease try again later.\(rq.
+\fBgrey_threshold\fP.  Default is \(lqPlease try again later.\(rq.
 .SS "Logging options"
 .IP "\fBlog_method\fP" 4
-is used to choose the logging method. Currently the only implemented
+is used to choose the logging method.  Currently the only implemented
 method is `syslog', which is the default.
 .IP "\fBlog_level\fP" 4
-sets the logging verbosity. Possible values in the order of increasing
+sets the logging verbosity.  Possible values in the order of increasing
 verbosity are `error', `warning', `notice', `info' and `debug'.
 \&\fBlog_level\fP defaults to `info'.
 .IP "\fBsyslog_facility\fP" 4
-is the facility syslog sends log messages with. It defaults to
+is the facility syslog sends log messages with.  It defaults to
 \&`mail'.
 .IP "\fBstat_type\fP" 4
-is the name of the requested statistic. It is of multivalued type. The
+is the name of the requested statistic.  It is of multivalued type.  The
 valid options are:
 .PD 0
 .RS 8
@@ -150,57 +150,57 @@ Default is `none'.  Setting both `none' and `full'
 is undefined.
 .RE
 .IP "\fBstat_interval\fP" 4
-is the number of seconds between status log entries. Default is 3600.
+is the number of seconds between status log entries.  Default is 3600.
 .SS "Configuring checks"
 .IP "\fBcheck\fP" 4
 is a multivalued option, that is, you can configure multiple checks by
-setting \fBcheck\fP option multiple times. Currently implemented checks
-are `dnsbl', `dnswl', `rhsbl' and `blocker'.
-Refer to sections describing the checks below. If you don't configure
+setting \fBcheck\fP option multiple times.  Currently implemented checks
+are `dnsbl', `dnswl', `rhsbl' and `blocker'.  
+Refer to sections describing the checks below.  If you don't configure
 any checks \fIgrossd\fP\|(8) will act as a traditional greylisting server.
 .IP "\fBdnsbl\fP" 4
 is a \s-1DNS\s0 domain name of the dnsbl that `dnsbl' \fBcheck\fP
-will query. There are no defaults, but the default configuration file
-lists a few as an example. If you have any locally administrated
-block lists take into account that \fIgrossd\fP\|(8) makes all queries as
-fully qualified. You may assign different weights for the dnsbl's,
+will query.  There are no defaults, but the default configuration file
+lists a few as an example.  If you have any locally administered
+block lists then you should be aware that \fIgrossd\fP\|(8) makes all queries as
+fully qualified.  You may assign different weights for the dnsbls,
 default weight is 1.  Refer to \fBgrey_threshold\fP and \fBblock_threshold\fP
 about the weights. \fBdnsbl\fP is a multivalued option.
 .IP "\fBdnswl\fP" 4
 is analogous to \fBdnsbl\fP.  Remember that \fBdnswl\fP is a
 \fIdefinitive\fP check, that is \fIgrossd\fP\|(8) waits
 for the check to complete
-before deciding how to respond. This may cause unwanted latency,
+before deciding how to respond.  This may cause unwanted latency,
 although you can adjust the maximum latency by \fBquery_timelimit\fP
-option. Highly recommended if you use \fIgrossd\fP\|(8) as a
-traditional greylister. This is a multivalued option.
+option.  \fBdnswl\fP is highly recommended if you use \fIgrossd\fP\|(8) as a
+traditional greylister.  This is a multivalued option.
 .IP "\fBrhsbl\fP" 4
-is analogous to \fBdnsbl\fP, but the check is made against the right
-hand side .Pq right hand side block list of the sender address,
-that is the domain part of the address. This is a multivalued option.
+is analogous to \fBdnsbl\fP, but the check is made with the right
+hand side of the sender address (the email domain) instead of the IP address.  
+This is a multivalued option.
 .IP "\fBblocker_host\fP" 4
-is the host name of the Sophos blocker server. This is used only if
+is the host name of the Sophos blocker server.  This is used only if
 \fBcheck\fP = `blocker' is set.
 .IP "\fBblocker_port\fP" 4
-is the \s-1TCP\s+1 port of the Sophos blocker service. Default is 4466.
+is the \s-1TCP\s+1 port of the Sophos blocker service.  Default is 4466.
 .IP "\fBblocker_weight\fP" 4
-is the weight of the blocker check. See description of
+is the weight of the blocker check.  See description of
 \fBgrey_threshold\fP and \fBblock_threshold\fP regarding the weights.
 .SS "Sun Java System Messaging Server specific options"
 You may configure the responses \fIgrossd\fP\|(8) sends over to grosscheck
 library.
 .IP "\fBsjsms_response_grey\fP" 4
 is the mapping result template \fIgrossd\fP\|(8) uses for a \s-1STATUS_GREY\s+1
-result. Default is `$X4.4.3|$NPlease$ try$ again$ later'.
+result.  Default is `$X4.4.3|$NPlease$ try$ again$ later'.
 .IP "\fBsjsms_response_match\fP" 4
 is the mapping result template \fIgrossd\fP\|(8) uses for a
-\s-1STATUS_MATCH\s+1 result. Default is `$Y'.
+\s-1STATUS_MATCH\s+1 result.  Default is `$Y'.
 .IP "\fBsjsms_response_trust\fP" 4
 is the mapping result template \fIgrossd\fP\|(8) uses for a
-\s-1STATUS_TRUST\s+1 result. Default is `$Y'.
+\s-1STATUS_TRUST\s+1 result.  Default is `$Y'.
 .IP "\fBsjsms_response_block\fP" 4
 is the mapping result template \fIgrossd\fP\|(8) uses for a
-\s-1TATUS_BLOCK\s+1 result. Default is
+\s-1TATUS_BLOCK\s+1 result.  Default is
 \&`$N%reason%', where `%reason%' is the template for the reason
 string.
 .SH "MTA CONFIGURATION"
