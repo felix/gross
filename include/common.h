@@ -69,12 +69,14 @@
 #endif
 
 /* what clock type to use */
-#if HAVE_GETTIMEOFDAY
+#if defined USE_GETTIMEOFDAY
 # define CLOCK_TYPE CLOCK_KLUDGE
-#elif HAVE_DECL_CLOCK_MONOTONIC
+#elif defined USE_CLOCK_MONOTONIC
 # define CLOCK_TYPE CLOCK_MONOTONIC
-#elif HAVE_DECL_CLOCK_HIGHRES
+#elif defined USE_CLOCK_HIGHRES
 # define CLOCK_TYPE CLOCK_HIGHRES
+#elif defined USE_CLOCK_REALTIME
+# define CLOCK_TYPE CLOCK_REALTIME
 #else
 # error "No suitable clock type found (should not happen)"
 #endif

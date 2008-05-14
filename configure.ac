@@ -70,22 +70,34 @@ AC_CHECK_LIB(m, pow)
 AC_CHECK_LIB(nsl, inet_pton)
 AC_CHECK_HEADERS(netinet/in.h)
 
-AC_CHECK_TYPE([bool])
+AC_CHECK_TYPES([bool])
 
-AC_CHECK_FUNCS([clock_gettime],
-    dnl clock_gettime() found
-    [AC_CHECK_DECLS([CLOCK_MONOTONIC],,
-	dnl no CLOCK_MONOTONIC
-	[AC_CHECK_DECLS([CLOCK_HIGHRES],,
+if test "x$USE_GETTIMEOFDAY" = "x"
+then
+    AC_CHECK_FUNCS([clock_gettime],
+	dnl clock_gettime() found
+	[AC_CHECK_DECLS([CLOCK_MONOTONIC],AC_DEFINE([USE_CLOCK_MONOTONIC],,[Clock type]),
 	    dnl no CLOCK_MONOTONIC
-	    [AC_CHECK_FUNCS([gettimeofday],,AC_MSG_ERROR([No suitable clock found]))]
-	dnl for CLOCK_HIGHRES
+	    [AC_CHECK_DECLS([CLOCK_HIGHRES],AC_DEFINE([USE_CLOCK_HIGHRES],,[Clock type]),
+		dnl no CLOCK_HIGHRES
+		[AC_CHECK_DECLS([CLOCK_HIGHRES],AC_DEFINE([USE_CLOCK_REALTIME],,[Clock type]),
+		    dnl no CLOCK_REALTIME
+		    [AC_CHECK_FUNCS([gettimeofday],AC_DEFINE([USE_GETTIMEOFDAY],,[Clock type]),AC_MSG_ERROR([No suitable clock found]))]
+		dnl for CLOCK_REALTIME
+		[#include <time.h>])],
+	    dnl for CLOCK_HIGHRES
+	    [#include <time.h>])],
+	dnl for CLOCK_MONOTONIC
 	[#include <time.h>])],
-    dnl for CLOCK_MONOTONIC
-    [#include <time.h>])],
-    dnl clock_gettime() not found
-    [AC_CHECK_FUNCS([gettimeofday],,AC_MSG_ERROR([No suitable clock found]))]
-)
+	dnl clock_gettime() not found
+	[AC_CHECK_FUNCS([gettimeofday],AC_DEFINE([USE_GETTIMEOFDAY],,[Clock type]),AC_MSG_ERROR([No suitable clock found]))]
+    )
+else
+    AC_MSG_NOTICE([Forced to use gettimeofday()])
+    AC_CHECK_FUNCS([gettimeofday],AC_DEFINE([USE_GETTIMEOFDAY],,[Clock type]),AC_MSG_ERROR([No suitable clock found]))
+    AC_CHECK_FUNCS([clock_gettime])
+    AC_CHECK_TYPES([clockid_t])
+fi
 
 AC_MSG_CHECKING([whether to disable dnsbl checking])
 AC_ARG_ENABLE(dnsbl,

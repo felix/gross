@@ -21,7 +21,7 @@
 #include "common.h"
 #include "utils.h"
 
-#ifndef HAVE_CLOCK_GETTIME
+#ifdef USE_GETTIMEOFDAY
 # include <sys/time.h>
 #endif
 
@@ -266,7 +266,7 @@ tstotv(const struct timespec *ts, struct timeval *tv)
 	tv->tv_usec = ts->tv_nsec / SI_KILO;
 }
 
-#ifndef HAVE_CLOCK_GETTIME
+#ifdef USE_GETTIMEOFDAY
 int
 clock_gettime(clockid_t clk_id, struct timespec *ts)
 {
@@ -282,4 +282,4 @@ clock_gettime(clockid_t clk_id, struct timespec *ts)
 		return -1;
 	}
 }
-#endif /* ! HAVE_CLOCK_GETTIME */
+#endif /* ! USE_GETTIMEOFDAY */

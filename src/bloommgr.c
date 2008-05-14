@@ -40,13 +40,14 @@ rotate(void *arg)
 	logstr(GLOG_DEBUG, "Now: %d Last: %d Max-diff %d", time(NULL), *(ctx->last_rotate),
 	    ctx->config.rotate_interval * ctx->config.num_bufs);
 	ACTIVATE_BLOOM_GUARD();
-	if (time(NULL) - *(ctx->last_rotate) >
-		ctx->config.rotate_interval * ctx->config.num_bufs) {
-	    zero_bloom_ring_queue(ctx->filter); *(ctx->last_rotate) = time(NULL);
-		    logstr(GLOG_INFO, "Max timediff exceeded. Zeroing whole bloom ring.");}
-	    else {
-	    *(ctx->last_rotate) += ctx->config.rotate_interval;
-		    ctx->filter = rotate_bloom_ring_queue(ctx->filter);}
+	if (time(NULL) - *(ctx->last_rotate) > ctx->config.rotate_interval * ctx->config.num_bufs) {
+		zero_bloom_ring_queue(ctx->filter);
+		*(ctx->last_rotate) = time(NULL);
+		logstr(GLOG_INFO, "Max timediff exceeded. Zeroing whole bloom ring.");
+	} else {
+		*(ctx->last_rotate) += ctx->config.rotate_interval;
+		ctx->filter = rotate_bloom_ring_queue(ctx->filter);
+	}
 	RELEASE_BLOOM_GUARD();
 	logstr(GLOG_DEBUG, "rotation completed");
 	return NULL;
@@ -95,7 +96,7 @@ bloommgr(void *arg)
 			/* logstr(GLOG_INSANE, "Absolute update, buffer %d, index %d", ss.buffer, ss.index); */
 			ACTIVATE_BLOOM_GUARD();
 			insert_absolute_bloom_ring_queue(ctx->filter, ss.filter, FILTER_SIZE,
-				ss.index, ss.buffer);
+			    ss.index, ss.buffer);
 			RELEASE_BLOOM_GUARD();
 			break;
 		case ROTATE:

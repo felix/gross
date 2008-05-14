@@ -280,6 +280,11 @@ Sendmail can query grossd via milter protocol.  Insert this in
 sendmail.mc and configure \fBmilter_listen\fP accordingly:
 .PP
   INPUT_MAIL_FILTER(`Gross', `S=inet:5523@localhost, T=R:20s')
+.PP
+You can check if your version of Sendmail has Milter support compiled in
+by issuing the following command:
+.PP
+  sendmail -bt -d0.1
 .SH "SEE ALSO"
 \fIgrossd\fP\|(8)
 .PP
