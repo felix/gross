@@ -649,6 +649,7 @@ querylogwrite(querylog_entry_t *q)
 		actionstr = "block";
 		break;
 	default:
+		actionstr = "this should not be seen anywhere";  /* just to silent compiler warnings */
 		daemon_shutdown(EXIT_FATAL, "querylogwrite: unknown statuscode %d", q->action);
 		break;
 	}

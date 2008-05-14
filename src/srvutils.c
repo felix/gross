@@ -226,7 +226,7 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 	bloom_ring_queue_t *brq;
 	char *ptr;
 	int i, ret;
-	int fd, lumpsize;
+	int lumpsize;
 	struct stat statbuf;
 	char *magic = "mmbrq2\n";
 	int use_mmap = FALSE;
@@ -531,7 +531,6 @@ date_fmt(char *msg, size_t len)
 	time_t tt;
 	char timestr[DATESTRLEN];
 	char buf[MSGSZ];
-	size_t ret;
 
 	tt = time(NULL);
 	ctime_r(&tt, timestr);
@@ -541,7 +540,7 @@ date_fmt(char *msg, size_t len)
 	strncpy(msg, buf, len - 1);
 	msg[len - 1] = '\0';
 
-	return ret;
+	return strlen(msg);
 }
 
 void

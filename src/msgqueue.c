@@ -416,7 +416,6 @@ put_msg(int msqid, void *omsgp, size_t msgsz)
 	msg_t *new;
 	void *msgp;
 	int ret;
-	size_t truesize;
 
 	mq = queuebyid(msqid);
 	assert(mq);
@@ -445,7 +444,6 @@ instant_msg(int msqid, void *omsgp, size_t msgsz)
 	msg_t *new;
 	void *msgp;
 	int ret;
-	size_t truesize;
 
 	mq = queuebyid(msqid);
 	assert(mq);

@@ -7,8 +7,8 @@ sbin_PROGRAMS = grossd
 bin_PROGRAMS = gclient
 lib_LTLIBRARIES = grosscheck.la
 
-grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c stats.c worker_postfix.c worker_sjsms.c check_blocker.c check_random.c helper_dns.c
-EXTRA_grossd_SOURCES = check_dnsbl.c worker_milter.c
+grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c stats.c worker_postfix.c worker_sjsms.c check_blocker.c check_random.c
+EXTRA_grossd_SOURCES = check_dnsbl.c helpder_dns.c worker_milter.c
 grossd_LDFLAGS = @LDFLAGS@ proto_sjsms.o
 grossd_LDADD = @DNSBLSOURCES@ @MILTERSOURCES@ @SPFSOURCES@
 grossd_DEPENDENCIES = @DNSBLSOURCES@ @MILTERSOURCES@ @SPFSOURCES@ proto_sjsms.c
