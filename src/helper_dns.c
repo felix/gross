@@ -100,12 +100,20 @@ helper_dns(void *arg)
 	int nfds;
 	int count;
 	ares_channel *channel;
+	int ret;
+
+        ret = pthread_mutex_lock(&ctx->locks.helper_dns_guard.mx);
+        assert(ret == 0);
 
 	channel = Malloc(sizeof(*channel));
 	if (ares_init(channel) != ARES_SUCCESS)
 		daemon_fatal("ares_init");
 
 	ctx->dns_channel = channel;
+
+	/* ready to serve */
+	pthread_mutex_unlock(&ctx->locks.helper_dns_guard.mx);
+	pthread_cond_signal(&ctx->locks.helper_dns_guard.cv);
 
 	for (;;) {
 		FD_ZERO(&readers);
@@ -124,6 +132,19 @@ helper_dns(void *arg)
 void
 helper_dns_init()
 {
+	int ret;
+
 	logstr(GLOG_INFO, "starting dns helper thread");
+	
+	pthread_mutex_init(&ctx->locks.helper_dns_guard.mx, NULL);
+	pthread_cond_init(&ctx->locks.helper_dns_guard.cv, NULL);
+
+	ret = pthread_mutex_lock(&ctx->locks.helper_dns_guard.mx);
+	assert(ret == 0);
+
 	create_thread(&ctx->process_parts.helper_dns, DETACH, &helper_dns, NULL);
+
+	/* wait until helper thread is ready to serve */
+	ret = pthread_cond_wait(&ctx->locks.helper_dns_guard.cv, &ctx->locks.helper_dns_guard.mx);
+	pthread_mutex_unlock(&ctx->locks.helper_dns_guard.mx);
 }

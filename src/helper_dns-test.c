@@ -37,11 +37,6 @@ main(int argc, char **argv)
 
 	helper_dns_init();
 
-	while (ctx->dns_channel == NULL) {
-		printf("waiting\n");
-		sleep(1);
-	}
-
 	host = Gethostbyname("www.utu.fi", 0);
 	printf("got: %s\n", host->h_name);
 	

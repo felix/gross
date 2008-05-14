@@ -127,22 +127,22 @@ configure_grossd(configlist_t *config)
 			logstr(GLOG_DEBUG, "config: %s = %s%s", cp->name, cp->value, buffer);
 			cp = cp->next;
 		}
+
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
 	if (ret == -1 && errno == EACCES)
 		daemon_fatal("sem_unlink");
-	ctx->sync_guard = sem_open("sem_sync", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
-	if (ctx->sync_guard == (sem_t *) SEM_FAILED)
+	ctx->locks.sync_guard = sem_open("sem_sync", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
+	if (ctx->locks.sync_guard == (sem_t *) SEM_FAILED)
 		daemon_fatal("sem_open");
 #else
-	ctx->sync_guard = Malloc(sizeof(sem_t));
-	ret = sem_init(ctx->sync_guard, 0, 1);	/* Process local (0), initial count 1. */
+	ctx->locks.sync_guard = Malloc(sizeof(sem_t));
+	ret = sem_init(ctx->locks.sync_guard, 0, 1);	/* Process local (0), initial count 1. */
 	if (ret != 0)
 		daemon_fatal("sem_init");
 #endif /* USE_SEM_OPEN */
 
-	pthread_mutex_init(&ctx->bloom_guard, NULL);
-
+	pthread_mutex_init(&ctx->locks.bloom_guard.mx, NULL);
 	pthread_mutex_init(&ctx->config.peer.peer_in_mutex, NULL);
 
 	ctx->config.gross_host.sin_family = AF_INET;
@@ -668,7 +668,6 @@ main(int argc, char *argv[])
 	if ((ctx->config.flags & FLG_NOREPLICATE) == 0) {
 		syncmgr_init();
 	}
-
 	ACTIVATE_SYNC_GUARD();
 	logstr(GLOG_INFO, "Filters in sync. Starting...");
 	RELEASE_SYNC_GUARD();
