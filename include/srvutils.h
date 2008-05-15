@@ -73,24 +73,26 @@ typedef enum
 #define MAXFD 			64
 #define FILTER_SIZE 		((uint32_t)32)
 
-#define ACTIVATE_SYNC_GUARD() sem_wait(ctx->locks.sync_guard) 
-#define RELEASE_SYNC_GUARD() sem_post(ctx->locks.sync_guard)
-#define ACTIVATE_BLOOM_GUARD() pthread_mutex_lock(&ctx->locks.bloom_guard.mx)
-#define RELEASE_BLOOM_GUARD() pthread_mutex_unlock(&ctx->locks.bloom_guard.mx)
+#define ACTIVATE_SYNC_GUARD() sem_wait(ctx->sync_guard) 
+#define RELEASE_SYNC_GUARD() sem_post(ctx->sync_guard)
+#define ACTIVATE_BLOOM_GUARD() pthread_mutex_lock(&ctx->bloom_guard)
+#define RELEASE_BLOOM_GUARD() pthread_mutex_unlock(&ctx->bloom_guard)
 
 typedef struct
 {
+	long mtype;
 	char mtext[MSGSZ];
 } log_message_t;
 
 typedef struct
 {
-	int mtype;
+	long mtype;
 	char mtext[MSGSZ];
 } update_message_t;
 
 typedef struct
 {
+	long mtype;
 	void *result;
 } poolresult_message_t;
 

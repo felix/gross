@@ -34,9 +34,6 @@
 #ifdef DNSBL
 #include "check_dnsbl.h"
 #endif /* DNSBL */
-#ifdef SPF
-#include "check_spf.h"
-#endif
 #include "check_blocker.h"
 #include "check_random.h"
 
@@ -127,22 +124,22 @@ configure_grossd(configlist_t *config)
 			logstr(GLOG_DEBUG, "config: %s = %s%s", cp->name, cp->value, buffer);
 			cp = cp->next;
 		}
-
 #ifdef USE_SEM_OPEN
 	ret = sem_unlink("sem_sync");
 	if (ret == -1 && errno == EACCES)
 		daemon_fatal("sem_unlink");
-	ctx->locks.sync_guard = sem_open("sem_sync", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
-	if (ctx->locks.sync_guard == (sem_t *) SEM_FAILED)
+	ctx->sync_guard = sem_open("sem_sync", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
+	if (ctx->sync_guard == (sem_t *) SEM_FAILED)
 		daemon_fatal("sem_open");
 #else
-	ctx->locks.sync_guard = Malloc(sizeof(sem_t));
-	ret = sem_init(ctx->locks.sync_guard, 0, 1);	/* Process local (0), initial count 1. */
+	ctx->sync_guard = Malloc(sizeof(sem_t));
+	ret = sem_init(ctx->sync_guard, 0, 1);	/* Process local (0), initial count 1. */
 	if (ret != 0)
 		daemon_fatal("sem_init");
 #endif /* USE_SEM_OPEN */
 
-	pthread_mutex_init(&ctx->locks.bloom_guard.mx, NULL);
+	pthread_mutex_init(&ctx->bloom_guard, NULL);
+
 	pthread_mutex_init(&ctx->config.peer.peer_in_mutex, NULL);
 
 	ctx->config.gross_host.sin_family = AF_INET;
@@ -368,8 +365,6 @@ configure_grossd(configlist_t *config)
 				ctx->config.checks |= CHECK_BLOCKER;
 			else if (strcmp(cp->value, "random") == 0)
 				ctx->config.checks |= CHECK_RANDOM;
-			else if (strcmp(cp->value, "spf") == 0)
-				ctx->config.checks |= CHECK_SPF;
 		}
 		cp = cp->next;
 	}
@@ -668,6 +663,7 @@ main(int argc, char *argv[])
 	if ((ctx->config.flags & FLG_NOREPLICATE) == 0) {
 		syncmgr_init();
 	}
+
 	ACTIVATE_SYNC_GUARD();
 	logstr(GLOG_INFO, "Filters in sync. Starting...");
 	RELEASE_SYNC_GUARD();
@@ -713,10 +709,6 @@ main(int argc, char *argv[])
 		blocker_init(&limits);
 	if (ctx->config.checks & CHECK_RANDOM)
 		random_init(&limits);
-#ifdef SPF
-	if (ctx->config.checks & CHECK_SPF)
-		spf_init(&limits);
-#endif
 
 	/* start the worker thread */
 	worker_init();
@@ -737,7 +729,7 @@ main(int argc, char *argv[])
 		if ((time(NULL) - *ctx->last_rotate) > ctx->config.rotate_interval) {
 			/* time to rotate filters */
 			rotatecmd.mtype = ROTATE;
-			ret = instant_msg(ctx->update_q, &rotatecmd, sizeof(update_message_t));
+			ret = instant_msg(ctx->update_q, &rotatecmd, 0, 0);
 			if (ret < 0)
 				gerror("rotate instant_msg");
 		}

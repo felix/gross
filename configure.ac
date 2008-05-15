@@ -1,13 +1,12 @@
 dnl $Id$
 
-AC_INIT([gross],[svn])
+AC_INIT([gross],[1.0.0])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 
 CONFIGURE_LINE="$0 $*"
 
-dnl AC_PROG_MAKE_SET
 AC_PROG_CC([cc gcc])
 AC_PROG_INSTALL
 
@@ -109,7 +108,7 @@ AC_ARG_ENABLE(dnsbl,
 if test "x$dnsbl" = "xyes"
 then
     AC_CHECK_HEADERS(ares.h, 
-	DNSBLSOURCES='check_dnsbl.o helper_dns.o',
+	DNSBLSOURCES='check_dnsbl.o',
 	AC_MSG_ERROR([ares.h needed for dnsbl checking.])
     )
     AC_SUBST([DNSBLSOURCES])
@@ -128,37 +127,11 @@ AC_ARG_ENABLE(milter,
 if test "$milter" = "yes"
 then
     AC_CHECK_HEADERS(libmilter/mfapi.h,
-	MILTERSOURCES='worker_milter.o',
-	AC_MSG_ERROR([libmilter/mfapi.h needed for dnsbl checking.])
+	MILTERSOURCES='worker_milter.o'
     )
     AC_SUBST([MILTERSOURCES])
     AC_CHECK_LIB(milter, smfi_main, ,
 	AC_MSG_ERROR([libmilter library needed for milter support])
-    )
-fi
-
-AC_MSG_CHECKING([whether to build check_spf])
-AC_ARG_ENABLE(spf,
-    AC_HELP_STRING([--enable-spf], [Enable spf check]),
-    [AC_MSG_RESULT([yes]) ; spf="yes"],
-    [AC_MSG_RESULT([no]) ; spf="no"]
-)
-
-if test "$spf" == "yes"
-then
-    AC_CHECK_HEADERS(arpa/nameser_compat.h)
-    AC_CHECK_HEADERS(arpa/inet.h)
-    AC_CHECK_HEADERS(spf2/spf.h,
-	SPFSOURCES='check_spf.o',
-	AC_MSG_ERROR(spf2/spf.h needed for spf checks.),
-	[#include <arpa/nameser_compat.h>
-	 #include <arpa/inet.h>
-	 #include <time.h>
-	])
-
-    AC_SUBST([SPFSOURCES])
-    AC_CHECK_LIB(spf2, SPF_request_new, ,
-	AC_MSG_ERROR([libspf2 library needed for spf checks.])
     )
 fi
 

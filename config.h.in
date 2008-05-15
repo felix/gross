@@ -9,12 +9,6 @@
 /* Define to 1 if you have the <ares.h> header file. */
 #undef HAVE_ARES_H
 
-/* Define to 1 if you have the <arpa/inet.h> header file. */
-#undef HAVE_ARPA_INET_H
-
-/* Define to 1 if you have the <arpa/nameser_compat.h> header file. */
-#undef HAVE_ARPA_NAMESER_COMPAT_H
-
 /* Define to 1 if the system has the type `bool'. */
 #undef HAVE_BOOL
 
@@ -56,17 +50,11 @@
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
-/* Define to 1 if you have the `spf2' library (-lspf2). */
-#undef HAVE_LIBSPF2
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
-
-/* Define to 1 if you have the <spf2/spf.h> header file. */
-#undef HAVE_SPF2_SPF_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

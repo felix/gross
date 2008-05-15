@@ -57,9 +57,6 @@
 # define MILTER
 #endif
 
-#ifdef HAVE_SPF2_SPF_H
-# define SPF
-#endif
 #if PROTOCOL == POSTFIX
 # define WORKER_PROTO_TCP
 #elif PROTOCOL == SJSMS
@@ -114,7 +111,6 @@
 #define CHECK_RANDOM (int)0x04
 #define CHECK_RHSBL (int)0x08
 #define CHECK_DNSWL (int)0x10
-#define CHECK_SPF (int)0x20
 
 #define PROTO_SJSMS (int)0x01
 #define PROTO_POSTFIX (int)0x02
@@ -245,7 +241,6 @@ typedef struct
 	thread_info_t postfix_server;
 	thread_info_t sjsms_server;
 	thread_info_t milter_server;
-	thread_info_t helper_dns;
 } thread_collection_t;
 
 #define MAXCHECKS 128
@@ -264,31 +259,18 @@ typedef struct statefile_info_s
 	int fd;
 } statefile_info_t;
 
-typedef struct lock_s
-{
-	pthread_mutex_t mx;
-	pthread_cond_t cv;
-} lock_t;
-
-typedef struct thread_locks_s
-{
-	sem_t *sync_guard;
-        lock_t bloom_guard;
-        lock_t update_guard;
-        lock_t helper_dns_guard;
-} thread_locks_t; 
-
 typedef struct
 {
 	bloom_ring_queue_t *filter;
 	int update_q;
-	thread_locks_t locks;
+	sem_t *sync_guard;
+	pthread_mutex_t bloom_guard;
+	pthread_mutex_t update_guard;
 	time_t *last_rotate;
 #ifdef DNSBL
 	dnsbl_t *dnsbl;
 	dnsbl_t *dnswl;
 	dnsbl_t *rhsbl;
-	ares_channel *dns_channel;
 #endif				/* ENDBL */
 	gross_config_t config;
 	mmapped_brq_t *mmap_info;

@@ -1,0 +1,2 @@
+Make modifications to pod files, and then run make.
+.in files are distributed to avoid dependecy to pod2man.

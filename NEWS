@@ -7,6 +7,7 @@ Version 1.0.0
 * New match shortcut logic. Now grossd will shortcut after
   a filter match only if no checks are configured (traditional
   greylister) or block_threshold == 0. 
+* A lot of Milter related fixes.
 
 - changed filter_bits default back to 24, as stated in the docs.
 - added grey_reason configuration file option. See block_reason.
@@ -17,10 +18,11 @@ Issues fixed:
 #60: Grossd should do all dns queries as fully qualified
 #61: Space Character in Mail From Crashing Gross
 #62: Double free() with milter
+#63: Apostrophe chokes old gcc
+#64: Garbage in logs with milter api
 
 Version 0.9.3
 
-* A few important bug fixes to milter server
 * HELOified all the rest of the code. There are still no checks
   that use helo info, but now grossd logs it and also gclient 
   can send it to the server. Check INSTALL details about 
@@ -28,7 +30,7 @@ Version 0.9.3
 * New logfile format! An example log line: 
 
   Thu Apr 17 14:50:05 2008 #8505600: a=greylist d=3 w=5 c=127.0.0.2
-  s=sender r=recipient h=N/A m=cbl.abuseat.org+1 m=bl.spamcop.net+2
+  s=sender r=recipient h=utu.fi m=cbl.abuseat.org+1 m=bl.spamcop.net+2
   m=combined.njabl.org+1 m=dnsbl.sorbs.net+1
 
   where
