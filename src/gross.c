@@ -144,16 +144,20 @@ configure_grossd(configlist_t *config)
 
 	ctx->config.gross_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("host"));
-	if (!host)
+	if (NULL == host)
 		daemon_fatal("'host' configuration option invalid:");
-	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
-	    &(ctx->config.gross_host.sin_addr));
+	if (NULL == inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	    &(ctx->config.gross_host.sin_addr)))
+		daemon_fatal("'host' configuration option invalid:");
 	logstr(GLOG_DEBUG, "Listening host address %s", inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
 	ctx->config.sync_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("sync_listen") ? CONF("sync_listen") : CONF("host"));
-	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
-	    &(ctx->config.sync_host.sin_addr));
+	if (NULL == host)
+		daemon_fatal("'sync_listen' configuration option invalid:");
+	if (NULL == inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	    &(ctx->config.sync_host.sin_addr)))
+		daemon_fatal("'sync_listen' configuration option ionvalid:");
 	logstr(GLOG_DEBUG, "Sync listen address %s", inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
 	ctx->config.sync_host.sin_port = htons(atoi(CONF("sync_port")));
@@ -176,8 +180,11 @@ configure_grossd(configlist_t *config)
 		logstr(GLOG_DEBUG, "Peer %s configured. Replicating.", CONF("sync_peer"));
 		ctx->config.peer.peer_addr.sin_family = AF_INET;
 		host = gethostbyname(CONF("sync_peer"));
-		inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
-		    &(ctx->config.peer.peer_addr.sin_addr));
+		if (NULL == host)
+			daemon_fatal("'sync_peer' configuration option invalid:");
+		if (NULL == inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+		    &(ctx->config.peer.peer_addr.sin_addr)))
+			daemon_fatal("'sync_peer' configuration option invalid:");
 		logstr(GLOG_DEBUG, "Sync peer address %s",
 		    inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 	}
@@ -200,8 +207,11 @@ configure_grossd(configlist_t *config)
 
 	ctx->config.status_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("status_host") ? CONF("status_host") : CONF("host"));
-	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
-	    &(ctx->config.status_host.sin_addr));
+	if (NULL == host)
+		daemon_fatal("'status_host' configuration option invalid:");
+	if (NULL == inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	    &(ctx->config.status_host.sin_addr)))
+		daemon_fatal("'status_host' configuration option invalid:");
 
 	ctx->config.status_host.sin_port = htons(atoi(CONF("status_port")));
 
@@ -424,11 +434,12 @@ configure_grossd(configlist_t *config)
 		if (NULL == CONF("blocker_host"))
 			daemon_fatal("'blocker' configured, but 'blocker_host' not");
 		host = gethostbyname(CONF("blocker_host"));
-		if (!host)
-			daemon_fatal("'blocker' configuration option invalid:");
+		if (NULL == host)
+			daemon_fatal("'blocker_host' configuration option invalid:");
 
-		inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
-		    &(ctx->config.blocker.server.sin_addr));
+		if (NULL == inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+		    &(ctx->config.blocker.server.sin_addr)))
+			daemon_fatal("'blocker_host' configuration option invalid:");
 		logstr(GLOG_DEBUG, "Blocker host address %s",
 		    inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
