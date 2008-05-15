@@ -29,7 +29,7 @@
 			"filter_bits",		"24",		\
 			"number_buffers",	"8",            \
 			"stat_interval",	"300",		\
-			"sjsms_response_grey",	"$X4.4.3|%reason%", \
+			"sjsms_response_grey",	"$X4.4.3|$N%reason%", \
 			"sjsms_response_match",	"$Y", 		\
 			"sjsms_response_trust",	"$Y",		\
 			"sjsms_response_block", "$N%reason%",	\
