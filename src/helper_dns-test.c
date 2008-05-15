@@ -37,8 +37,63 @@ main(int argc, char **argv)
 
 	helper_dns_init();
 
+	/* fire up THREADCOUNT threads to do dns queries */
+
 	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s\n", host->h_name);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.hut.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.tut.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.hut.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.lut.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
+	
+	host = Gethostbyname("www.uta.fi", 0);
+	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
+	sleep(1);
 	
 	return(0);
 }

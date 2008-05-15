@@ -10982,7 +10982,7 @@ if test `eval echo '${'$as_ac_Header'}'` = yes; then
   cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- DNSBLSOURCES='check_dnsbl.o helpder_dns.o'
+ DNSBLSOURCES='check_dnsbl.o helper_dns.o'
 else
   { { echo "$as_me:$LINENO: error: ares.h needed for dnsbl checking." >&5
 echo "$as_me: error: ares.h needed for dnsbl checking." >&2;}

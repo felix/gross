@@ -264,13 +264,25 @@ typedef struct statefile_info_s
 	int fd;
 } statefile_info_t;
 
+typedef struct lock_s
+{
+	pthread_mutex_t mx;
+	pthread_cond_t cv;
+} lock_t;
+
+typedef struct thread_locks_s
+{
+	sem_t *sync_guard;
+        lock_t bloom_guard;
+        lock_t update_guard;
+        lock_t helper_dns_guard;
+} thread_locks_t; 
+
 typedef struct
 {
 	bloom_ring_queue_t *filter;
 	int update_q;
-	sem_t *sync_guard;
-	pthread_mutex_t bloom_guard;
-	pthread_mutex_t update_guard;
+	thread_locks_t locks;
 	time_t *last_rotate;
 #ifdef DNSBL
 	dnsbl_t *dnsbl;

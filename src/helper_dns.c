@@ -21,8 +21,28 @@
 #include "common.h"
 #include "srvutils.h"
 #include "msgqueue.h"
+#include "utils.h"
 
 #include <netdb.h>
+
+typedef  unsigned long  int  ub4;
+
+/*
+ * cache hash table
+ * this is the simplest possible table: don't bother
+ * about collisions, just write over.
+ */
+typedef struct cache_data_s {
+	char *key;
+	struct hostent *value;
+	struct timespec savetime;
+} cache_data_t;
+
+#define HASHSIZE 0x0000ffff
+
+cache_data_t *hashtab[HASHSIZE] = { '\0' };
+
+ub4 mask = HASHSIZE;
 
 typedef struct dns_cba_s
 {
@@ -33,6 +53,36 @@ typedef struct dns_reply_s
 {
 	struct hostent *host;
 } dns_reply_t;
+
+/* internal functions */
+struct hostent *lookup_str(const char *key);
+ub4 one_at_a_time(const char *key, ub4 len);
+struct hostent *hostent_deepcopy(struct hostent *src);
+static void
+#if ARES_VERSION_MAJOR > 0 && ARES_VERSION_MINOR > 4
+Gethostbyname_cb(void *arg, int status, int timeouts, struct hostent *host);
+#else
+Gethostbyname_cb(void *arg, int status, struct hostent *host);
+#endif
+void cache_str(char *key, struct hostent *value);
+
+/*
+ * A simple hash function from http://www.burtleburtle.net/bob/hash/doobs.html
+ */
+ub4
+one_at_a_time(const char *key, ub4 len)
+{
+	ub4   hash, i;
+	for (hash=0, i=0; i<len; ++i) {
+		hash += key[i];
+		hash += (hash << 10);
+		hash ^= (hash >> 6);
+	}
+	hash += (hash << 3);
+	hash ^= (hash >> 11);
+	hash += (hash << 15);
+	return (hash & mask);
+} 
 
 struct hostent *
 hostent_deepcopy(struct hostent *src)
@@ -57,15 +107,57 @@ Gethostbyname_cb(void *arg, int status, struct hostent *host)
 	dns_reply_t *reply;
 
         cba = (dns_cba_t *)arg;
-
 	reply = Malloc(sizeof(dns_reply_t));
 
-        if (status == ARES_SUCCESS) {
+        if (status == ARES_SUCCESS)
 		reply->host = hostent_deepcopy(host);
-	} else {
+	else
 		reply->host = NULL;
-	}
 	put_msg(cba->response_q, reply, sizeof(dns_reply_t));
+}
+
+void
+cache_str(char *key, struct hostent *value)
+{
+	ub4 hashvalue = one_at_a_time(key, strlen(key));
+	cache_data_t *node;
+
+	node = hashtab[hashvalue];
+	/*
+	 * if we find a collision, free the old one
+	 * OTOH, the data must be copied when read as it
+	 * can be freed() at any time.
+	 */
+	if (node != NULL) {
+		Free(node->key);
+		Free(node->value);
+	} else {
+		node = Malloc(sizeof(cache_data_t));
+	}
+	node->key = key;
+	node->value = value;
+	clock_gettime(CLOCK_TYPE, &node->savetime);
+	hashtab[hashvalue] = node;
+}
+
+struct hostent *
+lookup_str(const char *key)
+{
+	ub4 hashvalue = one_at_a_time(key, strlen(key));
+	cache_data_t *node;
+	void *reply;
+
+	node = hashtab[hashvalue];
+
+	if (NULL == node)
+		return NULL;				/* not found */
+
+	if (strcmp(node->key, key) == 0) {
+		/* we must do a deep copy as the data can be freed() at any time */
+		return hostent_deepcopy(node->value);	/* found */
+	} else {
+		return NULL; 				/* collision */
+	}
 }
 
 struct hostent *
@@ -77,20 +169,28 @@ Gethostbyname(const char *name, mseconds_t timeout)
 	size_t size;
 	dns_reply_t reply;
 	int rq;
+	struct hostent *entry;
 
-	channel = ctx->dns_channel;
-	cba.response_q = get_queue();
+	entry = lookup_str(name);
 
-	ares_gethostbyname(*channel, name, PF_INET, &Gethostbyname_cb, &cba);
-	size = get_msg_timed(cba.response_q, &reply, sizeof(dns_reply_t), timeout);
-	release_queue(cba.response_q);
+	if (NULL == entry) {
+		channel = ctx->dns_channel;
+		cba.response_q = get_queue();
 
-	if (size > 0)
-		return reply.host;
-	else
-		return NULL;
+		ares_gethostbyname(*channel, name, PF_INET, &Gethostbyname_cb, &cba);
+		size = get_msg_timed(cba.response_q, &reply, sizeof(dns_reply_t), timeout);
+		release_queue(cba.response_q);
+
+		if (size > 0) {
+			cache_str(strdup(name), reply.host);
+			return reply.host;
+		} else
+			return NULL;
+	} else {
+		cache_str(strdup(name), entry);
+		return entry;
+	}
 }
-	
 
 void *
 helper_dns(void *arg)
