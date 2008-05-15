@@ -39,6 +39,7 @@ typedef struct cache_data_s {
 } cache_data_t;
 
 #define HASHSIZE 0x0000ffff
+#define CACHETIME 60 		/* 1 min */
 
 cache_data_t *hashtab[HASHSIZE] = { '\0' };
 
@@ -146,6 +147,7 @@ lookup_str(const char *key)
 	ub4 hashvalue = one_at_a_time(key, strlen(key));
 	cache_data_t *node;
 	void *reply;
+	struct timespec now;
 
 	node = hashtab[hashvalue];
 
@@ -153,8 +155,26 @@ lookup_str(const char *key)
 		return NULL;				/* not found */
 
 	if (strcmp(node->key, key) == 0) {
-		/* we must do a deep copy as the data can be freed() at any time */
-		return hostent_deepcopy(node->value);	/* found */
+		/*
+		 * we must do a deep copy as the data can be freed() at any time
+		 * Also, make sure the data isn't stale
+		 */
+		clock_gettime(CLOCK_TYPE, &now);
+		if (ms_diff(&now, &node->savetime) > CACHETIME * 1000) {
+			/*
+			 * stale, we don't have to remove the entry because
+			 * collision later will update the data, but in
+			 * case host is not found anymore will lead to unnecessary
+			 * clock_gettime() calls
+                         */
+			Free(node->key);
+			Free(node->value);
+			Free(node);
+			hashtab[hashvalue] = NULL;
+			return NULL;
+		} else {
+			return hostent_deepcopy(node->value);	/* found */
+		}
 	} else {
 		return NULL; 				/* collision */
 	}
