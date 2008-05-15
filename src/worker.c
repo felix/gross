@@ -406,11 +406,12 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 				 * two possibilities here: return TRUST if this 
 				 * has been seen before, GREY if not
 				 */
-				if (is_in_ring_queue(ctx->filter, digest))
+				if (is_in_ring_queue(ctx->filter, digest)) {
 					retvalue = STATUS_MATCH;
-				else
+				} else {
 					reasonstr = strdup(ctx->config.grey_reason);
 					retvalue = STATUS_GREY;
+				}
 			} else {
 				retvalue = STATUS_TRUST;
 			}
