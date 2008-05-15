@@ -99,6 +99,7 @@ typedef struct pool_ctx_s
 /* message queue wrap for edicts */
 typedef struct edict_message_s
 {
+	long mtype;
 	edict_t *edict;
 } edict_message_t;
 

@@ -66,11 +66,11 @@ bloommgr(void *arg)
 
 	logstr(GLOG_INFO, "bloommgr starting...");
 
-	sem_post(ctx->locks.sync_guard);
+	sem_post(ctx->sync_guard);
 
 	/* pseudo-loop */
 	for (;;) {
-		size = get_msg(ctx->update_q, &message, MSGSZ);
+		size = get_msg(ctx->update_q, &message, MSGSZ, 0);
 		if (size < 0) {
 			gerror("get_msg bloommgr");
 			continue;
@@ -106,7 +106,7 @@ bloommgr(void *arg)
 			break;
 		case SYNC_AGGREGATE:
 			sync_aggregate(ctx->filter);
-			ret = sem_post(ctx->locks.sync_guard);
+			ret = sem_post(ctx->sync_guard);
 			if (ret)
 				daemon_fatal("pthread_mutex_unlock");
 			break;
@@ -125,6 +125,6 @@ bloommgr(void *arg)
 void
 bloommgr_init()
 {
-	sem_wait(ctx->locks.sync_guard);
+	sem_wait(ctx->sync_guard);
 	create_thread(&ctx->process_parts.bloommgr, DETACH, &bloommgr, NULL);
 }

@@ -318,7 +318,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 			/* make sure timeleft != 0 as it would cause get_msg_timed to block */
 			if (timeused < ta->timeout) {
 				ret = get_msg_timed(edict->resultmq, &message,
-				    sizeof(message.result), ta->timeout - timeused);
+				    sizeof(message.result), 0, ta->timeout - timeused);
 				if (ret > 0) {
 					/* We've got a response */
 					result = (chkresult_t *)message.result;
@@ -439,7 +439,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 		/* update the filter */
 		update.mtype = UPDATE;
 		memcpy(update.mtext, &digest, sizeof(sha_256_t));
-		ret = put_msg(ctx->update_q, &update, sizeof(sha_256_t));
+		ret = put_msg(ctx->update_q, &update, sizeof(sha_256_t), 0);
 		if (ret < 0)
 			gerror("update put_msg");
 
@@ -663,8 +663,9 @@ querylogwrite(querylog_entry_t *q)
 	if (NULL == q->recipient)
 		q->recipient = "N/A";
 
-	snprintf(line, MAXLINELEN - 1, "a=%s d=%d w=%d c=%s s=%s r=%s", actionstr, q->delay, q->totalweight,  q->client_ip, q->sender, q->recipient);
-	
+	snprintf(line, MAXLINELEN - 1, "a=%s d=%d w=%d c=%s s=%s r=%s", actionstr, q->delay, q->totalweight,
+	    q->client_ip, q->sender, q->recipient);
+
 	if (q->helo) {
 		snprintf(buffer, MAXLINELEN - 1, " h=%s", q->helo);
 		strncat(line, buffer, MAXLINELEN - 1);

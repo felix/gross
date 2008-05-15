@@ -65,6 +65,3 @@
 -Tclient_info_t
 -Tgrey_tuple_t
 -Tares_channel
--TSPF_config_t
--TSPF_dns_config_t
--TSPF_output_t

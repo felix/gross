@@ -34,6 +34,12 @@ typedef struct queuepair_s {
 	int outq;
 } queuepair_t;
 
+typedef struct test_message_s
+{
+        long mtype;
+        int *counter;
+} test_message_t;
+
 /* internal functions */
 static void *msgqueueping(void *arg); 
 
@@ -45,7 +51,7 @@ msgqueueping(void *arg)
 	int *ret;
 	int i;
 	int tmp;
-	int *counter;
+	test_message_t message;
 
 	ret = Malloc(sizeof(int));
 	*ret = 0;
@@ -53,16 +59,16 @@ msgqueueping(void *arg)
 	qpair = (queuepair_t *)arg;
 
 	for (i=0; i < LOOPSIZE; i++) {
-		size = get_msg_timed(qpair->inq, &counter, sizeof(int *), TIMELIMIT);
+		size = get_msg_timed(qpair->inq, &message, sizeof(int *), 0, TIMELIMIT);
 		if (size == 0) {
 			printf("  timeout\n");
 			goto OUT;
 		} else {
 			/* avoid ++ to lure out concurrency problems */
-			tmp = *counter + 1;
+			tmp = *message.counter + 1;
 			usleep(1000);
-			*counter = tmp;
-			put_msg(qpair->outq, &counter, sizeof(int *));
+			*message.counter = tmp;
+			put_msg(qpair->outq, &message, sizeof(int *), 0);
 		}
 	}
 OUT:
@@ -76,7 +82,7 @@ main(int argc, char **argv)
 	int balls[BALLS];
 	int queues[QUEUES];
 	queuepair_t qpairs[QUEUEPAIRS];
-	int *counter; 
+	test_message_t message;
 	int ret;
 	int i;
 	int *exitvalue;
@@ -111,8 +117,9 @@ main(int argc, char **argv)
 	/* serve ping pong balls */
 	for (i=0; i < BALLS; i++) {
 		balls[i] = 0;
-		counter = &balls[i];
-		put_msg(queues[i % QUEUES], &counter, sizeof(int *));
+		message.mtype = 0;
+		message.counter = &balls[i];
+		put_msg(queues[i % QUEUES], &message, sizeof(int *), 0);
 	}
 	printf("  Done.\n");
 

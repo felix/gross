@@ -133,21 +133,25 @@ mlfi_envrcpt(SMFICTX * milter_ctx, char **argv)
 		tuple->helo_name = strdup(priv->helo_name);
 
 	ret = test_tuple(status, tuple, NULL);
-
-	switch (status->status) {
-	case STATUS_GREY:
-		smfi_setreply(milter_ctx, "452", "4.4.3",
-		    status->reason ? status->reason : "Please try again later");
-		retvalue = SMFIS_TEMPFAIL;
-		break;
-	case STATUS_BLOCK:
-		smfi_setreply(milter_ctx, "550", "5.7.1",
-		    status->reason ? status->reason : "Rejected by policy");
-		retvalue = SMFIS_REJECT;
-		break;
-	default:
+	if (ret == 0) {
+		switch (status->status) {
+		case STATUS_GREY:
+			smfi_setreply(milter_ctx, "452", "4.4.3",
+			    status->reason ? status->reason : "Please try again later");
+			retvalue = SMFIS_TEMPFAIL;
+			break;
+		case STATUS_BLOCK:
+			smfi_setreply(milter_ctx, "550", "5.7.1",
+			    status->reason ? status->reason : "Rejected by policy");
+			retvalue = SMFIS_REJECT;
+			break;
+		default:
+			retvalue = SMFIS_CONTINUE;
+			break;
+		}
+	} else {
+		logstr(GLOG_DEBUG, "test_tuple() returned <0");
 		retvalue = SMFIS_CONTINUE;
-		break;
 	}
 
 	finalize(status);
@@ -208,7 +212,7 @@ milter_watcher(void *arg)
 
 	ret = pthread_join(*ctx->process_parts.milter_server.thread, NULL);
 	daemon_shutdown(EXIT_NOERROR, "milter exited");
-	
+
 	pthread_exit(NULL);
 }
 
