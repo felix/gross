@@ -207,7 +207,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 	int checks_running;
 	int definitives_running;
 	int checkcount;
-	int susp_weight = 0;
+	int susp_weight = 0;		/* must be initialized to zero J_UNDEFINED */
 	int block_threshold;
 	int grey_threshold;
 	bool free_ta = false;
@@ -264,6 +264,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 		retvalue = STATUS_MATCH;
 	} else if (0 == checkcount) {
 		/* traditional greylister */
+		reasonstr = strdup(ctx->config.grey_reason);
 		retvalue = STATUS_GREY;
 	} else {
 		/* build default entry, if timeout not given */
@@ -398,10 +399,11 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 			retvalue = STATUS_BLOCK;
 			break;
 		case J_SUSPICIOUS:
+		case J_UNDEFINED:
 			if (block_threshold > 0 && susp_weight >= block_threshold) {
 				retvalue = STATUS_BLOCK;
 				reasonstr = strdup(ctx->config.block_reason);
-			} else if (grey_threshold > 0 && susp_weight >= grey_threshold) {
+			} else if (susp_weight >= grey_threshold) {
 				/*
 				 * two possibilities here: return TRUST if this 
 				 * has been seen before, GREY if not
@@ -416,11 +418,9 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 				retvalue = STATUS_TRUST;
 			}
 			break;
-		case J_UNDEFINED:
-			retvalue = STATUS_TRUST;
-			break;
 		default:
 			/* this should never happen */
+			logstr(GLOG_ERROR, "BUG: case default in switch (judgment)");
 			retvalue = STATUS_TRUST;
 			break;
 		}

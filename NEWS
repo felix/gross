@@ -1,3 +1,9 @@
+Version 1.0-svn
+
+Issues fixed:
+#67: Setting grey_threshold = 0 is not intuitive
+#68: grossd should accept sync connections only from the configured sync_peer
+
 Version 1.0.0
 
 * Prevent grossd from running as root (euid == 0). You may 
