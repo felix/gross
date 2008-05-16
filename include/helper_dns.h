@@ -24,6 +24,7 @@
 
 typedef  unsigned long  int  ub4;
 
+void helper_dns_init();
 struct hostent *Gethostbyname(const char *name, struct timeval *timeout);
 ub4 one_at_a_time(char *key, ub4 len);
 

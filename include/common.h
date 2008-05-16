@@ -278,7 +278,7 @@ typedef struct thread_locks_s
         lock_t helper_dns_guard;
 } thread_locks_t; 
 
-typedef struct
+typedef struct gross_ctx_s
 {
 	bloom_ring_queue_t *filter;
 	int update_q;
@@ -289,6 +289,7 @@ typedef struct
 	dnsbl_t *dnswl;
 	dnsbl_t *rhsbl;
 	ares_channel *dns_channel;
+	int dns_wake;
 #endif				/* ENDBL */
 	gross_config_t config;
 	mmapped_brq_t *mmap_info;

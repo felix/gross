@@ -7,7 +7,7 @@ sbin_PROGRAMS = grossd
 bin_PROGRAMS = gclient
 lib_LTLIBRARIES = grosscheck.la
 
-grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c stats.c worker_postfix.c worker_sjsms.c check_blocker.c check_random.c
+grossd_SOURCES = sha256.c bloom.c utils.c srvutils.c worker.c bloommgr.c gross.c syncmgr.c conf.c msgqueue.c srvstatus.c thread_pool.c stats.c worker_postfix.c worker_sjsms.c check_blocker.c check_random.c lookup3.c
 EXTRA_grossd_SOURCES = check_dnsbl.c helpder_dns.c worker_milter.c
 grossd_LDFLAGS = @LDFLAGS@ proto_sjsms.o
 grossd_LDADD = @DNSBLSOURCES@ @MILTERSOURCES@ @SPFSOURCES@
@@ -25,6 +25,5 @@ bloom_SOURCES = sha256.c bloom-test.c bloom.c srvutils.c utils.c
 sha256_SOURCES = sha256-test.c sha256.c srvutils.c utils.c bloom.c
 counter_SOURCES = counter-test.c counter.c srvutils.c bloom.c utils.c
 msgqueue_SOURCES = msgqueue-test.c msgqueue.c srvutils.c bloom.c utils.c
-helper_dns_SOURCES = helper_dns-test.c helper_dns.c msgqueue.c srvutils.c bloom.c utils.c
-#TESTS = counter msgqueue sha256 bloom 
-TESTS = helper_dns
+helper_dns_SOURCES = helper_dns-test.c helper_dns.c msgqueue.c srvutils.c bloom.c utils.c lookup3.c
+TESTS = counter msgqueue sha256 bloom helper_dns

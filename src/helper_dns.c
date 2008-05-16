@@ -22,10 +22,9 @@
 #include "srvutils.h"
 #include "msgqueue.h"
 #include "utils.h"
+#include "lookup3.h"
 
 #include <netdb.h>
-
-typedef  unsigned long  int  ub4;
 
 /*
  * cache hash table
@@ -38,12 +37,14 @@ typedef struct cache_data_s {
 	struct timespec savetime;
 } cache_data_t;
 
-#define HASHSIZE 0x0000ffff
+#define HASHSIZE hashsize(10)
+#define HASHMASK hashmask(10)
 #define CACHETIME 60 		/* 1 min */
-
 cache_data_t *hashtab[HASHSIZE] = { '\0' };
+pthread_mutex_t cache_mx = PTHREAD_MUTEX_INITIALIZER;
 
-ub4 mask = HASHSIZE;
+#define CACHE_LOCK { pthread_mutex_lock(&cache_mx); }
+#define CACHE_UNLOCK { pthread_mutex_unlock(&cache_mx); }
 
 typedef struct dns_cba_s
 {
@@ -57,7 +58,6 @@ typedef struct dns_reply_s
 
 /* internal functions */
 struct hostent *lookup_str(const char *key);
-ub4 one_at_a_time(const char *key, ub4 len);
 struct hostent *hostent_deepcopy(struct hostent *src);
 static void
 #if ARES_VERSION_MAJOR > 0 && ARES_VERSION_MINOR > 4
@@ -66,24 +66,6 @@ Gethostbyname_cb(void *arg, int status, int timeouts, struct hostent *host);
 Gethostbyname_cb(void *arg, int status, struct hostent *host);
 #endif
 void cache_str(char *key, struct hostent *value);
-
-/*
- * A simple hash function from http://www.burtleburtle.net/bob/hash/doobs.html
- */
-ub4
-one_at_a_time(const char *key, ub4 len)
-{
-	ub4   hash, i;
-	for (hash=0, i=0; i<len; ++i) {
-		hash += key[i];
-		hash += (hash << 10);
-		hash ^= (hash >> 6);
-	}
-	hash += (hash << 3);
-	hash ^= (hash >> 11);
-	hash += (hash << 15);
-	return (hash & mask);
-} 
 
 struct hostent *
 hostent_deepcopy(struct hostent *src)
@@ -120,9 +102,12 @@ Gethostbyname_cb(void *arg, int status, struct hostent *host)
 void
 cache_str(char *key, struct hostent *value)
 {
-	ub4 hashvalue = one_at_a_time(key, strlen(key));
+	/* ub4 hashvalue = one_at_a_time(key, strlen(key)); */
+	uint32_t hashvalue = hashfunc(key, strlen(key));
+
 	cache_data_t *node;
 
+	CACHE_LOCK;
 	node = hashtab[hashvalue];
 	/*
 	 * if we find a collision, free the old one
@@ -139,20 +124,26 @@ cache_str(char *key, struct hostent *value)
 	node->value = value;
 	clock_gettime(CLOCK_TYPE, &node->savetime);
 	hashtab[hashvalue] = node;
+	CACHE_UNLOCK;
 }
 
 struct hostent *
 lookup_str(const char *key)
 {
-	ub4 hashvalue = one_at_a_time(key, strlen(key));
+	/* ub4 hashvalue = one_at_a_time(key, strlen(key)); */
+	uint32_t hashvalue = hashfunc(key, strlen(key));
+	struct hostent *host;
+
 	cache_data_t *node;
-	void *reply;
 	struct timespec now;
 
+	CACHE_LOCK;
 	node = hashtab[hashvalue];
 
-	if (NULL == node)
+	if (NULL == node) {
+		CACHE_UNLOCK;
 		return NULL;				/* not found */
+	}
 
 	if (strcmp(node->key, key) == 0) {
 		/*
@@ -171,11 +162,15 @@ lookup_str(const char *key)
 			Free(node->value);
 			Free(node);
 			hashtab[hashvalue] = NULL;
+			CACHE_UNLOCK;
 			return NULL;
 		} else {
-			return hostent_deepcopy(node->value);	/* found */
+			host = hostent_deepcopy(node->value);	/* found */
+			CACHE_UNLOCK;
+			return host;
 		}
 	} else {
+		CACHE_UNLOCK;
 		return NULL; 				/* collision */
 	}
 }
@@ -188,7 +183,6 @@ Gethostbyname(const char *name, mseconds_t timeout)
 	ares_channel *channel;
 	size_t size;
 	dns_reply_t reply;
-	int rq;
 	struct hostent *entry;
 
 	entry = lookup_str(name);
@@ -196,18 +190,22 @@ Gethostbyname(const char *name, mseconds_t timeout)
 	if (NULL == entry) {
 		channel = ctx->dns_channel;
 		cba.response_q = get_queue();
-
 		ares_gethostbyname(*channel, name, PF_INET, &Gethostbyname_cb, &cba);
+		/* send a byte via pipe to wake up the select loop */
+		size = write(ctx->dns_wake, "w", 1);
+		if (size != 1)
+			daemon_fatal("write");
+		/* wait for the reply via message queue */
 		size = get_msg_timed(cba.response_q, &reply, sizeof(dns_reply_t), timeout);
 		release_queue(cba.response_q);
 
 		if (size > 0) {
-			cache_str(strdup(name), reply.host);
+			if (reply.host)
+				cache_str(strdup(name), reply.host);
 			return reply.host;
 		} else
 			return NULL;
 	} else {
-		cache_str(strdup(name), entry);
 		return entry;
 	}
 }
@@ -217,10 +215,14 @@ helper_dns(void *arg)
 {
 	struct timeval tv;
         fd_set readers, writers;
-	int nfds;
+	int nfds = 0;
 	int count;
 	ares_channel *channel;
+	int pipefd[2];
 	int ret;
+	int dns_wake;
+	char buf[MAXLINELEN];
+	ssize_t size;
 
         ret = pthread_mutex_lock(&ctx->locks.helper_dns_guard.mx);
         assert(ret == 0);
@@ -231,6 +233,15 @@ helper_dns(void *arg)
 
 	ctx->dns_channel = channel;
 
+	/*
+	 * pipe for wakening helper from select()
+	 */
+	ret = pipe(pipefd);
+	if (ret < 0)
+		daemon_fatal("pipe");
+	dns_wake = pipefd[0];
+	ctx->dns_wake = pipefd[1];
+
 	/* ready to serve */
 	pthread_mutex_unlock(&ctx->locks.helper_dns_guard.mx);
 	pthread_cond_signal(&ctx->locks.helper_dns_guard.cv);
@@ -238,13 +249,32 @@ helper_dns(void *arg)
 	for (;;) {
 		FD_ZERO(&readers);
 		FD_ZERO(&writers);
-		nfds = ares_fds(*channel, &readers, &writers);
+		/* nfds = ares_fds(*channel, &readers, &writers); */
+		FD_SET(dns_wake, &readers);
+		nfds = MAX(nfds, dns_wake + 1);
 
-		if (nfds == 0)
+		/* ares knows the next timeout */
 		ares_timeout(*channel, NULL, &tv);
 		
+		printf("select\n");
 		count = select(nfds, &readers, &writers, NULL, &tv);
-		ares_process(*channel, &readers, &writers);
+		if (count < 0) {
+			daemon_fatal("select");
+		} else {
+			/* job to do or timeout */
+			if (FD_ISSET(dns_wake, &readers)) {
+				logstr(GLOG_INSANE, "helper_dns: received a wake up call");
+				printf("helper_dns: received a wake up call\n");
+				/* consume the wake up call */
+				size = read(dns_wake, buf, 1);
+				if (size != 1)
+					daemon_fatal("read");
+			}
+			/* clear out our wakening fd */
+			FD_CLR(dns_wake, &readers);
+			ares_process(*channel, &readers, &writers);
+		}
+			
 	}
 	/* never reached */
 }
@@ -264,7 +294,7 @@ helper_dns_init()
 
 	create_thread(&ctx->process_parts.helper_dns, DETACH, &helper_dns, NULL);
 
-	/* wait until helper thread is ready to serve */
+	/* wait until the helper thread is ready to serve */
 	ret = pthread_cond_wait(&ctx->locks.helper_dns_guard.cv, &ctx->locks.helper_dns_guard.mx);
 	pthread_mutex_unlock(&ctx->locks.helper_dns_guard.mx);
 }

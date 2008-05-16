@@ -22,15 +22,36 @@
 #include "srvutils.h"
 #include "helper_dns.h"
 
+/* internal funtions */
+static void *dnstest(void *arg);
+
 /* dummy context */
 gross_ctx_t *ctx;
+
+#define THREADCOUNT 2000
+
+static void *
+dnstest(void *arg)
+{
+	struct hostent *host;
+	int i;
+       
+	for (i=0; i < 10; i++) {
+		host = Gethostbyname("www.utu.fi", 0);
+		printf("got: %s\n", host->h_name);
+	}
+
+	printf("exiting\n");
+
+	pthread_exit(NULL);
+}
 
 int
 main(int argc, char **argv)
 {
+	thread_info_t threads[THREADCOUNT];
 	gross_ctx_t myctx = { 0x00 }; /* dummy context */
-	struct hostent *host;
-	char *foo;
+	int i = 0;
 
         ctx = &myctx;
 	ctx->config.loglevel = GLOG_EMERG;
@@ -38,62 +59,17 @@ main(int argc, char **argv)
 	helper_dns_init();
 
 	/* fire up THREADCOUNT threads to do dns queries */
+	
+	create_thread(&threads[i], 0, &dnstest, NULL);
+	pthread_join(*threads[i].thread, NULL);
 
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
 	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.hut.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.tut.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.hut.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.lut.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
-	host = Gethostbyname("www.uta.fi", 0);
-	printf("got: %s -> %x\n", host->h_name, one_at_a_time(host->h_name, strlen(host->h_name)));
-	sleep(1);
-	
+
+	for(i=0; i < THREADCOUNT; i++)
+		create_thread(&threads[i], 0, &dnstest, NULL);
+	for (i=0; i < THREADCOUNT; i++)
+		if (0 != pthread_join(*threads[i].thread, NULL))
+			perror("pthread_join");
+
 	return(0);
 }

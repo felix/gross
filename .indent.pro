@@ -1,5 +1,5 @@
 -bad -nbc -br -ncdb -c33 -cd33 -ce -cli0 -d0 -di0 -ndj -nfc1 -i8 -ip8 -l110
--nlp -npcs -psl -bap -nbbb -nsc -nsob -ci4 -ncs
+-nlp -npcs -psl -bap -nbbb -sc -nsob -ci4 -ncs
 -Tbitindex_t
 -Tbitarray_base_t
 -Tbitmask_t
