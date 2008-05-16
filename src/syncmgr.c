@@ -280,7 +280,8 @@ recv_sync_msg(peer_t *peer)
 	default:
 		logstr(GLOG_ERROR, "Unknown sync message type.");
 		ACTIVATE_SYNC_GUARD();
-		peer->connected = 0; close(peer->peerfd_out);
+		peer->connected = 0;
+		close(peer->peerfd_out);
 		RELEASE_SYNC_GUARD();
 		return -1;
 		break;
@@ -420,9 +421,11 @@ synchronize(peer_t *peer, int syncfd)
 	int opt = 0;
 	socklen_t clen = sizeof(struct sockaddr_in);
 	char ipstr[INET_ADDRSTRLEN];
+	char conn_ipstr[INET_ADDRSTRLEN];
 	int ret;
 	sync_config_t conf;
 	update_message_t rotatecmd;
+	struct sockaddr_in receive;
 
 	peer->peerfd_out = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -434,8 +437,9 @@ synchronize(peer_t *peer, int syncfd)
 	/* Try connect to peer */
 	if (connect(peer->peerfd_out, (struct sockaddr *)&(peer->peer_addr), clen) != 0) {
 		/* Miserable failure */
-		if (NULL == inet_ntop(AF_INET, &(peer->peer_addr.sin_addr), ipstr, INET_ADDRSTRLEN))
+		if (NULL == inet_ntop(AF_INET, &(peer->peer_addr.sin_addr), ipstr, INET_ADDRSTRLEN)) {
 			daemon_fatal("inet_ntop");
+		}
 
 		logstr(GLOG_INFO, "Connect to peer failed, host %s, port %d", ipstr,
 		    ntohs(peer->peer_addr.sin_port));
@@ -462,9 +466,27 @@ synchronize(peer_t *peer, int syncfd)
 	while (TRUE) {
 		logstr(GLOG_INFO, "Waiting sync connection on host %s port %d", ipstr,
 		    ntohs(ctx->config.sync_host.sin_port));
-		peer->peerfd_in = accept(syncfd, (struct sockaddr *)&(ctx->config.sync_host), &clen);
-		peer->connected = peer->peerfd_in;
+		peer->peerfd_in = accept(syncfd, (struct sockaddr *)&(receive), &clen);
+
 		logstr(GLOG_INFO, "Got sync connection");
+
+		if (ctx->config.peer.peer_addr.sin_addr.s_addr != receive.sin_addr.s_addr) {
+			if (NULL == inet_ntop(AF_INET, &(receive.sin_addr), conn_ipstr, INET_ADDRSTRLEN)) {
+				daemon_fatal("inet_ntop");
+			}
+
+			close(peer->peerfd_in);
+			logstr(GLOG_INFO, "Sync connection not from peer. Disconnecting %s.", conn_ipstr);
+			continue;
+		} else {
+			if (NULL == inet_ntop(AF_INET, &(receive.sin_addr), conn_ipstr, INET_ADDRSTRLEN)) {
+				daemon_fatal("inet_ntop");
+			}
+
+			logstr(GLOG_INFO, "Good peer %s.", conn_ipstr);
+		}
+
+		peer->connected = peer->peerfd_in;
 
 		if (peer->peerfd_in < 0) {
 			if (errno != EINTR) {
@@ -480,8 +502,10 @@ synchronize(peer_t *peer, int syncfd)
 		send_sync_config(peer, &conf);
 
 		ACTIVATE_SYNC_GUARD();
-		queue_freeze(ctx->update_q); send_filters(peer);
-		    walk_queue(ctx->update_q, &send_update_msg_as_oper_sync); queue_thaw(ctx->update_q);
+		queue_freeze(ctx->update_q);
+		send_filters(peer);
+		walk_queue(ctx->update_q, &send_update_msg_as_oper_sync);
+		queue_thaw(ctx->update_q);
 		RELEASE_SYNC_GUARD();
 
 		logstr(GLOG_INFO, "Sent filters. Waiting for oper syncs");

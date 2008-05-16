@@ -112,6 +112,7 @@ srvstatus(void *arg)
 	int tmpfd = -1;
 	char statbuf[MSGSZ] = { 0x00 };
 	socklen_t clen = sizeof(struct sockaddr_in);
+	struct sockaddr_in receive;
 
 	statfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (statfd < 0) {
@@ -140,7 +141,7 @@ srvstatus(void *arg)
 
 	while (TRUE) {
 		memset(statbuf, 0, MSGSZ);
-		tmpfd = accept(statfd, (struct sockaddr *)&(ctx->config.status_host), &clen);
+		tmpfd = accept(statfd, (struct sockaddr *)&(receive), &clen);
 
 		if (tmpfd < 0) {
 			gerror("Syncfd accept");
