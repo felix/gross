@@ -48,7 +48,7 @@ assemble_response(char *result, size_t len, char *template, char *reason)
                 *reasonsubstitute = '\0';
                 epilogue = reasonsubstitute + strlen(REASONTEMPLATE);
                 snprintf(result, len, "%s%s%s", prologue, reason, epilogue);
-		result[len] = '\0';
+		result[len-1] = '\0';
         }
         Free(prologue);
 

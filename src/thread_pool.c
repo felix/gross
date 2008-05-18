@@ -33,6 +33,7 @@
 
 /* internals */
 static void *thread_pool(void *arg);
+void edict_reference(edict_t *edict);
 
 /* macros */
 #define POOL_MUTEX_LOCK { pthread_mutex_lock(pool_ctx->mx); }
@@ -245,6 +246,22 @@ create_thread_pool(const char *name, int (*routine) (thread_pool_t *, thread_ctx
 	return pool;
 }
 
+ /*
+ * edict_reference     - add a reference to an edict
+ */
+void
+edict_reference(edict_t *edict)
+{
+       int ret;
+
+       /* increment reference counter */
+       ret = pthread_mutex_lock(&edict->reference.mx);
+       assert(0 == ret);
+       edict->reference.count++;
+       ret = pthread_mutex_unlock(&edict->reference.mx);
+       assert(0 == ret);
+}
+
 /*
  * submit_job	- add a job request to the work queue
  */
@@ -257,9 +274,7 @@ submit_job(thread_pool_t *pool, edict_t *edict)
 	message.edict = edict;
 
 	/* increment reference counter */
-	pthread_mutex_lock(&edict->reference.mx);
-	edict->reference.count++;
-	pthread_mutex_unlock(&edict->reference.mx);
+	edict_reference(edict);
 
 	return put_msg(pool->work_queue_id, &message, sizeof(message.edict), 0);
 }
