@@ -651,10 +651,7 @@ main(int argc, char *argv[])
 	config = read_config(configfile);
 	configure_grossd(config);
 
-	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
-		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
-		ctx->syslog_open = true;
-	}
+	log_open();
 
 	logstr(GLOG_INFO, "grossd version %s starting...", VERSION);
 
@@ -670,19 +667,9 @@ main(int argc, char *argv[])
 	if (ctx->config.flags & FLG_CHECK_PIDFILE)
 		check_pidfile();
 
-	/* close syslog before daemonizing */
-	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG)
-		closelog();
-
 	/* daemonize must be run before any pthread_create */
 	if ((ctx->config.flags & FLG_NODAEMON) == 0)
 		daemonize();
-
-	/* open syslog again */
-	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
-		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
-		ctx->syslog_open = true;
-	}
 
 	if (ctx->config.flags & FLG_CREATE_PIDFILE)
 		create_pidfile();
@@ -692,6 +679,7 @@ main(int argc, char *argv[])
 
 	/* Mask all allowed signals */
 	sigfillset(&mask);
+	sigdelset(&mask, SIGALRM); 	/* for killing stuck threads */
 	ret = pthread_sigmask(SIG_BLOCK, &mask, &oldmask);
 	if (ret)
 		daemon_fatal("pthread_sigmask");

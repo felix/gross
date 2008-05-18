@@ -442,14 +442,29 @@ daemonize(void)
 	int i;
 	pid_t pid;
 
-	if ((pid = fork()) != 0)
+	log_close();
+	if ((pid = fork()) > 0) {
+		log_open();
 		exit(EXIT_NOERROR);	/* parent terminates */
+	} else if (pid < 0) {
+		log_open();
+		daemon_fatal("fork(): "); /* error */
+	}
 
 	/* 1st child continues */
-	setsid();		/* become session leader */
+	/* become session leader */
+	if ((pid = setsid()) < 0) {
+		log_open();
+		daemon_fatal("setsid(): ");
+	}
 
-	if ((pid = fork()) != 0)
+	if ((pid = fork()) > 0) {
+		log_open();
 		exit(EXIT_NOERROR);	/* 1st child terminates */
+	} else if (pid < 0) {
+		log_open();
+		daemon_fatal("fork: "); /* error */
+	}
 
 	/* 2nd child continues */
 	close(0);
@@ -460,6 +475,7 @@ daemonize(void)
 	open("/dev/null", O_WRONLY, 0);
 	for (i = 3; i < MAXFD; i++)
 		close(i);
+	log_open();
 }
 
 /*
@@ -573,4 +589,34 @@ ipstr(struct sockaddr_in *saddr)
 		strncpy(ipstr, "UNKNOWN\0", INET_ADDRSTRLEN);
 	}
 	return strdup(ipstr);
+}
+
+/*
+ * log_open	- open the configured log facility (currently only syslog)
+ */
+int
+log_open(void)
+{
+        if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
+		if (ctx->syslog_open)
+			return -1;
+                openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
+                ctx->syslog_open = true;
+        }
+	return 0;
+}
+	
+/*
+ * log_close	- close the configured log facility (currenlty only syslog)
+ */
+int
+log_close(void)
+{
+        if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
+		if (! ctx->syslog_open)
+			return -1;
+		closelog();
+                ctx->syslog_open = false;
+        }
+	return 0;
 }
