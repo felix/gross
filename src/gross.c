@@ -670,9 +670,19 @@ main(int argc, char *argv[])
 	if (ctx->config.flags & FLG_CHECK_PIDFILE)
 		check_pidfile();
 
+	/* close syslog before daemonizing */
+	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG)
+		closelog();
+
 	/* daemonize must be run before any pthread_create */
 	if ((ctx->config.flags & FLG_NODAEMON) == 0)
 		daemonize();
+
+	/* open syslog again */
+	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
+		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
+		ctx->syslog_open = true;
+	}
 
 	if (ctx->config.flags & FLG_CREATE_PIDFILE)
 		create_pidfile();
