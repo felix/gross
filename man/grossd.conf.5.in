@@ -107,7 +107,7 @@ is the reason given when client is too suspicious, see
 \fBblock_threshold\fP.  Default is \(lqBad reputation\(rq.
 .IP "\fBgrey_threshold\fP" 4
 is analogous to \fBblock_threshold\fP, except at the threshold \fIgrossd\fP\|(8)
-sends a \s-1STATUS_GREY\s+1 response.
+sends a \s-1STATUS_GREY\s+1 response. Default is 1. If set to 0 \fIgrossd\fP\|(8) will greylist by default. This makes it possible to combine a traditional greylister and rbl checks.
 .IP "\fBgrey_reason\fP" 4
 is the reason given when client is suspicious enough to be greylisted, see
 \fBgrey_threshold\fP.  Default is \(lqPlease try again later.\(rq.
