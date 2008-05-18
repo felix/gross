@@ -70,6 +70,8 @@
                         "update",			\
                         "peer_name",			\
                         "statefile",			\
+			"postfix_response_grey",	\
+			"postfix_response_block",	\
 			"sjsms_response_grey",		\
 			"sjsms_response_match",		\
 			"sjsms_response_trust",		\

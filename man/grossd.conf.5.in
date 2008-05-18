@@ -191,7 +191,8 @@ You may configure the responses \fIgrossd\fP\|(8) sends over to grosscheck
 library.
 .IP "\fBsjsms_response_grey\fP" 4
 is the mapping result template \fIgrossd\fP\|(8) uses for a \s-1STATUS_GREY\s+1
-result.  Default is `$X4.4.3|$NPlease$ try$ again$ later'.
+result.  Default is `$X4.4.3|$N%reason%', where `%reason%' is the template for
+the reason string.
 .IP "\fBsjsms_response_match\fP" 4
 is the mapping result template \fIgrossd\fP\|(8) uses for a
 \s-1STATUS_MATCH\s+1 result.  Default is `$Y'.
@@ -200,9 +201,18 @@ is the mapping result template \fIgrossd\fP\|(8) uses for a
 \s-1STATUS_TRUST\s+1 result.  Default is `$Y'.
 .IP "\fBsjsms_response_block\fP" 4
 is the mapping result template \fIgrossd\fP\|(8) uses for a
-\s-1TATUS_BLOCK\s+1 result.  Default is
+\s-1STATUS_BLOCK\s+1 result.  Default is
 \&`$N%reason%', where `%reason%' is the template for the reason
 string.
+.SS "Postfix specific options"
+.IP "\fBpostfix_response_grey\fP" 4
+is the response template \fIgrossd\fP\|(8) uses for a \s-1STATUS_GREY\s+1
+result.  Default is `action=defer_if_permit %reason%', where `%reason' is the
+template for the reason string.
+.IP "\fBpostfix_response_block\fP" 4
+is the response template \fIgrossd\fP\|(8) uses for a \s-1STATUS_BLOCK\s+1
+result.  Default is `action=reject %reason%', where `%reason' is the
+template for the reason string.
 .SH "MTA CONFIGURATION"
 .SS "Sun Java System Messaging Server"
 You have to add a mapping entry to set
