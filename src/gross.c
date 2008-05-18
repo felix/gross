@@ -656,6 +656,8 @@ main(int argc, char *argv[])
 		ctx->syslog_open = true;
 	}
 
+	logstr(GLOG_INFO, "grossd version %s starting...", VERSION);
+
 	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE) {
 		if (ctx->config.statefile) {
 			create_statefile();

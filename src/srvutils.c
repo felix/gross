@@ -268,6 +268,8 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 
 		ctx->statefile_info = Malloc(sizeof(statefile_info_t));
                 ctx->statefile_info->fd = open(ctx->config.statefile, O_RDWR);
+		if (ctx->statefile_info->fd < 0)
+			daemon_fatal("open() statefile:");
 
 		ptr = (char *)mmap((void *)0, lumpsize, PROT_READ | PROT_WRITE, MAP_SHARED, ctx->statefile_info->fd, 0);
 		assert(ptr);
