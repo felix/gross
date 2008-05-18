@@ -24,8 +24,6 @@
 #include "worker.h"
 #include "utils.h"
 
-#define REASONTEMPLATE "%reason%"
-
 /* internal functions */
 int mappingstr(const char *from, char *to, size_t len);
 char *assemble_mapresult(char *template, char *reason);
