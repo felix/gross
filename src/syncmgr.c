@@ -426,6 +426,7 @@ synchronize(peer_t *peer, int syncfd)
 	sync_config_t conf;
 	update_message_t rotatecmd;
 	struct sockaddr_in receive;
+	struct sockaddr_in sync_out;
 
 	peer->peerfd_out = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -434,7 +435,17 @@ synchronize(peer_t *peer, int syncfd)
 	if (ret)
 		daemon_fatal("setsockopt");
 
-	/* Try connect to peer */
+	/*
+	 * Try connect to peer;
+	 * socket must be bind() because peer only accepts connections from
+	 * the configured peer address
+	 */
+	memcpy(&sync_out, &ctx->config.sync_host, sizeof(struct sockaddr_in));
+	sync_out.sin_port = 0;	/* any */
+	ret = bind(peer->peerfd_out, (struct sockaddr *)&sync_out, sizeof(struct sockaddr_in));
+	if (ret < 0)
+		daemon_fatal("bind");
+
 	if (connect(peer->peerfd_out, (struct sockaddr *)&(peer->peer_addr), clen) != 0) {
 		/* Miserable failure */
 		if (NULL == inet_ntop(AF_INET, &(peer->peer_addr.sin_addr), ipstr, INET_ADDRSTRLEN)) {
