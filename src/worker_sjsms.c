@@ -349,7 +349,7 @@ sjsms_server(void *arg)
 			edict_unlink(edict);
 		}
 	}
-	/* never reached */
+	/* NOTREACHED */
 }
 
 void

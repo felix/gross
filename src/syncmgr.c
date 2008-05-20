@@ -287,8 +287,7 @@ recv_sync_msg(peer_t *peer)
 		break;
 	}
 
-	/* never reached */
-
+	/* NOTREACHED */
 }
 
 int
@@ -526,9 +525,8 @@ synchronize(peer_t *peer, int syncfd)
 		} while (0x00 != ret);
 	}
 
-	/* never reached 
-	 * logstr(GLOG_INFO, "Peer %s connected", peer->peer_name);
-	 */
+	/* NOTREACHED */
+	/* logstr(GLOG_INFO, "Peer %s connected", peer->peer_name); */
 }
 
 static void *

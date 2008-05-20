@@ -299,7 +299,7 @@ optimal_size(unsigned int n, double c)
 			return result;
 	}
 
-	/* Never reached */
+	/* NOTREACHED */
 	assert(0);
 	return 0;
 }

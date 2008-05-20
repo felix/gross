@@ -201,7 +201,7 @@ milter_server(void *arg)
 	logstr(GLOG_DEBUG, "milter thread calling smfi_main()");
 	smfi_main();
 
-	/* never reached */
+	/* NOTREACHED */
 	pthread_exit(NULL);
 }
 
