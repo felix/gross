@@ -46,7 +46,7 @@
 			"blocker_weight",	"1",		\
 			"block_threshold",	"0",		\
 			"grey_threshold",	"1",		\
-			"grey_reason",		"Please try again later.", \
+			"grey_reason",		"Please try again later", \
 			"block_reason",		"Bad reputation", \
 			"query_timelimit",	"5000",		\
 			"pool_maxthreads",	"100"
