@@ -440,7 +440,7 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 		/* update the filter */
 		update.mtype = UPDATE;
 		memcpy(update.mtext, &digest, sizeof(sha_256_t));
-		ret = put_msg(ctx->update_q, &update, sizeof(sha_256_t));
+		ret = put_msg(ctx->update_q, &update, sizeof(update_message_t));
 		if (ret < 0)
 			gerror("update put_msg");
 
