@@ -52,6 +52,38 @@ main(int argc, char **argv)
 	thread_info_t threads[THREADCOUNT];
 	gross_ctx_t myctx = { 0x00 }; /* dummy context */
 	int i = 0;
+	struct hostent *host;
+
+        ctx = &myctx;
+	ctx->config.loglevel = GLOG_EMERG;
+
+	helper_dns_init();
+
+	host = Gethostbyname("www.utu.fi", 0);
+	printf("got: %s\n", host->h_name);
+	host = Gethostbyname("www.tut.fi", 0);
+	printf("got: %s\n", host->h_name);
+	host = Gethostbyname("www.hut.fi", 0);
+	printf("got: %s\n", host->h_name);
+	host = Gethostbyname("www.lut.fi", 0);
+	printf("got: %s\n", host->h_name);
+	host = Gethostbyname("www.uta.fi", 0);
+	printf("got: %s\n", host->h_name);
+	host = Gethostbyname("www.jyu.fi", 0);
+	printf("got: %s\n", host->h_name);
+	host = Gethostbyname("www.uku.fi", 0);
+	printf("got: %s\n", host->h_name);
+
+	return 0;
+}
+
+#if 0
+int
+main(int argc, char **argv)
+{
+	thread_info_t threads[THREADCOUNT];
+	gross_ctx_t myctx = { 0x00 }; /* dummy context */
+	int i = 0;
 
         ctx = &myctx;
 	ctx->config.loglevel = GLOG_EMERG;
@@ -73,3 +105,4 @@ main(int argc, char **argv)
 
 	return(0);
 }
+#endif

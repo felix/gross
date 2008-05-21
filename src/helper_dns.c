@@ -213,7 +213,7 @@ Gethostbyname(const char *name, mseconds_t timeout)
 void *
 helper_dns(void *arg)
 {
-	struct timeval tv;
+	struct timeval tv, *tvp;
         fd_set readers, writers;
 	int nfds = 0;
 	int count;
@@ -249,22 +249,26 @@ helper_dns(void *arg)
 	for (;;) {
 		FD_ZERO(&readers);
 		FD_ZERO(&writers);
-		/* nfds = ares_fds(*channel, &readers, &writers); */
+		nfds = ares_fds(*channel, &readers, &writers);
+
+		/* if ares has pending requests it knows the next timeout */
+		tvp = &tv;
+		if (nfds > 0)
+			ares_timeout(*channel, NULL, tvp);
+		else
+			tvp = NULL;
+
 		FD_SET(dns_wake, &readers);
 		nfds = MAX(nfds, dns_wake + 1);
-
-		/* ares knows the next timeout */
-		ares_timeout(*channel, NULL, &tv);
 		
-		printf("select\n");
-		count = select(nfds, &readers, &writers, NULL, &tv);
+		printf("select %d\n", nfds);
+		count = select(nfds, &readers, &writers, NULL, tvp);
 		if (count < 0) {
 			daemon_fatal("select");
 		} else {
 			/* job to do or timeout */
 			if (FD_ISSET(dns_wake, &readers)) {
 				logstr(GLOG_INSANE, "helper_dns: received a wake up call");
-				printf("helper_dns: received a wake up call\n");
 				/* consume the wake up call */
 				size = read(dns_wake, buf, 1);
 				if (size != 1)
