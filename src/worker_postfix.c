@@ -29,6 +29,31 @@ enum parse_status_t
 /* prototypes of internals */
 int postfix_connection(thread_pool_t *, thread_ctx_t *, edict_t *edict);
 int parse_postfix(client_info_t *info, grey_tuple_t *grey_tuple);
+char *assemble_response(char *result, size_t len, char *template, char *reason);
+
+char *
+assemble_response(char *result, size_t len, char *template, char *reason)
+{
+        char *reasonsubstitute;
+        char *prologue;
+        char *epilogue;
+
+        /* ignore the reason if template does not use it */
+        prologue = strdup(template);
+        reasonsubstitute = strstr(prologue, REASONTEMPLATE);
+        if (NULL == reasonsubstitute) {
+                snprintf(result, len, "%s", prologue);
+        } else {
+                /* null terminate the first part */
+                *reasonsubstitute = '\0';
+                epilogue = reasonsubstitute + strlen(REASONTEMPLATE);
+                snprintf(result, len, "%s%s%s", prologue, reason, epilogue);
+		result[len-1] = '\0';
+        }
+        Free(prologue);
+
+	return result;
+}
 
 /*
  * postfix_connection	- the actual server for policy delegation
@@ -62,14 +87,14 @@ postfix_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict
 				switch (status->status) {
 				case STATUS_TRUST:
 				case STATUS_MATCH:
-					snprintf(response, MAXLINELEN, "action=dunno");
+					if (snprintf(response, MAXLINELEN, "action=dunno"));
 					break;
 				case STATUS_BLOCK:
-					snprintf(response, MAXLINELEN, "action=reject %s",
+					assemble_response(response, MAXLINELEN, ctx->config.postfix.responseblock,
 					    status->reason ? status->reason : "Rejected");
 					break;
 				case STATUS_GREY:
-					snprintf(response, MAXLINELEN, "action=defer_if_permit %s",
+					assemble_response(response, MAXLINELEN, ctx->config.postfix.responsegrey,
 					    status->reason ? status->reason : "Please try again later");
 					break;
 				default:

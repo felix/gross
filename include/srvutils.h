@@ -115,5 +115,8 @@ char *ipstr(struct sockaddr_in *saddr);
 void create_statefile(void);
 void check_pidfile(void);
 void create_pidfile(void);
+int log_open(void);
+int log_close(void);
+
 
 #endif

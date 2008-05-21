@@ -149,14 +149,24 @@ configure_grossd(configlist_t *config)
 	host = gethostbyname(CONF("host"));
 	if (!host)
 		daemon_fatal("'host' configuration option invalid:");
-	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	ret = inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
 	    &(ctx->config.gross_host.sin_addr));
+	if (ret < 0)
+		daemon_fatal("error setting 'host':");
+	else if (ret == 0)
+		daemon_shutdown(EXIT_CONFIG, "'host' configuration option invalid");
 	logstr(GLOG_DEBUG, "Listening host address %s", inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
 	ctx->config.sync_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("sync_listen") ? CONF("sync_listen") : CONF("host"));
-	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	if (NULL == host)
+		daemon_fatal("'sync_listen' configuration option invalid:");
+	ret = inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
 	    &(ctx->config.sync_host.sin_addr));
+	if (ret < 0)
+		daemon_fatal("'error setting 'sync_listen':");
+	else if (ret == 0)
+		daemon_shutdown(EXIT_CONFIG, "'sync_listen' configuration option invalid");
 	logstr(GLOG_DEBUG, "Sync listen address %s", inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
 	ctx->config.sync_host.sin_port = htons(atoi(CONF("sync_port")));
@@ -179,8 +189,14 @@ configure_grossd(configlist_t *config)
 		logstr(GLOG_DEBUG, "Peer %s configured. Replicating.", CONF("sync_peer"));
 		ctx->config.peer.peer_addr.sin_family = AF_INET;
 		host = gethostbyname(CONF("sync_peer"));
-		inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+		if (NULL == host)
+			daemon_fatal("'sync_peer' configuration option invalid:");
+		ret = inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
 		    &(ctx->config.peer.peer_addr.sin_addr));
+		if (ret < 0)
+			daemon_fatal("error setting 'sync_peer':");
+		else if (ret == 0)
+			daemon_shutdown(EXIT_CONFIG, "'sync_peer' configuration option invalid");
 		logstr(GLOG_DEBUG, "Sync peer address %s",
 		    inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 	}
@@ -203,9 +219,14 @@ configure_grossd(configlist_t *config)
 
 	ctx->config.status_host.sin_family = AF_INET;
 	host = gethostbyname(CONF("status_host") ? CONF("status_host") : CONF("host"));
-	inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+	if (NULL == host)
+		daemon_fatal("'status_host' configuration option invalid:");
+	ret = inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
 	    &(ctx->config.status_host.sin_addr));
-
+	if (ret < 0)
+		daemon_fatal("error setting 'status_host':");
+	else if (ret == 0)
+		daemon_shutdown(EXIT_CONFIG, "'status_host' configuration option invalid");
 	ctx->config.status_host.sin_port = htons(atoi(CONF("status_port")));
 
 	ctx->config.rotate_interval = atoi(CONF("rotate_interval"));
@@ -220,6 +241,16 @@ configure_grossd(configlist_t *config)
 	if ((ctx->config.filter_size < 5) || (ctx->config.filter_size > 32)) {
 		daemon_shutdown(EXIT_CONFIG, "filter_bits should be in range [4,32]");
 	}
+
+	if (!CONF("postfix_response_grey"))
+		daemon_shutdown(EXIT_CONFIG, "No postfix_response_grey set!");
+	else
+		ctx->config.postfix.responsegrey = strdup(CONF("postfix_response_grey"));
+	if (!CONF("postfix_response_block"))
+		daemon_shutdown(EXIT_CONFIG, "No postfix_response_block set!");
+	else
+		ctx->config.postfix.responseblock = strdup(CONF("postfix_response_block"));
+
 
 	if (!CONF("sjsms_response_grey"))
 		daemon_shutdown(EXIT_CONFIG, "No sjsms_response_grey set!");
@@ -432,8 +463,12 @@ configure_grossd(configlist_t *config)
 		if (!host)
 			daemon_fatal("'blocker' configuration option invalid:");
 
-		inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
+		ret = inet_pton(AF_INET, inet_ntoa(*(struct in_addr *)host->h_addr_list[0]),
 		    &(ctx->config.blocker.server.sin_addr));
+		if (ret < 0)
+			daemon_fatal("error setting 'blocker_host':");
+		else if (ret == 0)
+			daemon_shutdown(EXIT_CONFIG, "'blocker_host' configuration option invalid");
 		logstr(GLOG_DEBUG, "Blocker host address %s",
 		    inet_ntoa(*(struct in_addr *)host->h_addr_list[0]));
 
@@ -621,10 +656,9 @@ main(int argc, char *argv[])
 	config = read_config(configfile);
 	configure_grossd(config);
 
-	if ((ctx->config.flags & (FLG_NODAEMON | FLG_SYSLOG)) == FLG_SYSLOG) {
-		openlog("grossd", LOG_ODELAY, ctx->config.syslogfacility);
-		ctx->syslog_open = true;
-	}
+	log_open();
+
+	logstr(GLOG_INFO, "grossd version %s starting...", VERSION);
 
 	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE) {
 		if (ctx->config.statefile) {
@@ -650,6 +684,7 @@ main(int argc, char *argv[])
 
 	/* Mask all allowed signals */
 	sigfillset(&mask);
+	sigdelset(&mask, SIGALRM); 	/* for killing stuck threads */
 	ret = pthread_sigmask(SIG_BLOCK, &mask, &oldmask);
 	if (ret)
 		daemon_fatal("pthread_sigmask");

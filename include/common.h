@@ -147,7 +147,7 @@ typedef int bool;
 # endif	/* bool */
 #endif /* HAVE_BOOL */
 
-typedef struct
+typedef struct peer_s
 {
 	struct sockaddr_in peer_addr;
 	pthread_mutex_t peer_in_mutex;
@@ -156,7 +156,7 @@ typedef struct
 	int connected;
 } peer_t;
 
-typedef struct
+typedef struct sjsms_config_s
 {
 	char *responsegrey;
 	char *responsematch;
@@ -164,14 +164,20 @@ typedef struct
 	char *responseblock;
 } sjsms_config_t;
 
-typedef struct
+typedef struct postfix_config_s
+{
+	char *responsegrey;
+	char *responseblock;
+} postfix_config_t;
+
+typedef struct blocker_config_s
 {
 	struct sockaddr_in server;
 	int weight;
 } blocker_config_t;
 
 #ifdef MILTER
-typedef struct
+typedef struct milter_config_s
 {
 	char *listen;
 } milter_config_t;
@@ -197,6 +203,7 @@ typedef struct
 	int grey_mask;
 	int protocols;
 	int greylist_delay;
+	postfix_config_t postfix;
 	sjsms_config_t sjsms;
 	blocker_config_t blocker;
 	mseconds_t query_timelimit;

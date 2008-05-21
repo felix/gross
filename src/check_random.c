@@ -55,7 +55,6 @@ randomc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		thread_ctx->cleanup = &cleanup_random;
 	}
 
-
 	request = (grey_tuple_t *)edict->job;
 	client_address = request->client_address;
 	assert(client_address);

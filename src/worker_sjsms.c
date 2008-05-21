@@ -24,8 +24,6 @@
 #include "worker.h"
 #include "utils.h"
 
-#define REASONTEMPLATE "%reason%"
-
 /* internal functions */
 int mappingstr(const char *from, char *to, size_t len);
 char *assemble_mapresult(char *template, char *reason);
@@ -198,7 +196,7 @@ sjsms_connection(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		ta1.arg = client_info;
 		ta1.next = &ta2;
 
-		ta2.timeout = ctx->config.query_timelimit - 1000;	/* minus ta1 */
+		ta2.timeout = ctx->config.query_timelimit;
 		ta2.action = NULL;
 		ta2.next = NULL;
 	} else {
@@ -351,7 +349,7 @@ sjsms_server(void *arg)
 			edict_unlink(edict);
 		}
 	}
-	/* never reached */
+	/* NOTREACHED */
 }
 
 void

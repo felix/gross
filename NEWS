@@ -1,3 +1,23 @@
+Version 1.0.1
+
+* Two new configuration options: postfix_response_grey and
+  postfix_response_block. Now it's possible to configure
+  responses grossd sends in reply to Postfix policy delegation
+  client.
+* Now grossd allows only the configured sync_peer to connect
+  to sync server port.
+* When grey_threshold = 0 is set grossd defaults to greylisting.
+  Now it's possible to combine traditional greylisting with 
+  blocking based on check results.
+
+Issues fixed:
+#65: Version number to log (RFE)
+#66: Compiler warnings on with 1.0.0
+#67: Setting grey_threshold = 0 is not intuitive
+#68: grossd should accept sync connections only from the configured sync_peer
+#69: Implement postfix_response_grey and postfix_response_block (RFE)
+#70: Busyloop if no access to configured statefile 
+
 Version 1.0.0
 
 * Prevent grossd from running as root (euid == 0). You may 

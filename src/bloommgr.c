@@ -116,10 +116,8 @@ bloommgr(void *arg)
 		}
 	}
 
-	/*
-	 * never reached: 
-	 * release_bloom_ring_queue(ctx->filter);
-	 */
+	/* NOTREACHED */ 
+	/* release_bloom_ring_queue(ctx->filter);*/
 }
 
 void

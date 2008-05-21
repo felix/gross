@@ -58,6 +58,8 @@ get_srvstatus(char *buf, int len)
 	unsigned int update_len_out = out_queue_len(ctx->update_q);
 	unsigned int update_len = update_len_in + update_len_out;
 
+	*buf = '\0';
+
 	if (test_thread(ctx->process_parts.bloommgr.thread) == -1) {
 		state |= SRV_ERR;
 		snprintf(buf, len - strlen(buf), "%d: bloommgr-thread is dead.", state);
