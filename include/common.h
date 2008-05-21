@@ -99,15 +99,16 @@
 #define OPER_SYNC ((uint32_t)0x01)
 #define AGGREGATE_SYNC ((uint32_t)0x02)
 
-#define FLG_NODAEMON (int)0x01
-#define FLG_NOREPLICATE (int)0x02
-#define FLG_UPDATE_ALWAYS (int)0x04
-#define FLG_CREATE_STATEFILE (int)0x08
-#define FLG_DRYRUN (int)0x10
-#define FLG_SYSLOG (int)0x20
-#define FLG_CHECK_PIDFILE (int)0x40
-#define FLG_CREATE_PIDFILE (int)0x80
+#define FLG_NODAEMON (int)0x0001
+#define FLG_NOREPLICATE (int)0x0002
+#define FLG_UPDATE_ALWAYS (int)0x0004
+#define FLG_CREATE_STATEFILE (int)0x0008
+#define FLG_DRYRUN (int)0x0010
+#define FLG_SYSLOG (int)0x0020
+#define FLG_CHECK_PIDFILE (int)0x0040
+#define FLG_CREATE_PIDFILE (int)0x0080
 #define FLG_MATCH_SHORTCUT (int)0x0100
+#define FLG_RECONFIGURE_PENDING (int)0x0200
 
 #define CHECK_DNSBL (int)0x01
 #define CHECK_BLOCKER (int)0x02

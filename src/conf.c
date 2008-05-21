@@ -121,6 +121,8 @@ record_config_item(configlist_t **config, const char *name, const char *value, p
 	cp = *config;
 	prev = NULL;
 
+	logstr(GLOG_INSANE, "record_config_item: %s = %s", name, value);
+
 	if (multivalue(name)) {
 		/* remove default values */
 		while (cp) {
@@ -272,7 +274,7 @@ a_delim_b(char *buffer, char delim, char **stra, char **strb)
 configlist_t *
 default_config(void)
 {
-	configlist_t *config;
+	configlist_t **config;
 	int i;
 	const char *defaults[] = {
 		DEFAULT_CONFIG,
@@ -280,25 +282,26 @@ default_config(void)
 	};
 
 	/* init */
-	config = NULL;
+	config = Malloc(sizeof(configlist_t *));
+	*config = NULL;
 
 	i = 0;
 	while (defaults[i]) {
 		assert(defaults[i]);
 		assert(defaults[i + 1]);
-		add_config_item(&config, defaults[i], defaults[i + 1], NULL, true);
+		add_config_item(config, defaults[i], defaults[i + 1], NULL, true);
 		i += 2;
 	}
-	return config;
+	assert(*config);
+	return *config;
 }
 
 /*
- * read_config	- parse a configfile
+ * read_config	- parse a configfile; return < 0 if failed
  */
-configlist_t *
-read_config(const char *filename)
+int
+read_config(configlist_t **config, const char *filename)
 {
-	configlist_t *config;
 	int fd;
 	char buffer[MAXLINELEN];
 	char line[MAXLINELEN];
@@ -317,14 +320,11 @@ read_config(const char *filename)
 		NULL
 	};
 
-	/* init */
-	config = default_config();
-
 	/* open configfile for reading */
 	fd = open(filename, O_RDONLY);
 
 	if (fd < 0)
-		return config;
+		return -1;
 
 	/*
 	 * Process the config file.
@@ -339,8 +339,8 @@ read_config(const char *filename)
 
 		ret = namevalueparams(buffer, name, value, params);
 		if (ret < 0) {
-			fprintf(stderr, "Couldn't parse line %d: %s\n", count, line);
-			exit(1);
+			logstr(GLOG_ERROR, "Couldn't parse configfile at line %d: %s\n", count, line);
+			return -1;
 		} else if (ret) {
 			i = 0;
 			while (valids[i]) {
@@ -354,12 +354,13 @@ read_config(const char *filename)
 					paramcount++;
 				if (paramcount <= maxparams(*name)
 				    && paramcount >= minparams(*name)) {
-					record_config_item(&config, *name, *value, *params);
+					record_config_item(config, *name, *value, *params);
 					if (ret < 0)
 						daemon_fatal("record_config_item");
 				} else {
-					daemon_shutdown(EXIT_CONFIG,
+					logstr(GLOG_ERROR,
 					    "Invalid parameter count for configuration parameter: %s", *name);
+					return -1;
 				}
 			} else {
 				i = 0;
@@ -368,12 +369,15 @@ read_config(const char *filename)
 						break;
 					i++;
 				}
-				if (deprecated[i])
-					daemon_shutdown(EXIT_CONFIG,
+				if (deprecated[i]) {
+					logstr(GLOG_ERROR,
 					    "Deprecated configuration parameter: %s", *name);
-				else
-					daemon_shutdown(EXIT_CONFIG,
+					return -1;
+				} else {
+					logstr(GLOG_ERROR,
 					    "Unknown configuration parameter: %s", *name);
+					return -1;
+				}
 			}
 		}
 	} while (rlstatus == DATA);
@@ -382,5 +386,5 @@ read_config(const char *filename)
 	if (rlstatus == ERROR)
 		daemon_fatal("readline");
 
-	return config;
+	return 0;
 }

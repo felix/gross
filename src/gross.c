@@ -503,6 +503,33 @@ configure_grossd(configlist_t *config)
 }
 
 /*
+ * reconfigure_grossd 	- alter runtime modifiable configuration info
+ */
+void
+reconfigure_grossd(configlist_t *config)
+{
+
+#define TESTANDRESET(c, s) do { 					\
+	if (CONF(s) && strcmp(CONF(s), c)) {				\
+		logstr(GLOG_DEBUG, "reset %s = %s", s, CONF(s));	\
+		c = strdup(CONF(s));					\
+	}								\
+} while(0)
+
+	TESTANDRESET(ctx->config.grey_reason, "grey_reason");
+	TESTANDRESET(ctx->config.block_reason, "block_reason");
+}
+
+/*
+ * reconfig - signal handler to reload configuration
+ */
+void
+reconfig(int signo)
+{
+	ctx->config.flags |= FLG_RECONFIGURE_PENDING;
+}
+
+/*
  * noop	 - signal handler to interrupt blockin I/O operations
  */
 void
@@ -554,6 +581,13 @@ setup_signal_handlers(void)
 	act.sa_handler = &noop;
 	act.sa_flags = 0;
 	sigaction(SIGALRM, &act, NULL);
+
+	/* this is used to initiate configuration reload */
+	sigemptyset(&act.sa_mask);
+	sigaddset(&act.sa_mask, SIGHUP);
+	act.sa_handler = &reconfig;
+	act.sa_flags = 0;
+	sigaction(SIGHUP, &act, NULL);
 
 	/* clean up */
 	sigemptyset(&act.sa_mask);
@@ -653,7 +687,10 @@ main(int argc, char *argv[])
 			    pwd->pw_uid, strerror(errno));
 	}
 
-	config = read_config(configfile);
+	config = default_config();
+	ret = read_config(&config, configfile);
+	if (ret < 0)
+		daemon_shutdown(EXIT_CONFIG, "Configuration file errors, exiting ...");
 	configure_grossd(config);
 
 	log_open();
@@ -786,6 +823,19 @@ main(int argc, char *argv[])
 			increment_dnsbl_tolerance_counters(ctx->dnsbl);
 		}
 #endif /* DNSBL */
+
+		/* check if configuration reload has been requested */
+		if (ctx->config.flags & FLG_RECONFIGURE_PENDING) {
+			logstr(GLOG_INFO, "reloading configuration ...");
+			config = default_config();
+			ret = read_config(&config, configfile);
+			if (ret < 0)
+				logstr(GLOG_ERROR, "configuration file errors, not reloading...");
+			else
+				reconfigure_grossd(config);
+			ctx->config.flags ^= FLG_RECONFIGURE_PENDING;
+			logstr(GLOG_DEBUG, "reloading complete");
+		}
 
 		/* not so busy loop */
 		sleep(1);

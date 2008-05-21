@@ -109,6 +109,23 @@
 				"statusport"
 
 
+#define RUNTIME_MODIFIABLE	"grey_threshold",		\
+				"block_threshold",		\
+				"pool_maxthreads",		\
+				"grey_mask",			\
+				"grey_delay",			\
+				"log_level",			\
+				"check",			\
+				"query_timelimit",		\
+				"postfix_response_grey",        \
+				"postfix_response_block",       \
+				"sjsms_response_grey",          \
+				"sjsms_response_match",         \
+				"sjsms_response_trust",         \
+				"sjsms_response_block",         \
+				"grey_reason", 		        \
+				"block_reason", 	        \
+				"update"
 /*
  * How many parameters a given keyword accepts, format is
  * "keyword", MIN, MAX. -1 as maximum means unlimited
@@ -132,7 +149,8 @@ typedef struct configlist_s
 	struct configlist_s *next;	/* linked list */
 } configlist_t;
 
-configlist_t *read_config(const char *filename);
+configlist_t *default_config(void);
+int read_config(configlist_t **config, const char *filename);
 const char *gconf(configlist_t *config, const char *name);
 
 #endif /* CONF_H */
