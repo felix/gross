@@ -18,7 +18,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "srvutils.h"
 #include "sha256.h"
 
 void (*p_convert_int64_to_big_endian) (sha_ulong_t *num) = &convert_int64_big_endian;
@@ -126,40 +125,48 @@ sha256(sha_byte_t *message, sha_ulong_t size)
 	sha_ulong_t tmp_size = size * 8;
 
 	/* Multipurpose indices */
-	sha_uint_t i, j;
+	sha_uint_t i, j, k;
 	sha_byte_t *iter;
 	sha_uint_t w[64];
 	sha_uint_t s0, s1, maj, t2, ch, t1, chunk;
 
-	sha_byte_t *digestable_message = (sha_byte_t *)Malloc(sizeof(sha_byte_t) * new_size);
+	sha_byte_t digestable_block[64] = { 0x00 };
 
 	if (little_endian()) {
 		p_convert_int64_to_big_endian = &convert_int64_little_endian;
 		p_convert_int32_to_big_endian = &convert_int32_little_endian;
 	}
 
-	/* Initialize buffer */
-	bzero(digestable_message, new_size);
-	memcpy((void *)digestable_message, (const void *)message, size);
-	digestable_message[size] = 0x80;
-
 	/*
 	 * Insert message bit length to the end of the buffer
 	 * in big endian 64 integer
 	 */
 	(*p_convert_int64_to_big_endian) (&tmp_size);
-	for (i = new_size - 8, j = 0, iter = (sha_byte_t *)&tmp_size; i < new_size; i++, j++) {
-		*(digestable_message + i) = *(iter + j);
-	}
-
-	iter = (sha_byte_t *)digestable_message;
-
 
 	for (i = 0; i < new_size; i += 64) {
+		bzero(digestable_block,64);
+		if (i+64 <= size) {
+			memcpy((void *)digestable_block, (const void *)(message+i), 64);
+		} 
+
+		if ((i+64 > size) && (size >= i )) {
+			/* Padding round */
+			memcpy((void *)digestable_block, (const void *)(message+i), size%64);
+			digestable_block[size%64] = 0x80;
+		} 
+
+		if (i+64 >= new_size) {
+			/* Last round */
+			for (k = 0, j = 0, iter = (sha_byte_t *)&tmp_size; k < 8; k++, j++) {
+				*(digestable_block + k + 56) = *(iter + j);
+			}
+		}
+		
+		iter = digestable_block;
 
 		/* Initialize the beginning 0..15 of the word block */
 		for (j = 0; j < 64; j += 4) {
-			chunk = *((sha_uint_t *)(iter + i + j));
+			chunk = *((sha_uint_t *)(iter + j));
 			p_convert_int32_to_big_endian(&chunk);
 			w[j / 4] = chunk;
 		}
@@ -211,7 +218,7 @@ sha256(sha_byte_t *message, sha_ulong_t size)
 	}
 
 	/* Free Willy! */
-	Free(digestable_message);
+/* 	Free(digestable_message); */
 
 	return digest;
 }
