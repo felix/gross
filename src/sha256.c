@@ -20,6 +20,17 @@
 
 #include "sha256.h"
 
+/* prototypes of internals */
+int little_endian();
+void swap_bytes(sha_byte_t *a, sha_byte_t *b);
+void convert_int64_little_endian(sha_ulong_t *num);
+void convert_int64_big_endian(sha_ulong_t *num);
+void convert_int32_little_endian(sha_uint_t *num);
+void convert_int32_big_endian(sha_uint_t *num);
+sha_uint_t rotate_right(sha_uint_t num, int amount);
+void debug_print_digest(sha_256_t digest, int with_newline);
+
+
 void (*p_convert_int64_to_big_endian) (sha_ulong_t *num) = &convert_int64_big_endian;
 void (*p_convert_int32_to_big_endian) (sha_uint_t *num) = &convert_int32_big_endian;
 
@@ -107,6 +118,23 @@ convert_int32_big_endian(sha_uint_t *num)
 }
 
 void
+string_sha256_hexdigest(char *to, char *message)
+{
+	/* *to must be at least 72 bytes long char buffer */
+	sha256_hexdigest(to, message, strlen(message));
+}
+
+void
+sha256_hexdigest(char *to, char *message, sha_ulong_t size)
+{
+	/* *to must be at least 72 bytes long char buffer */
+	sha_256_t digest = sha256(message, size);
+
+	snprintf(to, 72, "%08x %08x %08x %08x %08x %08x %08x %08x", digest.h0, digest.h1, digest.h2,
+	    digest.h3, digest.h4, digest.h5, digest.h6, digest.h7);
+}
+
+void
 debug_print_digest(sha_256_t digest, int with_newline)
 {
 	printf("sha256: %08x %08x %08x %08x %08x %08x %08x %08x", digest.h0, digest.h1, digest.h2, digest.h3,
@@ -144,24 +172,24 @@ sha256(sha_byte_t *message, sha_ulong_t size)
 	(*p_convert_int64_to_big_endian) (&tmp_size);
 
 	for (i = 0; i < new_size; i += 64) {
-		bzero(digestable_block,64);
-		if (i+64 <= size) {
-			memcpy((void *)digestable_block, (const void *)(message+i), 64);
-		} 
+		bzero(digestable_block, 64);
+		if (i + 64 <= size) {
+			memcpy((void *)digestable_block, (const void *)(message + i), 64);
+		}
 
-		if ((i+64 > size) && (size >= i )) {
+		if ((i + 64 > size) && (size >= i)) {
 			/* Padding round */
-			memcpy((void *)digestable_block, (const void *)(message+i), size%64);
-			digestable_block[size%64] = 0x80;
-		} 
+			memcpy((void *)digestable_block, (const void *)(message + i), size % 64);
+			digestable_block[size % 64] = 0x80;
+		}
 
-		if (i+64 >= new_size) {
+		if (i + 64 >= new_size) {
 			/* Last round */
 			for (k = 0, j = 0, iter = (sha_byte_t *)&tmp_size; k < 8; k++, j++) {
 				*(digestable_block + k + 56) = *(iter + j);
 			}
 		}
-		
+
 		iter = digestable_block;
 
 		/* Initialize the beginning 0..15 of the word block */

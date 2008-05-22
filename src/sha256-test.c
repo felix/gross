@@ -26,22 +26,22 @@
 
 #define MAX_MESSAGE_LEN 1024
 
-void 
+void
 verbose_result(bool ok, char *message, char *digest_hex, char *reference_digest)
 {
-	char tmp[40] = {0x00};
+	char tmp[40] = { 0x00 };
 	strncpy(tmp, message, 36);
-	
+
 	if (strnlen(message) > 36) {
-		strncat(tmp+36, "...", 3);
+		strncat(tmp + 36, "...", 3);
 	}
-		
+
 	if (ok) {
 		printf("\nMessage: '%s'\n\t          digest: '%s'\n\treference digest: '%s'.",
-		       tmp, digest_hex, reference_digest);
+		    tmp, digest_hex, reference_digest);
 	} else {
 		printf("\nERROR: For string %s digest '%s' and reference digest '%s' differ.\n",
-		       tmp, digest_hex, reference_digest);
+		    tmp, digest_hex, reference_digest);
 	}
 }
 
@@ -59,45 +59,41 @@ main(int argc, char **argv)
 	printf("Check: sha256\n");
 
 	/* Known test vectors */
-	for (test=test_vectors ; test->message && test->reference_digest ; test++) {
+	for (test = test_vectors; test->message && test->reference_digest; test++) {
 		strncpy(message, test->message, MAX_MESSAGE_LEN);
 		strncpy(reference_digest, test->reference_digest, MAX_MESSAGE_LEN);
 
-		digest = sha256((sha_byte_t *)message, strlen(message));
-		snprintf(digest_hex, MAX_MESSAGE_LEN, "%08x %08x %08x %08x %08x %08x %08x %08x", digest.h0,
-		    digest.h1, digest.h2, digest.h3, digest.h4, digest.h5, digest.h6, digest.h7);
-
+		string_sha256_hexdigest(digest_hex, message);
 		if (strncmp(digest_hex, reference_digest, MAX_MESSAGE_LEN) != 0) {
-			if (argc>1) {
+			if (argc > 1) {
 				verbose_result(FALSE, message, digest_hex, reference_digest);
 			}
 
 			error_count++;
 		} else {
-			if (argc>1) { 
+			if (argc > 1) {
 				verbose_result(TRUE, message, digest_hex, reference_digest);
 			}
 		}
 	}
 
 	/* Known long message */
-	long_message = Malloc(sizeof(char)*1000001);
+	long_message = Malloc(sizeof(char) * 1000001);
 	memset(long_message, 'a', 1000000);
 	long_message[1000000] = 0x00;
-	strncpy(reference_digest, "cdc76e5c 9914fb92 81a1c7e2 84d73e67 f1809a48 a497200e 046d39cc c7112cd0",MAX_MESSAGE_LEN);
+	strncpy(reference_digest, "cdc76e5c 9914fb92 81a1c7e2 84d73e67 f1809a48 a497200e 046d39cc c7112cd0",
+	    MAX_MESSAGE_LEN);
 
-	digest = sha256((sha_byte_t *)long_message, strlen(long_message));
-	snprintf(digest_hex, MAX_MESSAGE_LEN, "%08x %08x %08x %08x %08x %08x %08x %08x", digest.h0,
-		 digest.h1, digest.h2, digest.h3, digest.h4, digest.h5, digest.h6, digest.h7);
-	
+	string_sha256_hexdigest(digest_hex, long_message);
+
 	if (strncmp(digest_hex, reference_digest, MAX_MESSAGE_LEN) != 0) {
-		if (argc>1) {
+		if (argc > 1) {
 			verbose_result(FALSE, long_message, digest_hex, reference_digest);
 		}
-		
+
 		error_count++;
 	} else {
-		if (argc>1) {
+		if (argc > 1) {
 			verbose_result(TRUE, long_message, digest_hex, reference_digest);
 		}
 	}

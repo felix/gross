@@ -47,15 +47,10 @@ typedef struct
 	sha_uint_t h7;
 } sha_256_t;
 
-
-int little_endian();
-void swap_bytes(sha_byte_t *a, sha_byte_t *b);
-void convert_int64_little_endian(sha_ulong_t *num);
-void convert_int64_big_endian(sha_ulong_t *num);
-void convert_int32_little_endian(sha_uint_t *num);
-void convert_int32_big_endian(sha_uint_t *num);
-sha_uint_t rotate_right(sha_uint_t num, int amount);
-void debug_print_digest(sha_256_t digest, int with_newline);
+/* *to must be at least 72 bytes long char buffer */
+void string_sha256_hexdigest(char *to, char *message); 
+/* *to must be at least 72 bytes long char buffer */
+void sha256_hexdigest(char *to, char *message, sha_ulong_t size); 
 sha_256_t sha256_string(char *message);
 sha_256_t sha256(sha_byte_t *message, sha_ulong_t size);
 
