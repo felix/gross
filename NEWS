@@ -1,3 +1,8 @@
+Version 1.0-svn
+
+Issues fixed:
+#71: grossd dies under Linux
+
 Version 1.0.1
 
 * Two new configuration options: postfix_response_grey and
