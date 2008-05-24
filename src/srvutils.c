@@ -510,10 +510,15 @@ create_thread(thread_info_t *tinfo, int detach, void *(*routine) (void *), void 
 	ret = pthread_attr_init(&tattr);
 	if (ret)
 		daemon_fatal("pthread_attr_init");
-	if (DETACH == detach)
+	if (DETACH == detach) {
 		ret = pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+		if (ret)
+			daemon_fatal("pthread_attr_setdetachstate");
+	}
+
+	ret = pthread_attr_setstacksize(&tattr, THREAD_STACK_SIZE);
 	if (ret)
-		daemon_fatal("pthread_attr_setdetachstate");
+		daemon_fatal("pthread_attr_setstacksize");
 
 	ret = pthread_create(tid, &tattr, routine, arg);
 	if (ret)
