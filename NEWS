@@ -1,3 +1,9 @@
+Version svn
+
+Issues fixed:
+#71: grossd dies under Linux
+#72: freebsd port broken
+
 Version 1.0.1
 
 * Two new configuration options: postfix_response_grey and

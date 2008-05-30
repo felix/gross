@@ -9921,7 +9921,7 @@ return sem_init ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' rt; do
+for ac_lib in '' rt pthread; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -11273,8 +11273,16 @@ fi
 echo $ECHO_N "checking whether to disable dnsbl checking... $ECHO_C" >&6; }
 # Check whether --enable-dnsbl was given.
 if test "${enable_dnsbl+set}" = set; then
-  enableval=$enable_dnsbl; { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; } ; dnsbl="no"
+  enableval=$enable_dnsbl; if test "x$enableval" = "xyes"; then
+	{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+	dnsbl="no"
+    else
+	{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	dnsbl="yes"
+    fi
+
 else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; } ; dnsbl="yes"
@@ -11512,8 +11520,8 @@ fi
 echo $ECHO_N "checking whether to enable milter... $ECHO_C" >&6; }
 # Check whether --enable-milter was given.
 if test "${enable_milter+set}" = set; then
-  enableval=$enable_milter; { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; } ; milter="yes"
+  enableval=$enable_milter; { echo "$as_me:$LINENO: result: $enableval" >&5
+echo "${ECHO_T}$enableval" >&6; } ; milter="$enableval"
 else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; } ; milter="no"
