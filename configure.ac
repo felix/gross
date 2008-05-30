@@ -52,7 +52,7 @@ if test "$SYS" = "darwin"
 then
     AC_DEFINE([USE_SEM_OPEN], [], [Use sem_open() instead of sem_init()])
 else
-    AC_SEARCH_LIBS(sem_init, [rt], ,
+    AC_SEARCH_LIBS(sem_init, [rt pthread], ,
 	AC_MSG_ERROR([Can't compile without semaphores.])
     )
 fi
@@ -101,7 +101,14 @@ fi
 AC_MSG_CHECKING([whether to disable dnsbl checking])
 AC_ARG_ENABLE(dnsbl,
     AC_HELP_STRING([--disable-dnsbl], [Disable dnsbl checking]),
-    [AC_MSG_RESULT([yes]) ; dnsbl="no"],
+    [if test "x$enableval" = "xyes"; then
+	AC_MSG_RESULT([no])
+	dnsbl="no"
+    else
+	AC_MSG_RESULT([yes])
+	dnsbl="yes"
+    fi
+    ],
     [AC_MSG_RESULT([no]) ; dnsbl="yes"]
 )
 
@@ -120,7 +127,7 @@ fi
 AC_MSG_CHECKING([whether to enable milter])
 AC_ARG_ENABLE(milter,
     AC_HELP_STRING([--enable-milter], [Enable milter]),
-    [AC_MSG_RESULT([yes]) ; milter="yes"],
+    [AC_MSG_RESULT([$enableval]) ; milter="$enableval"],
     [AC_MSG_RESULT([no]) ; milter="no"]
 )
 
