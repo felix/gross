@@ -1,5 +1,7 @@
 Version 1.0-svn
 
+* do not check /etc/hosts in dnsbl check
+
 Issues fixed:
 #71: grossd dies under Linux
 #72: freebsd port broken

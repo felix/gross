@@ -223,10 +223,10 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	callback_arg_t *callback_arg;
 	const char *dnslname;
 	int timeused;
-
 	chkresult_t *result;
 	grey_tuple_t *request;
 	dns_check_info_t *check_info;
+	struct ares_options ares_opts = { 0 };
 
 	logstr(GLOG_DEBUG, "dnsblc called: timelimit %d", edict->timelimit);
 
@@ -237,8 +237,9 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
+		ares_opts.lookups = "b";
 		channel = Malloc(sizeof(*channel));
-		if (ares_init(channel) != ARES_SUCCESS) {
+		if (ares_init_options(channel, &ares_opts, ARES_OPT_LOOKUPS) != ARES_SUCCESS) {
 			gerror("ares_init");
 			goto FINISH;
 		}
