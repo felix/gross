@@ -122,6 +122,7 @@
 #define PROTO_MILTER (int)0x04
 
 #define TMP_BUF_SIZE ((uint32_t)640)	/* 640 should be enough for everyone */
+#define THREAD_STACK_SIZE ((size_t)(1024 * 1024))	/* one megabyte */
 
 /* A few utility macros */
 #define Free(a) { assert(a); free(a); a = NULL; }
