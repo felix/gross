@@ -1,5 +1,8 @@
 Version svn
 
+* do not check /etc/hosts in dnsbl check
+* -u command line option to run grossd with a differnet uid
+
 Issues fixed:
 #71: grossd dies under Linux
 #72: freebsd port broken
