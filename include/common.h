@@ -277,14 +277,14 @@ typedef struct lock_s
 {
 	pthread_mutex_t mx;
 	pthread_cond_t cv;
-} lock_t;
+} g_lock_t;
 
 typedef struct thread_locks_s
 {
 	sem_t *sync_guard;
-        lock_t bloom_guard;
-        lock_t update_guard;
-        lock_t helper_dns_guard;
+        g_lock_t bloom_guard;
+        g_lock_t update_guard;
+        g_lock_t helper_dns_guard;
 } thread_locks_t; 
 
 typedef struct gross_ctx_s
