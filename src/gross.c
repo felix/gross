@@ -521,7 +521,7 @@ mrproper(int signo)
 void
 usage(void)
 {
-	printf("Usage: grossd [-CDdhnPprV] [-f configfile]\n");
+	printf("Usage: grossd [-CDdhnPpruV] [-f configfile]\n");
 	printf("       -C	create statefile and exit\n");
 	printf("       -D	Enable debug logging (insane verbosity with -DD)\n");
 	printf("       -d	Run grossd as a foreground process\n");
@@ -531,6 +531,7 @@ usage(void)
 	printf("       -p file  write the process id in a pidfile\n");
 	printf("       -P file  same as -p, but pid file must not exist\n");
 	printf("       -r	disable replication\n");
+	printf("       -u user  run gross as user\n");	
 	printf("       -V	version information\n");
 	exit(EXIT_USAGE);
 }
@@ -573,6 +574,7 @@ main(int argc, char *argv[])
 	pool_limits_t limits;
 	sigset_t mask, oldmask;
 	struct passwd *pwd;
+	char *user = "nobody";
 
 #ifdef DNSBL
 	dns_check_info_t *dns_check_info;
@@ -584,7 +586,7 @@ main(int argc, char *argv[])
 		daemon_shutdown(EXIT_FATAL, "Couldn't initialize context");
 
 	/* command line arguments */
-	while ((c = getopt(argc, argv, ":drf:VCDnp:P:")) != -1) {
+	while ((c = getopt(argc, argv, ":drf:VCDnp:P:u:")) != -1) {
 		switch (c) {
 		case 'd':
 			ctx->config.flags |= FLG_NODAEMON;
@@ -624,6 +626,9 @@ main(int argc, char *argv[])
 			ctx->config.flags |= FLG_CHECK_PIDFILE;
 			ctx->config.flags |= FLG_CREATE_PIDFILE;
 			break;
+		case 'u':
+			user = optarg;
+			break;
 		case 'h':
 			usage();
 			break;
@@ -636,16 +641,16 @@ main(int argc, char *argv[])
 
 	/* grossd doesn't need to be running as root */
 	if (geteuid() == 0) {
-		logstr(GLOG_DEBUG, "Running as root: setuid() to 'nobody'");
-		pwd = getpwnam("nobody");
+		logstr(GLOG_DEBUG, "Running as root: setuid() to '%s'", user);
+		pwd = getpwnam(user);
 		if (NULL == pwd)
-			daemon_shutdown(EXIT_FATAL, "Running as root: can't find user 'nobody'");
+			daemon_shutdown(EXIT_FATAL, "Running as root: can't find user '%s'", user);
 		if (setgid(pwd->pw_gid) != 0)
-			daemon_shutdown(EXIT_FATAL, "Running as root: can't setgid(%d) to 'nobody': %s",
-			    pwd->pw_gid, strerror(errno));
+			daemon_shutdown(EXIT_FATAL, "Running as root: can't setgid(%d) to '%s': %s",
+			    pwd->pw_gid, user, strerror(errno));
 		if (setuid(pwd->pw_uid) != 0)
-			daemon_shutdown(EXIT_FATAL, "Running as root: can't setuid(%d) to 'nobody': %s",
-			    pwd->pw_uid, strerror(errno));
+			daemon_shutdown(EXIT_FATAL, "Running as root: can't setuid(%d) to '%s': %s",
+			    pwd->pw_uid, user, strerror(errno));
 	}
 
 	config = read_config(configfile);
