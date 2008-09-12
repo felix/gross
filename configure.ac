@@ -103,10 +103,10 @@ AC_ARG_ENABLE(dnsbl,
     AC_HELP_STRING([--disable-dnsbl], [Disable dnsbl checking]),
     [if test "x$enableval" = "xyes"; then
 	AC_MSG_RESULT([no])
-	dnsbl="no"
+	dnsbl="yes"
     else
 	AC_MSG_RESULT([yes])
-	dnsbl="yes"
+	dnsbl="no"
     fi
     ],
     [AC_MSG_RESULT([no]) ; dnsbl="yes"]
