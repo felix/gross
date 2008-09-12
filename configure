@@ -11276,11 +11276,11 @@ if test "${enable_dnsbl+set}" = set; then
   enableval=$enable_dnsbl; if test "x$enableval" = "xyes"; then
 	{ echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
-	dnsbl="no"
+	dnsbl="yes"
     else
 	{ echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-	dnsbl="yes"
+	dnsbl="no"
     fi
 
 else
