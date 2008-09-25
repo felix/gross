@@ -25,6 +25,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pwd.h>
+#include <sys/types.h>
+#include <grp.h>
 
 #include "common.h"
 #include "conf.h"
@@ -531,7 +533,7 @@ usage(void)
 	printf("       -p file  write the process id in a pidfile\n");
 	printf("       -P file  same as -p, but pid file must not exist\n");
 	printf("       -r	disable replication\n");
-	printf("       -u user  run gross as user\n");	
+	printf("       -u user  run gross as user\n");
 	printf("       -V	version information\n");
 	exit(EXIT_USAGE);
 }
@@ -645,6 +647,10 @@ main(int argc, char *argv[])
 		pwd = getpwnam(user);
 		if (NULL == pwd)
 			daemon_shutdown(EXIT_FATAL, "Running as root: can't find user '%s'", user);
+		if (initgroups(pwd->pw_name, pwd->pw_gid) != 0)
+			daemon_shutdown(EXIT_FATAL,
+			    "Running as root: can't initgroups() to user 'nobody' groups: %s",
+			    strerror(errno));
 		if (setgid(pwd->pw_gid) != 0)
 			daemon_shutdown(EXIT_FATAL, "Running as root: can't setgid(%d) to '%s': %s",
 			    pwd->pw_gid, user, strerror(errno));
@@ -663,9 +669,10 @@ main(int argc, char *argv[])
 	if ((ctx->config.flags & FLG_CREATE_STATEFILE) == FLG_CREATE_STATEFILE) {
 		if (ctx->config.statefile) {
 			create_statefile();
-			daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...", ctx->config.statefile);
+			daemon_shutdown(EXIT_NOERROR, "statefile %s created, exiting...",
+			    ctx->config.statefile);
 		} else {
-			daemon_shutdown(EXIT_FATAL, "statefile not configured");	
+			daemon_shutdown(EXIT_FATAL, "statefile not configured");
 		}
 	}
 
@@ -684,7 +691,7 @@ main(int argc, char *argv[])
 
 	/* Mask all allowed signals */
 	sigfillset(&mask);
-	sigdelset(&mask, SIGALRM); 	/* for killing stuck threads */
+	sigdelset(&mask, SIGALRM);	/* for killing stuck threads */
 	ret = pthread_sigmask(SIG_BLOCK, &mask, &oldmask);
 	if (ret)
 		daemon_fatal("pthread_sigmask");

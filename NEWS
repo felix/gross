@@ -6,6 +6,7 @@ Version 1.0-svn
 Issues fixed:
 #71: grossd dies under Linux
 #72: freebsd port broken
+#77: grossd does not call initgroups() prior setgid()
 
 Version 1.0.1
 
