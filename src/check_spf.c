@@ -59,6 +59,7 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
 	result->judgment = J_UNDEFINED;
+        result->checkname = "spf";
 
 	/* initialize if we are not yet initialized */
 	if (NULL == thread_ctx->state) {
