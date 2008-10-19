@@ -85,7 +85,7 @@ hostent_deepcopy(struct hostent *src)
 
 	/* copy addresses */
 	addr_count = count_ptrs(src->h_addr_list);
-	dst->h_addr_list = Malloc(addr_count * sizeof(char *));
+	dst->h_addr_list = Malloc((addr_count + 1) * sizeof(char *));
 	for (i = 0; i < addr_count; i++) {
 		dst->h_addr_list[i] = Malloc(src->h_length);
 		memcpy(dst->h_addr_list[i], src->h_addr_list[i], src->h_length);
@@ -94,7 +94,7 @@ hostent_deepcopy(struct hostent *src)
 
 	/* copy aliases */
 	alias_count = count_ptrs(src->h_aliases);
-	dst->h_aliases = Malloc(alias_count * sizeof(char *) + 1);
+	dst->h_aliases = Malloc((alias_count + 1) * sizeof(char *));
 	for (i = 0; i < alias_count; i++)
 		dst->h_aliases[i] = strdup(src->h_aliases[i]);
 	dst->h_aliases[alias_count] = NULL;
@@ -105,20 +105,19 @@ hostent_deepcopy(struct hostent *src)
 void
 free_hostent(struct hostent *host)
 {
-	int i, alias_count, addr_count = 0;
+	int i = 0;
 
-	if (host->h_name)
-		free((char *)(host->h_name));
+	assert(host);
+	Free(host->h_name);
 	/* free addresses */
-	addr_count = count_ptrs(host->h_addr_list);
-	for (i = 0; i < addr_count; i++)
-		free(host->h_addr_list[i]);
-	free(host->h_addr_list);
+	for (i = 0; NULL != host->h_addr_list[i]; i++)
+		Free(host->h_addr_list[i]);
+	Free(host->h_addr_list);
 	/* free aliases */
-	alias_count = count_ptrs(host->h_aliases);
-	for (i = 0; i < addr_count; i++)
-		free(host->h_aliases[i]);
-	free(host->h_aliases);
+	for (i = 0; NULL != host->h_aliases[i]; i++)
+		Free(host->h_aliases[i]);
+	Free(host->h_aliases);
+	Free(host);
 }
 
 int 
@@ -126,7 +125,7 @@ count_ptrs(char **ptr)
 {
 	int i = 0;
 	while (ptr[i++]);
-	return i - 1; /* terminator (NULL) not counted */
+	return i - 1 ; /* terminator (NULL) not counted */
 }
 	
 static void
@@ -166,12 +165,12 @@ cache_str(char *key, struct hostent *value)
 	 */
 	if (node != NULL) {
 		Free(node->key);
-		Free(node->value);
+		free_hostent(node->value);
 	} else {
 		node = Malloc(sizeof(cache_data_t));
 	}
 	node->key = key;
-	node->value = value;
+	node->value = hostent_deepcopy(value);
 	clock_gettime(CLOCK_TYPE, &node->savetime);
 	hashtab[hashvalue] = node;
 	CACHE_UNLOCK;
@@ -209,7 +208,7 @@ lookup_str(const char *key)
 			 * clock_gettime() calls
                          */
 			Free(node->key);
-			Free(node->value);
+			free_hostent(node->value);
 			Free(node);
 			hashtab[hashvalue] = NULL;
 			CACHE_UNLOCK;

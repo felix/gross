@@ -43,15 +43,17 @@ dnstest(void *arg)
 		ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
 		assert (ptr);
 		printf("got: %s -> %s\n", host->h_name, buf);
+		free_hostent(host);
 		host = Gethostbyname("www.utu.fi", 0);
 		ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
 		assert (ptr);
 		printf("got: %s -> %s\n", host->h_name, buf);
+		free_hostent(host);
 	}
 	pthread_exit(NULL);
 }
 
-#if 1
+#if 0
 int
 main(int argc, char **argv)
 {
@@ -72,6 +74,12 @@ main(int argc, char **argv)
 	ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
 	assert (ptr);
 	printf("got: %s -> %s\n", host->h_name, buf);
+	free_hostent(host);
+	host = Gethostbyaddr_str("130.232.1.3", 0);
+	ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
+	assert (ptr);
+	printf("got: %s -> %s\n", host->h_name, buf);
+	free_hostent(host);
 
 	return 0;
 }

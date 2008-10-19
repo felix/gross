@@ -28,7 +28,7 @@ int
 helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
-	struct hostent *host;
+	struct hostent *host, *reversehost;
 
 	grey_tuple_t *request;
 	const char *helostr;
@@ -51,22 +51,34 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	if (host) {
 		ptr = inet_ntop(AF_INET, host->h_addr_list[0], addrstrbuf, INET_ADDRSTRLEN);
 		if (NULL == ptr) {
-			logstr(GLOG_DEBUG, "helo_name not resolvable");
-			result->judgment = J_SUSPICIOUS;
-			result->weight = 1; /* FIXME */
+			logstr(GLOG_ERROR, "helo_name resolved to an invalid ip");
 			goto FINISH;
 		}
-
 		logstr(GLOG_INSANE, "client_address (%s), helo (%s)",
 			client_address, addrstrbuf); /* FIXME */
 		if (strcmp(addrstrbuf, client_address)) {
 			logstr(GLOG_DEBUG, "helo name (%s) does not resolve to client address (%s)",
 				helostr, client_address);
 			result->judgment = J_SUSPICIOUS;
-			result->weight = 1; /* FIXME */
+			result->weight += 1; /* FIXME */
 		}
 	} else {
-		logstr(GLOG_DEBUG, "host not found");
+		logstr(GLOG_DEBUG, "helo_name not resolvable");
+		result->judgment = J_SUSPICIOUS;
+		result->weight += 1; /* FIXME */
+		goto FINISH;
+	}
+
+	reversehost = Gethostbyaddr_str(client_address, 0);
+        if (reversehost) {
+                logstr(GLOG_INSANE, "client_address (%s) has a PTR record (%s)",
+                        client_address, reversehost->h_name);
+		if (strcmp(reversehost->h_name, helostr)) {
+			logstr(GLOG_DEBUG, "PTR for client_address (%s) differs from helo_name (%s)",
+				reversehost->h_name, helostr);
+			result->judgment = J_SUSPICIOUS;
+			result->weight += 1; /* FIXME */
+		}
 	}
 
       FINISH:
