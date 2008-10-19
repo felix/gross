@@ -42,6 +42,7 @@ void helper_dns_init();
 struct hostent *Gethostbyname(const char *name, mseconds_t timeout);
 struct hostent *Gethostbyaddr(const char *addr, mseconds_t timeout);
 struct hostent *Gethostbyaddr_str(const char *addr, mseconds_t timeout);
+void free_hostent(struct hostent *host);
 ub4 one_at_a_time(char *key, ub4 len);
 
 #endif /* #ifndef HELPER_DNS_H */

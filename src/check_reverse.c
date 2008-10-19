@@ -28,12 +28,10 @@ int
 reverse(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
-	int ret;
 	struct hostent *canonicalhost, *reversehost;
 
 	grey_tuple_t *request;
 	const char *client_address;
-	char buffer[MAXLINELEN] = { '\0' };
         char buf[INET_ADDRSTRLEN];
 	const char *ptr;
 
@@ -62,18 +60,19 @@ reverse(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 				result->judgment = J_SUSPICIOUS;
 				result->weight = 1; /* FIXME */
 			}
+			free_hostent(canonicalhost);
 		} else {
 			logstr(GLOG_DEBUG, "No A for PTR for client_ip (%s)", client_address);
 			result->judgment = J_SUSPICIOUS;
 			result->weight = 1;
 		}
+		free_hostent(canonicalhost);
 	} else {
 		logstr(GLOG_DEBUG, "client_ip (%s) has no PTR record", client_address);
 		result->judgment = J_SUSPICIOUS;
 		result->weight = 1;
 	}
 
-      FINISH:
 	send_result(edict, result);
 	logstr(GLOG_DEBUG, "reverse returning");
 	request_unlink(request);

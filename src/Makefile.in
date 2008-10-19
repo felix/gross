@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# $Id: Makefile.am 466 2008-05-16 12:56:43Z eino.tuominen $
+# $Id: Makefile.am 499 2008-10-19 15:27:43Z eino.tuominen $
 
 
 VPATH = @srcdir@

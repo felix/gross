@@ -103,7 +103,7 @@ hostent_deepcopy(struct hostent *src)
 }
 
 void
-hostent_free(struct hostent *host)
+free_hostent(struct hostent *host)
 {
 	int i, alias_count, addr_count = 0;
 
