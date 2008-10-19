@@ -110,12 +110,14 @@
 #define FLG_MATCH_SHORTCUT (int)0x0100
 #define FLG_RECONFIGURE_PENDING (int)0x0200
 
-#define CHECK_DNSBL (int)0x01
-#define CHECK_BLOCKER (int)0x02
-#define CHECK_RANDOM (int)0x04
-#define CHECK_RHSBL (int)0x08
-#define CHECK_DNSWL (int)0x10
-#define CHECK_SPF (int)0x20
+#define CHECK_DNSBL (int)0x0001
+#define CHECK_BLOCKER (int)0x0002
+#define CHECK_RANDOM (int)0x0004
+#define CHECK_RHSBL (int)0x0008
+#define CHECK_DNSWL (int)0x0010
+#define CHECK_SPF (int)0x0020
+#define CHECK_REVERSE (int)0x0040
+#define CHECK_HELO (int)0x0080
 
 #define PROTO_SJSMS (int)0x01
 #define PROTO_POSTFIX (int)0x02

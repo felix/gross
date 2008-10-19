@@ -33,6 +33,9 @@
 
 #ifdef DNSBL
 #include "check_dnsbl.h"
+#include "check_reverse.h"
+#include "check_helo.h"
+#include "helper_dns.h"
 #endif /* DNSBL */
 #ifdef SPF
 #include "check_spf.h"
@@ -401,6 +404,10 @@ configure_grossd(configlist_t *config)
 				ctx->config.checks |= CHECK_RANDOM;
 			else if (strcmp(cp->value, "spf") == 0)
 				ctx->config.checks |= CHECK_SPF;
+			else if (strcmp(cp->value, "reverse") == 0)
+				ctx->config.checks |= CHECK_REVERSE;
+			else if (strcmp(cp->value, "helo") == 0)
+				ctx->config.checks |= CHECK_HELO;
 		}
 		cp = cp->next;
 	}
@@ -785,6 +792,11 @@ main(int argc, char *argv[])
 		dns_check_info->dnsbase = ctx->rhsbl;
 		dnsbl_init(dns_check_info, &limits);
 	}
+	helper_dns_init();
+	if (ctx->config.checks & CHECK_REVERSE)
+		reverse_init(&limits);
+	if (ctx->config.checks & CHECK_HELO)
+		helo_init(&limits);
 #endif /* DNSBL */
 	if (ctx->config.checks & CHECK_BLOCKER)
 		blocker_init(&limits);

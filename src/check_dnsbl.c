@@ -28,6 +28,7 @@
 #include "srvutils.h"
 #include "utils.h"
 #include "worker.h"
+#include "helper_dns.h"
 
 /* the cleanup routine */
 int
@@ -252,6 +253,7 @@ dnsblc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	assert(request);
 	result = (chkresult_t *)Malloc(sizeof(chkresult_t));
 	memset(result, 0, sizeof(*result));
+	result->checkname = "dnsbl"; /* the default is only used in a GLOG_INSANE log line */
 
 	if (check_info->type == TYPE_DNSBL || check_info->type == TYPE_DNSWL) {
 		/* test the client ip address */

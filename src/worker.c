@@ -339,8 +339,8 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 						request_unlink(request);
 					} else {
 						logstr(GLOG_INSANE,
-						    "Received a check result, judgment = %d, weight = %d",
-						    result->judgment, result->weight);
+						    "Received a check result, check = %s, judgment = %d, weight = %d",
+						    result->checkname, result->judgment, result->weight);
 						/* was this a final result from the check? */
 						if (!result->wait)
 							checks_running--;

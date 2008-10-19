@@ -116,7 +116,7 @@ AC_ARG_ENABLE(dnsbl,
 if test "x$dnsbl" = "xyes"
 then
     AC_CHECK_HEADERS(ares.h, 
-	DNSBLSOURCES='check_dnsbl.o helper_dns.o',
+	DNSBLSOURCES='check_dnsbl.o helper_dns.o check_reverse.o check_helo.o',
 	AC_MSG_ERROR([ares.h needed for dnsbl checking.])
     )
     AC_SUBST([DNSBLSOURCES])

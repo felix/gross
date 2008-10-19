@@ -23,6 +23,7 @@
 #include "msgqueue.h"
 #include "utils.h"
 #include "lookup3.h"
+#include "helper_dns.h"
 
 #include <netdb.h>
 
@@ -61,29 +62,78 @@ struct hostent *lookup_str(const char *key);
 struct hostent *hostent_deepcopy(struct hostent *src);
 static void
 #if ARES_VERSION_MAJOR > 0 && ARES_VERSION_MINOR > 4
-Gethostbyname_cb(void *arg, int status, int timeouts, struct hostent *host);
+default_cb(void *arg, int status, int timeouts, struct hostent *host);
 #else
-Gethostbyname_cb(void *arg, int status, struct hostent *host);
+default_cb(void *arg, int status, struct hostent *host);
 #endif
 void cache_str(char *key, struct hostent *value);
+int count_ptrs(char **ptr);
 
 struct hostent *
 hostent_deepcopy(struct hostent *src)
 {
+	int i, alias_count, addr_count = 0;
+
 	struct hostent *dst = Malloc(sizeof(struct hostent));
 
 	assert(src);
-
+	
 	if (src->h_name)
 		dst->h_name = strdup(src->h_name);
+	dst->h_addrtype = src->h_addrtype;
+	dst->h_length = src->h_length;
+
+	/* copy addresses */
+	addr_count = count_ptrs(src->h_addr_list);
+	dst->h_addr_list = Malloc(addr_count * sizeof(char *));
+	for (i = 0; i < addr_count; i++) {
+		dst->h_addr_list[i] = Malloc(src->h_length);
+		memcpy(dst->h_addr_list[i], src->h_addr_list[i], src->h_length);
+	}
+	dst->h_addr_list[addr_count] = NULL;
+
+	/* copy aliases */
+	alias_count = count_ptrs(src->h_aliases);
+	dst->h_aliases = Malloc(alias_count * sizeof(char *) + 1);
+	for (i = 0; i < alias_count; i++)
+		dst->h_aliases[i] = strdup(src->h_aliases[i]);
+	dst->h_aliases[alias_count] = NULL;
+	
 	return dst;
 }
 
+void
+hostent_free(struct hostent *host)
+{
+	int i, alias_count, addr_count = 0;
+
+	if (host->h_name)
+		free((char *)(host->h_name));
+	/* free addresses */
+	addr_count = count_ptrs(host->h_addr_list);
+	for (i = 0; i < addr_count; i++)
+		free(host->h_addr_list[i]);
+	free(host->h_addr_list);
+	/* free aliases */
+	alias_count = count_ptrs(host->h_aliases);
+	for (i = 0; i < addr_count; i++)
+		free(host->h_aliases[i]);
+	free(host->h_aliases);
+}
+
+int 
+count_ptrs(char **ptr)
+{
+	int i = 0;
+	while (ptr[i++]);
+	return i - 1; /* terminator (NULL) not counted */
+}
+	
 static void
 #if ARES_VERSION_MAJOR > 0 && ARES_VERSION_MINOR > 4
-Gethostbyname_cb(void *arg, int status, int timeouts, struct hostent *host)
+default_cb(void *arg, int status, int timeouts, struct hostent *host)
 #else
-Gethostbyname_cb(void *arg, int status, struct hostent *host)
+default_cb(void *arg, int status, struct hostent *host)
 #endif
 {
         dns_cba_t *cba;
@@ -184,16 +234,21 @@ Gethostbyname(const char *name, mseconds_t timeout)
 	size_t size;
 	dns_reply_t reply;
 	struct hostent *entry;
+	dns_request_t request;
+
+	request.type = HOSTBYNAME;
+	request.query = (void *)name;
+	request.callback = &default_cb;
+	request.cba = &cba;
 
 	entry = lookup_str(name);
 
 	if (NULL == entry) {
 		channel = ctx->dns_channel;
 		cba.response_q = get_queue();
-		ares_gethostbyname(*channel, name, PF_INET, &Gethostbyname_cb, &cba);
-		/* send a byte via pipe to wake up the select loop */
-		size = write(ctx->dns_wake, "w", 1);
-		if (size != 1)
+		/* send the request via pipe to wake up the select loop */
+		size = write(ctx->dns_wake, &request, sizeof(request));
+		if (size != sizeof(request))
 			daemon_fatal("write");
 		/* wait for the reply via message queue */
 		size = get_msg_timed(cba.response_q, &reply, sizeof(dns_reply_t), timeout);
@@ -202,6 +257,74 @@ Gethostbyname(const char *name, mseconds_t timeout)
 		if (size > 0) {
 			if (reply.host)
 				cache_str(strdup(name), reply.host);
+			return reply.host;
+		} else
+			return NULL;
+	} else {
+		return entry;
+	}
+}
+
+struct hostent *
+Gethostbyaddr_str(const char *addr, mseconds_t timeout)
+{
+        struct in_addr inaddr;
+        int ret;
+
+	assert(addr);
+	ret = inet_pton(AF_INET, addr, &inaddr);
+	if (ret < 0) {
+		gerror("inet_pton");
+		return NULL;
+	} else if (0 == ret) {
+		logstr(GLOG_ERROR, "invalid IP address: %s", addr);
+		return NULL;
+	} else {
+		return Gethostbyaddr((char *)&inaddr, 0);
+	}
+	/* NOTREACHED */
+	assert(0);
+	return NULL;
+}
+
+struct hostent *
+Gethostbyaddr(const char *addr, mseconds_t timeout)
+{
+	dns_cba_t cba;
+	ares_channel *channel;
+	size_t size;
+	dns_reply_t reply;
+	struct hostent *entry;
+	dns_request_t request;
+	char ipstr[INET_ADDRSTRLEN];
+	const char *ptr;
+
+	request.type = HOSTBYADDR;
+	request.query = (void *)addr;
+	request.callback = &default_cb;
+	request.cba = &cba;
+
+	ptr = inet_ntop(AF_INET, addr, ipstr, INET_ADDRSTRLEN);
+	if (NULL == ptr) {
+		gerror("inet_ntop");
+		return NULL;
+	}
+	entry = lookup_str(ipstr);
+
+	if (NULL == entry) {
+		channel = ctx->dns_channel;
+		cba.response_q = get_queue();
+		/* send the request via pipe to wake up the select loop */
+		size = write(ctx->dns_wake, &request, sizeof(request));
+		if (size != sizeof(request))
+			daemon_fatal("write");
+		/* wait for the reply via message queue */
+		size = get_msg_timed(cba.response_q, &reply, sizeof(dns_reply_t), timeout);
+		release_queue(cba.response_q);
+
+		if (size > 0) {
+			if (reply.host)
+				cache_str(strdup(ipstr), reply.host);
 			return reply.host;
 		} else
 			return NULL;
@@ -221,8 +344,8 @@ helper_dns(void *arg)
 	int pipefd[2];
 	int ret;
 	int dns_wake;
-	char buf[MAXLINELEN];
 	ssize_t size;
+	dns_request_t request;
 
         ret = pthread_mutex_lock(&ctx->locks.helper_dns_guard.mx);
         assert(ret == 0);
@@ -261,7 +384,6 @@ helper_dns(void *arg)
 		FD_SET(dns_wake, &readers);
 		nfds = MAX(nfds, dns_wake + 1);
 		
-		printf("select %d\n", nfds);
 		count = select(nfds, &readers, &writers, NULL, tvp);
 		if (count < 0) {
 			daemon_fatal("select");
@@ -270,9 +392,20 @@ helper_dns(void *arg)
 			if (FD_ISSET(dns_wake, &readers)) {
 				logstr(GLOG_INSANE, "helper_dns: received a wake up call");
 				/* consume the wake up call */
-				size = read(dns_wake, buf, 1);
-				if (size != 1)
+				size = read(dns_wake, &request, sizeof(request));
+				if (size < sizeof(request))
 					daemon_fatal("read");
+				switch (request.type) {
+				case HOSTBYNAME:
+					ares_gethostbyname(*channel, (char *)request.query, PF_INET, request.callback, request.cba);
+					break;
+				case HOSTBYADDR:
+					ares_gethostbyaddr(*channel, (char *)request.query, 4, PF_INET, request.callback, request.cba);
+					break;
+				default:
+					logstr(GLOG_ERROR, "helper_dns: unknown request");
+					printf("Unknown request\n");
+				}
 			}
 			/* clear out our wakening fd */
 			FD_CLR(dns_wake, &readers);

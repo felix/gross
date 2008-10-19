@@ -1,5 +1,8 @@
 Version svn
 
+* New check: reverse. It tries to find a name for client_ip
+  and then check if that name points back to client_ip.
+* New check: helo. It checks if helo_name matches client_ip.
 * do not check /etc/hosts in dnsbl check
 * -u command line option to run grossd with a differnet uid
 

@@ -35,17 +35,23 @@ dnstest(void *arg)
 {
 	struct hostent *host;
 	int i;
+	char buf[INET_ADDRSTRLEN];
+	const char *ptr;
        
 	for (i=0; i < 10; i++) {
+		host = Gethostbyname("www.funet.fi", 0);
+		ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
+		assert (ptr);
+		printf("got: %s -> %s\n", host->h_name, buf);
 		host = Gethostbyname("www.utu.fi", 0);
-		printf("got: %s\n", host->h_name);
+		ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
+		assert (ptr);
+		printf("got: %s -> %s\n", host->h_name, buf);
 	}
-
-	printf("exiting\n");
-
 	pthread_exit(NULL);
 }
 
+#if 1
 int
 main(int argc, char **argv)
 {
@@ -53,31 +59,24 @@ main(int argc, char **argv)
 	gross_ctx_t myctx = { 0x00 }; /* dummy context */
 	int i = 0;
 	struct hostent *host;
+	char buf[INET_ADDRSTRLEN];
+	const char *ptr;
+	int ret;
 
         ctx = &myctx;
 	ctx->config.loglevel = GLOG_EMERG;
 
 	helper_dns_init();
 
-	host = Gethostbyname("www.utu.fi", 0);
-	printf("got: %s\n", host->h_name);
-	host = Gethostbyname("www.tut.fi", 0);
-	printf("got: %s\n", host->h_name);
-	host = Gethostbyname("www.hut.fi", 0);
-	printf("got: %s\n", host->h_name);
-	host = Gethostbyname("www.lut.fi", 0);
-	printf("got: %s\n", host->h_name);
-	host = Gethostbyname("www.uta.fi", 0);
-	printf("got: %s\n", host->h_name);
-	host = Gethostbyname("www.jyu.fi", 0);
-	printf("got: %s\n", host->h_name);
-	host = Gethostbyname("www.uku.fi", 0);
-	printf("got: %s\n", host->h_name);
+	host = Gethostbyaddr_str("130.232.1.1", 0);
+	ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
+	assert (ptr);
+	printf("got: %s -> %s\n", host->h_name, buf);
 
 	return 0;
 }
 
-#if 0
+#else
 int
 main(int argc, char **argv)
 {

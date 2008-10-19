@@ -215,6 +215,7 @@ hashlittle(const void *key, size_t length, uint32_t initval)
 			length -= 12;
 			k += 3;
 		}
+		k8 = (const uint8_t *)k;
 
     /*----------------------------- handle the last (probably partial) block */
 		/* 
@@ -283,7 +284,6 @@ hashlittle(const void *key, size_t length, uint32_t initval)
 
 #else /* make valgrind happy */
 
-		k8 = (const uint8_t *)k;
 		switch (length) {
 		case 12:
 			c += k[2];
