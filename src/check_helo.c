@@ -29,12 +29,12 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
 	chkresult_t *result;
 	struct hostent *host, *reversehost;
-
 	grey_tuple_t *request;
 	const char *helostr;
 	const char *client_address;
 	char addrstrbuf[INET_ADDRSTRLEN];
 	const char *ptr;
+	mseconds_t timelimit;
 
 	request = (grey_tuple_t *)edict->job;
 	helostr = request->helo_name;
@@ -47,7 +47,9 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	result->judgment = J_UNDEFINED;
 	result->checkname = "helo";
 
-	host = Gethostbyname(helostr, 0);
+	timelimit = edict->timelimit;
+
+	host = Gethostbyname(helostr, timelimit);
 	if (host) {
 		ptr = inet_ntop(AF_INET, host->h_addr_list[0], addrstrbuf, INET_ADDRSTRLEN);
 		if (NULL == ptr) {
@@ -69,7 +71,7 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		goto FINISH;
 	}
 
-	reversehost = Gethostbyaddr_str(client_address, 0);
+	reversehost = Gethostbyaddr_str(client_address, timelimit);
         if (reversehost) {
                 logstr(GLOG_INSANE, "client_address (%s) has a PTR record (%s)",
                         client_address, reversehost->h_name);

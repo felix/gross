@@ -34,6 +34,7 @@ reverse(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	const char *client_address;
         char buf[INET_ADDRSTRLEN];
 	const char *ptr;
+	mseconds_t timelimit;
 
 	request = (grey_tuple_t *)edict->job;
 	client_address = request->client_address;
@@ -44,11 +45,13 @@ reverse(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	result->judgment = J_UNDEFINED;
 	result->checkname = "reverse";
 
-	reversehost = Gethostbyaddr_str(client_address, 0);
+	timelimit = edict->timelimit;
+
+	reversehost = Gethostbyaddr_str(client_address, timelimit);
 	if (reversehost) {
                 logstr(GLOG_INSANE, "client_address (%s) has a PTR record (%s)",
                         client_address, reversehost->h_name);
-		canonicalhost = Gethostbyname(reversehost->h_name, 0);
+		canonicalhost = Gethostbyname(reversehost->h_name, timelimit);
 		if (canonicalhost) {
 			ptr = inet_ntop(AF_INET, canonicalhost->h_addr_list[0], buf, INET_ADDRSTRLEN);
 			assert(ptr);
