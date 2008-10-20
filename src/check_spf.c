@@ -92,7 +92,7 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	if (request->helo_name) {
 		ret = SPF_request_set_helo_dom(spf_request, request->helo_name);
 		if (ret) {
-			logstr(GLOG_ERROR, "invalid HELO domain: %s.", "");
+			logstr(GLOG_ERROR, "invalid HELO domain: %s.", request->helo_name);
 			goto CLEANUP;
 		}
 	}
@@ -149,6 +149,8 @@ spfc(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
       CLEANUP:
 	if (spf_request)
 		SPF_request_free(spf_request);
+	if (spf_response)
+		SPF_response_free(spf_response);
       FINISH:
 
 	send_result(edict, result);

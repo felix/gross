@@ -28,7 +28,7 @@ static void *dnstest(void *arg);
 /* dummy context */
 gross_ctx_t *ctx;
 
-#define THREADCOUNT 2000
+#define THREADCOUNT 200
 
 static void *
 dnstest(void *arg)
@@ -37,17 +37,14 @@ dnstest(void *arg)
 	int i;
 	char buf[INET_ADDRSTRLEN];
 	const char *ptr;
+	int *errors = arg;
        
-	for (i=0; i < 10; i++) {
-		host = Gethostbyname("www.funet.fi", 0);
+	for (i=0; i < 1; i++) {
+		host = Gethostbyname("ns1.utu.fi", 0);
 		ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
 		assert (ptr);
-		printf("got: %s -> %s\n", host->h_name, buf);
-		free_hostent(host);
-		host = Gethostbyname("www.utu.fi", 0);
-		ptr = inet_ntop(AF_INET, host->h_addr_list[0], buf, INET_ADDRSTRLEN);
-		assert (ptr);
-		printf("got: %s -> %s\n", host->h_name, buf);
+		if (strcmp("130.232.1.1", buf))
+			(*errors)++;
 		free_hostent(host);
 	}
 	pthread_exit(NULL);
@@ -91,25 +88,23 @@ main(int argc, char **argv)
 	thread_info_t threads[THREADCOUNT];
 	gross_ctx_t myctx = { 0x00 }; /* dummy context */
 	int i = 0;
+	int errors = 0;
 
         ctx = &myctx;
 	ctx->config.loglevel = GLOG_EMERG;
 
 	helper_dns_init();
 
-	/* fire up THREADCOUNT threads to do dns queries */
-	
-	create_thread(&threads[i], 0, &dnstest, NULL);
-	pthread_join(*threads[i].thread, NULL);
-
+	/* populate cache */
+	create_thread(&threads[0], 0, &dnstest, &errors);
 	sleep(1);
-
-	for(i=0; i < THREADCOUNT; i++)
-		create_thread(&threads[i], 0, &dnstest, NULL);
+	/* fire up THREADCOUNT threads to do dns queries */
+	for(i=1; i < THREADCOUNT; i++)
+		create_thread(&threads[i], 0, &dnstest, &errors);
 	for (i=0; i < THREADCOUNT; i++)
 		if (0 != pthread_join(*threads[i].thread, NULL))
 			perror("pthread_join");
 
-	return(0);
+	return(errors);
 }
 #endif
