@@ -24,6 +24,52 @@
 #include "worker.h"
 #include "helper_dns.h"
 
+/*
+ * Jeff Chan <jff.chan at gmail.com>:
+ * "The code handled some cases with exception to RFCs. First, the code
+ * allows underscores, which is not uncommon for misconfigured hostnames.
+ * Second, even bracketed IP addresses that are RFC compliant, will get
+ * greylisted."
+ */
+int
+check_helo(char *helo)
+{
+	int match_dot = 0;
+	int match_bad = 0;
+	int match_isalpha = 0;
+	int match_isnum = 0;
+	char *ptr = helo, *tmp = helo;
+	int ret = 0;
+	char c;
+
+	while (tmp && (c = tmp++[0]))
+		if (c == '/')
+			ptr = tmp;
+
+	while (ptr && (c = ptr++[0])) {
+		if (c == '-' || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+			match_isalpha++;
+			continue;
+		} else if (c >= '0' && c<= '9') {
+			match_isnum++;
+			continue;
+		} else if (c == '.') {
+			match_dot++;
+			continue;
+		} else if (c == '_') {
+			continue;
+		} else {
+			match_bad++;
+			break;
+		}
+	}
+	if (match_dot == 3 && match_isnum >= 4 && match_isalpha == 0)
+		ret = 0;
+	else if (match_dot > 0 && match_bad == 0 && match_isnum + match_isalpha >= 2)
+		ret = -1;
+	return ret;
+}
+
 int
 helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 {
@@ -49,6 +95,16 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 
 	timelimit = edict->timelimit;
 
+	/* check the validity of helo string */
+	if (check_helo(helostr)) {
+		logstr(GLOG_DEBUG, "Syntactically suspicious helo name");
+		result->judgment = J_SUSPICIOUS;
+		result->weight += 2; /* FIXME */
+		/* Unlikely to resolve */
+		goto FINISH;
+	}
+	
+	/* check if clientip and helo match */
 	host = Gethostbyname(helostr, timelimit);
 	if (host) {
 		ptr = inet_ntop(AF_INET, host->h_addr_list[0], addrstrbuf, INET_ADDRSTRLEN);
