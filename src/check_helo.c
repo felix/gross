@@ -31,15 +31,14 @@
  * Second, even bracketed IP addresses that are RFC compliant, will get
  * greylisted."
  */
-int
-check_helo(char *helo)
+bool
+check_helo(const char *helo)
 {
 	int match_dot = 0;
 	int match_bad = 0;
 	int match_isalpha = 0;
 	int match_isnum = 0;
-	char *ptr = helo, *tmp = helo;
-	int ret = 0;
+	const char *ptr = helo, *tmp = helo;
 	char c;
 
 	while (tmp && (c = tmp++[0]))
@@ -64,10 +63,12 @@ check_helo(char *helo)
 		}
 	}
 	if (match_dot == 3 && match_isnum >= 4 && match_isalpha == 0)
-		ret = 0;
+		return true;
 	else if (match_dot > 0 && match_bad == 0 && match_isnum + match_isalpha >= 2)
-		ret = -1;
-	return ret;
+		return false;
+
+	/* NOT REACHED */
+	assert(0);
 }
 
 int
@@ -98,17 +99,18 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 	/* check the validity of helo string */
 	if (check_helo(helostr)) {
 		logstr(GLOG_DEBUG, "Syntactically suspicious helo name");
-		result->judgment = J_SUSPICIOUS;
+		/* one for invalid helo string AND one for not matching the client ip */
 		result->weight += 2; /* FIXME */
-		/* Unlikely to resolve */
+		/* no point in doing dns queries as invalid helo wouldn't match the client ip */
 		goto FINISH;
 	}
-	
-	/* check if clientip and helo match */
+
+	/* check if helo resolves to client ip */
 	host = Gethostbyname(helostr, timelimit);
 	if (host) {
 		ptr = inet_ntop(AF_INET, host->h_addr_list[0], addrstrbuf, INET_ADDRSTRLEN);
 		if (NULL == ptr) {
+			/* this should never happen */
 			logstr(GLOG_ERROR, "helo_name resolved to an invalid ip");
 			goto FINISH;
 		}
@@ -117,16 +119,14 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		if (strcmp(addrstrbuf, client_address)) {
 			logstr(GLOG_DEBUG, "helo name (%s) does not resolve to client address (%s)",
 				helostr, client_address);
-			result->judgment = J_SUSPICIOUS;
 			result->weight += 1; /* FIXME */
 		}
 	} else {
 		logstr(GLOG_DEBUG, "helo_name not resolvable");
-		result->judgment = J_SUSPICIOUS;
 		result->weight += 1; /* FIXME */
-		goto FINISH;
 	}
 
+	/* check if client's PTR record match helo */
 	reversehost = Gethostbyaddr_str(client_address, timelimit);
         if (reversehost) {
                 logstr(GLOG_INSANE, "client_address (%s) has a PTR record (%s)",
@@ -134,12 +134,16 @@ helo(thread_pool_t *info, thread_ctx_t *thread_ctx, edict_t *edict)
 		if (strcmp(reversehost->h_name, helostr)) {
 			logstr(GLOG_DEBUG, "PTR for client_address (%s) differs from helo_name (%s)",
 				reversehost->h_name, helostr);
-			result->judgment = J_SUSPICIOUS;
 			result->weight += 1; /* FIXME */
 		}
+	} else {
+		logstr(GLOG_INSANE, "client_address (%s) does not have a PTR record");
+		result->weight += 1; /* FIXME */
 	}
 
       FINISH:
+	if (result->weight > 0)
+		result->judgment = J_SUSPICIOUS;
 	send_result(edict, result);
 	logstr(GLOG_DEBUG, "helo returning");
 	request_unlink(request);
