@@ -29,7 +29,7 @@ static void *bloommgr(void *arg);
 static void *
 rotate(void *arg)
 {
-	logstr(GLOG_INFO, "rotate thread starting");
+	logstr(GLOG_DEBUG, "rotate thread starting");
 
 	if ((time(NULL) - *ctx->last_rotate) <= ctx->config.rotate_interval) {
 		logstr(GLOG_DEBUG, "rotation not needed");
@@ -100,7 +100,7 @@ bloommgr(void *arg)
 			RELEASE_BLOOM_GUARD();
 			break;
 		case ROTATE:
-			logstr(GLOG_INFO, "received rotate command");
+			logstr(GLOG_DEBUG, "received rotate command");
 			/* debug_print_ring_queue(ctx->filter, TRUE); */
 			create_thread(NULL, DETACH, &rotate, NULL);
 			break;
