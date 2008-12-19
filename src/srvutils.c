@@ -186,7 +186,7 @@ void
 create_statefile(void)
 {
 	int ret;
-	int lumpsize;
+	size_t lumpsize;
 	int i;
 	struct stat statbuf;
 	FILE *statefile;
@@ -198,7 +198,7 @@ create_statefile(void)
 	    sizeof(bloom_filter_group_t) +	/* filter group data */
 	    num * sizeof(bloom_filter_t *) +	/* pointers to filters */
 	    (num + 1) * sizeof(bloom_filter_t) +	/* filter metadata */
-	    (num + 1) * (1 << num_bits) / BITS_PER_CHAR +	/* filter data */
+	    (num + 1) * ((1 << num_bits) / BITS_PER_CHAR) +	/* filter data */
 	    sizeof(mmapped_brq_t);	/* mmap_info */
 
 	ret = stat(ctx->config.statefile, &statbuf);
@@ -226,7 +226,7 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 	bloom_ring_queue_t *brq;
 	char *ptr;
 	int i, ret;
-	int lumpsize;
+	size_t lumpsize;
 	struct stat statbuf;
 	char *magic = "mmbrq2\n";
 	int use_mmap = FALSE;
@@ -242,7 +242,7 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 	    sizeof(bloom_filter_group_t) +	/* filter group data */
 	    num * sizeof(bloom_filter_t *) +	/* pointers to filters */
 	    (num + 1) * sizeof(bloom_filter_t) +	/* filter metadata */
-	    (num + 1) * (1 << num_bits) / BITS_PER_CHAR;	/* filter data */
+	    (num + 1) * ((1 << num_bits) / BITS_PER_CHAR);	/* filter data */
 
 	if (ctx->config.statefile) {
 		use_mmap = TRUE;
@@ -306,17 +306,17 @@ build_bloom_ring(unsigned int num, bitindex_t num_bits)
 	brq->current_index = 0;
 
 	/* filter group data */
-	ptr += sizeof(bloom_ring_queue_t);
+	ptr += sizeof(bloom_ring_queue_t);		/* skip metadata */
 	brq->group = (bloom_filter_group_t *)ptr;	/* see malloc */
 	brq->group->group_size = num;
 
 	/* pointers of pointers to filters */
-	ptr += sizeof(bloom_filter_group_t);
+	ptr += sizeof(bloom_filter_group_t);		/* skip filter group data */
 	brq->group->filter_group = (bloom_filter_t **)ptr;
 
 	/* filter metadata */
-	ptr += num * sizeof(bloom_filter_t *);
-	brq->aggregate = (bloom_filter_t *)ptr;
+	ptr += num * sizeof(bloom_filter_t *); 		/* skip pointers to filters */
+	brq->aggregate = (bloom_filter_t *)ptr;	
 	brq->aggregate->bitsize = 1 << num_bits;
 	brq->aggregate->mask = ((bitindex_t)-1) >> (BITARRAY_BASE_SIZE - num_bits);
 	brq->aggregate->size = brq->aggregate->bitsize / BITARRAY_BASE_SIZE;
