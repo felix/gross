@@ -1,4 +1,4 @@
-Version 1.0-svn
+Version 1.0.2
 
 * do not check /etc/hosts in dnsbl check
 * -u command line option to run grossd with a differnet uid
