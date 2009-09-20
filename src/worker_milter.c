@@ -104,11 +104,28 @@ sfsistat
 mlfi_envfrom(SMFICTX * milter_ctx, char **argv)
 {
 	struct private_ctx_s *priv = MILTER_PRIVATE;
+	char *m_verify = NULL;
+	char *m_certsubj = NULL;
 
 	priv->sender = strdup(argv[0]);
 
+	/* authenticated? */
+	m_auth = smfi_getsymval(milter_ctx, "{auth_authen}");
+	if (NULL != m_auth) {
+		logstr(GLOG_DEBUG, "milter: envfrom: %s: authenticated as %s, letting through", priv->sender, m_auth);
+		return SMFIS_ACCEPT;
+	}
 	logstr(GLOG_INSANE, "milter: envfrom: %s", priv->sender);
 
+	/* cetificate? */
+	m_verify = smfi_getsymval(milter_ctx, "{verify}");
+	if (NULL != m_verify && strcmp(0 == strcmp(m_verify, "OK"))) {
+		m_certsubj = smfi_getsymval(milter_ctx, "{cert_subject}");
+		if (NULL != m_certsubj) {
+			logstr(GLOG_DEBUG, "milter: envfrom: %s: certauth as dn=%s, letting through", priv->sender, m_certsubj);
+			return SMFIS_ACCEPT;
+		}
+	}
 	return SMFIS_CONTINUE;
 }
 
