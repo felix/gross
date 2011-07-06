@@ -4,6 +4,7 @@ Version svn
   and then check if that name points back to client_ip.
 * New check: helo. It checks if helo_name matches client_ip.
 * New check: spf. Depends on libspf2, compile time option.
+* New configure option 'grey_tuple' for looser greylist.
 * do not check /etc/hosts in dnsbl check
 * -u command line option to run grossd with a differnet uid
 
