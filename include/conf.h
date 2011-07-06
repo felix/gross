@@ -41,6 +41,7 @@
 			"stat_type",		"status",	\
 			"grey_mask",		"24",		\
 			"grey_delay",		"10",           \
+			"grey_type",		"normal",	\
 			"syslog_facility",	"mail",		\
 			"blocker_port",		"4466",		\
 			"blocker_weight",	"1",		\
@@ -80,6 +81,7 @@
                         "log_level",			\
 			"grey_mask",			\
                         "grey_delay",               	\
+                        "grey_type",               	\
 			"check",			\
 			"protocol",			\
                         "syslog_facility",		\

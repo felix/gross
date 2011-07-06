@@ -186,6 +186,14 @@ update_counters(int status)
 	}
 }
 
+static const char *domain_part(const char *email)
+{
+	char *p = strchr(email, '@');
+	if (p == NULL)
+		return email;
+	return p + 1;
+}
+
 int
 test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 {
@@ -233,7 +241,14 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 	}
 
 	/* greylist */
-	snprintf(maskedtuple, MSGSZ, "%s %s %s", chkipstr, request->sender, request->recipient);
+	switch (ctx->config.grey_tuple) {
+	case GREY_TUPLE_NORMAL:
+		snprintf(maskedtuple, MSGSZ, "%s %s %s", chkipstr, request->sender, request->recipient);
+		break;
+	case GREY_TUPLE_LOOSE:
+		snprintf(maskedtuple, MSGSZ, "%s %s %s", chkipstr, domain_part(request->sender), request->helo_name);
+		break;
+	}
 	digest = sha256_string(maskedtuple);
 
 	querylog_entry = &final->querylog_entry;

@@ -151,6 +151,12 @@ typedef int bool;
 # endif	/* bool */
 #endif /* HAVE_BOOL */
 
+typedef enum
+{
+	GREY_TUPLE_NORMAL = 0,
+	GREY_TUPLE_LOOSE,
+} greytupletype_t;
+
 typedef struct peer_s
 {
 	struct sockaddr_in peer_addr;
@@ -207,6 +213,7 @@ typedef struct
 	int grey_mask;
 	int protocols;
 	int greylist_delay;
+	greytupletype_t grey_tuple;
 	postfix_config_t postfix;
 	sjsms_config_t sjsms;
 	blocker_config_t blocker;

@@ -112,7 +112,7 @@ configure_grossd(configlist_t *config)
 {
 	int ret;
 	configlist_t *cp;
-	const char *updatestr;
+	const char *updatestr, *greytuplestr;
 	struct hostent *host = NULL;
 	char buffer[MAXLINELEN] = { '\0' };
 	params_t *pp;
@@ -212,6 +212,17 @@ configure_grossd(configlist_t *config)
 		logstr(GLOG_DEBUG, "updatestyle: GREY");
 	else {
 		daemon_shutdown(EXIT_CONFIG, "Invalid updatestyle: %s", updatestr);
+	}
+
+	greytuplestr = CONF("grey_tuple");
+	if (strncmp(greytuplestr, "loose", 6) == 0) {
+		logstr(GLOG_DEBUG, "grey_tuple: LOOSE");
+		ctx->config.grey_tuple = GREY_TUPLE_LOOSE;
+	} else if ((greytuplestr == NULL) || (strncmp(greytuplestr, "normal", 7) == 0)) {
+		logstr(GLOG_DEBUG, "grey_tuple: NORMAL");
+		ctx->config.grey_tuple = GREY_TUPLE_NORMAL;
+	} else {
+		daemon_shutdown(EXIT_CONFIG, "Invalid grey_tuple: %s", greytuplestr);
 	}
 
 	/* we must reset errno because strtol returns 0 if it fails */
