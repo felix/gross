@@ -67,10 +67,10 @@ is the way server updates the database.  Valid options are
 `\s-1STATUS_GREY\s+1'.  Setting it to `always' may reduce the impact on
 \s-1DNS\s+1 servers.
 .IP "\fBgrey_tuple\fP" 4
-is the greylisting tuple. Valid options are `normal' and `loose'. If set to
-`normal', which is the default, \fIgrossd\fP\|(8) will create the tuple from
+is the greylisting tuple. Valid options are `user' and `server'. If set to
+`user', which is the default, \fIgrossd\fP\|(8) will create the tuple from
 the masked `smtp\-client\-ip', sender email and recipient email. If set to
-`loose' it will create the tuple from the masked `smtp\-client\-ip', the sender
+`server' it will create the tuple from the masked `smtp\-client\-ip', the sender
 email domain and helo message.
 .IP "\fBgrey_mask\fP" 4
 is the mask for \fIgrossd\fP\|(8) to use when matching the 

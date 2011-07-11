@@ -153,8 +153,8 @@ typedef int bool;
 
 typedef enum
 {
-	GREY_TUPLE_NORMAL = 0,
-	GREY_TUPLE_LOOSE,
+	GREY_TUPLE_USER = 0,
+	GREY_TUPLE_SERVER,
 } greytupletype_t;
 
 typedef struct peer_s

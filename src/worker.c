@@ -242,10 +242,10 @@ test_tuple(final_status_t *final, grey_tuple_t *request, tmout_action_t *ta)
 
 	/* greylist */
 	switch (ctx->config.grey_tuple) {
-	case GREY_TUPLE_NORMAL:
+	case GREY_TUPLE_USER:
 		snprintf(maskedtuple, MSGSZ, "%s %s %s", chkipstr, request->sender, request->recipient);
 		break;
-	case GREY_TUPLE_LOOSE:
+	case GREY_TUPLE_SERVER:
 		snprintf(maskedtuple, MSGSZ, "%s %s %s", chkipstr, domain_part(request->sender), request->helo_name);
 		break;
 	}

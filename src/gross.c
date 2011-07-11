@@ -215,12 +215,12 @@ configure_grossd(configlist_t *config)
 	}
 
 	greytuplestr = CONF("grey_tuple");
-	if (strncmp(greytuplestr, "loose", 6) == 0) {
-		logstr(GLOG_DEBUG, "grey_tuple: LOOSE");
-		ctx->config.grey_tuple = GREY_TUPLE_LOOSE;
-	} else if ((greytuplestr == NULL) || (strncmp(greytuplestr, "normal", 7) == 0)) {
-		logstr(GLOG_DEBUG, "grey_tuple: NORMAL");
-		ctx->config.grey_tuple = GREY_TUPLE_NORMAL;
+	if ((greytuplestr == NULL) || (strcmp(greytuplestr, "user") == 0)) {
+		logstr(GLOG_DEBUG, "grey_tuple: USER");
+		ctx->config.grey_tuple = GREY_TUPLE_USER;
+	} else if (strcmp(greytuplestr, "server") == 0) {
+		logstr(GLOG_DEBUG, "grey_tuple: SERVER");
+		ctx->config.grey_tuple = GREY_TUPLE_SERVER;
 	} else {
 		daemon_shutdown(EXIT_CONFIG, "Invalid grey_tuple: %s", greytuplestr);
 	}
