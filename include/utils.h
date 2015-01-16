@@ -39,7 +39,6 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 #endif /* ! USE_GETTIMEOFDAY */
 
 int readline(int fd, void *vptr, size_t maxlen);
-int getline(int fd, char *line, size_t maxlen);
 ssize_t readn(int fd, void *vptr, size_t n);
 ssize_t writen(int fd, const void *vptr, size_t n);
 ssize_t writeline(int fd, const char *line);
